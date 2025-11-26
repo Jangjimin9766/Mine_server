@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    # serverTimezone을 Asia/Seoul로 하면 한국 시간으로 저장됩니다.
+    url: jdbc:mysql://localhost:3306/mine_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    # [중요] Workbench 접속할 때 입력한 비밀번호를 '따옴표 안'에 넣으세요.
+    # 만약 비밀번호가 없으면 "" 빈칸으로 두세요.
+    password: "1234" 
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 서버 켤 때마다 DB 스키마를 자동 업데이트
+    properties:
+      hibernate:
+        format_sql: true # 로그에 SQL 예쁘게 출력
+        show_sql: true   # 실행되는 SQL 보여주기
+        # MySQL 8.0 이상을 쓰시면 아래 Dialect 설정은 보통 생략해도 스프링이 알아서 찾습니다.
+        # 혹시 에러나면 주석 해제해서 쓰세요.
+        # dialect: org.hibernate.dialect.MySQL8Dialect
+
+logging:
+  level:
+    org.hibernate.SQL: debug # SQL 로그 레벨 설정
