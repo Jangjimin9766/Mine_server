@@ -14,15 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
+    private final com.mine.api.repository.UserRepository userRepository;
 
     @Transactional
-    public Long saveMagazine(MagazineCreateRequest request) {
+    public Long saveMagazine(MagazineCreateRequest request, String email) {
+        com.mine.api.domain.User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         // 1. Magazine 엔티티 생성
         Magazine magazine = Magazine.builder()
                 .title(request.getTitle())
                 .introduction(request.getIntroduction())
                 .coverImageUrl(request.getCoverImageUrl())
-                .userId(1L) // 요구사항: 임시로 1L 고정
+                .user(user)
                 .build();
 
         // 2. Section 엔티티 생성 및 연관관계 설정
@@ -41,5 +45,22 @@ public class MagazineService {
         // 3. 저장 (CascadeType.ALL로 인해 Section도 함께 저장됨)
         Magazine savedMagazine = magazineRepository.save(magazine);
         return savedMagazine.getId();
+    }
+
+    public java.util.List<Magazine> getMagazinesByUser(String email) {
+        com.mine.api.domain.User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return magazineRepository.findAllByUser(user);
+    }
+
+    public Magazine getMagazineDetail(Long id, String email) {
+        Magazine magazine = magazineRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+
+        if (!magazine.getUser().getEmail().equals(email)) {
+            throw new IllegalArgumentException("Unauthorized access to this magazine");
+        }
+
+        return magazine;
     }
 }
