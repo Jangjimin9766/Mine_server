@@ -20,11 +20,15 @@ public class AuthService {
 
     @Transactional
     public Long signup(AuthDto.SignupRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
         }
 
         User user = User.builder()
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nickname(request.getNickname())
@@ -36,14 +40,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthDto.TokenResponse login(AuthDto.LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new IllegalArgumentException("Invalid username or password");
         }
 
-        String token = jwtTokenProvider.createToken(user.getEmail(), user.getRole().name());
+        String token = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
         return new AuthDto.TokenResponse(token);
     }
 }
