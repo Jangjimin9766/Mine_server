@@ -15,6 +15,10 @@ public class MagazineService {
 
     private final MagazineRepository magazineRepository;
     private final com.mine.api.repository.UserRepository userRepository;
+    private final org.springframework.web.client.RestTemplate restTemplate;
+
+    @org.springframework.beans.factory.annotation.Value("${python.api.url}")
+    private String pythonApiUrl;
 
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String email) {
@@ -62,5 +66,26 @@ public class MagazineService {
         }
 
         return magazine;
+    }
+
+    @Transactional
+    public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String email) {
+        // 1. Python 서버로 요청
+        // Python 서버가 기대하는 요청 바디: {"topic": "...", "user_mood": "...", "user_email":
+        // "..."}
+        java.util.Map<String, String> pythonRequest = new java.util.HashMap<>();
+        pythonRequest.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
+        pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
+        pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, email);
+
+        MagazineCreateRequest generatedData = restTemplate.postForObject(pythonApiUrl, pythonRequest,
+                MagazineCreateRequest.class);
+
+        if (generatedData == null) {
+            throw new RuntimeException("Failed to generate magazine from AI server");
+        }
+
+        // 2. 받은 데이터로 저장 로직 수행
+        return saveMagazine(generatedData, email);
     }
 }
