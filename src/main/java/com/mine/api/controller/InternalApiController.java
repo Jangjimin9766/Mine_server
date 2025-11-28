@@ -18,7 +18,7 @@ public class InternalApiController {
 
     @PostMapping("/magazine")
     public ResponseEntity<Long> createMagazine(@RequestBody MagazineCreateRequest request) {
-        Long magazineId = magazineService.saveMagazine(request);
+        Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
         return ResponseEntity.ok(magazineId);
     }
 }

@@ -22,3 +22,7 @@ spring:
 logging:
   level:
     org.hibernate.SQL: debug # SQL 로그 레벨 설정
+
+python:
+  api:
+    url: http://localhost:8000/api/magazine/create

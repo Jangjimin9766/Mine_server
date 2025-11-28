@@ -27,6 +27,7 @@ public class MagazineSection {
     @Column(name = "layout_hint")
     private String layoutHint;
 
+    @com.fasterxml.jackson.annotation.JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "magazine_id")
     private Magazine magazine;

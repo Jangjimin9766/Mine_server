@@ -28,21 +28,24 @@ public class Magazine {
     @Column(name = "cover_image_url")
     private String coverImageUrl;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @com.fasterxml.jackson.annotation.JsonManagedReference
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MagazineSection> sections = new ArrayList<>();
 
     @Builder
-    public Magazine(String title, String introduction, String coverImageUrl, Long userId) {
+    public Magazine(String title, String introduction, String coverImageUrl, User user) {
         this.title = title;
         this.introduction = introduction;
         this.coverImageUrl = coverImageUrl;
-        this.userId = userId;
+        this.user = user;
         this.createdAt = LocalDateTime.now();
     }
 

@@ -16,6 +16,9 @@ public class MagazineCreateRequest {
     @JsonProperty("cover_image_url")
     private String coverImageUrl;
 
+    @JsonProperty("user_email")
+    private String userEmail;
+
     private List<SectionDto> sections;
 
     @Getter
