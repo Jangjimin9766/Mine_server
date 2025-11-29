@@ -2,8 +2,11 @@ package com.mine.api.service;
 
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
+import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.repository.MagazineRepository;
+import java.util.stream.Collectors;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,7 @@ public class MagazineService {
     private final com.mine.api.repository.UserRepository userRepository;
     private final com.mine.api.repository.MagazineLikeRepository magazineLikeRepository;
     private final com.mine.api.repository.UserInterestRepository userInterestRepository;
+    private final com.mine.api.repository.FollowRepository followRepository;
     private final org.springframework.web.client.RestTemplate restTemplate;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
@@ -234,8 +238,32 @@ public class MagazineService {
     // }
 
     // ⭐ Phase 2: 내 매거진 조회
+    // ⭐ Phase 2: 내 매거진 조회
     public org.springframework.data.domain.Page<Magazine> getMyMagazinesPage(
             String username, org.springframework.data.domain.Pageable pageable) {
         return magazineRepository.findByUserUsername(username, pageable);
+    }
+
+    // ⭐ Phase 4: 개인화 피드
+    public org.springframework.data.domain.Page<Magazine> getPersonalizedFeed(String username,
+            org.springframework.data.domain.Pageable pageable) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        // 1. 팔로잉 목록 가져오기
+        java.util.List<User> followings = followRepository.findByFollower(user).stream()
+                .map(com.mine.api.domain.Follow::getFollowing)
+                .collect(java.util.stream.Collectors.toList());
+
+        // 2. 관심사 중 하나 랜덤 선택
+        java.util.List<com.mine.api.domain.UserInterest> interests = userInterestRepository.findByUser(user);
+        String keyword = "";
+        if (!interests.isEmpty()) {
+            int randomIndex = new java.util.Random().nextInt(interests.size());
+            keyword = interests.get(randomIndex).getInterest().getDisplayName();
+        }
+
+        // 3. 쿼리 실행 (팔로잉 OR 관심사 키워드)
+        return magazineRepository.findPersonalizedFeed(followings, keyword, pageable);
     }
 }

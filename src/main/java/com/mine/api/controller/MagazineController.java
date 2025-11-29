@@ -23,11 +23,13 @@ public class MagazineController {
 
     private final MagazineService magazineService;
 
-    @Operation(summary = "내 매거진 목록 조회", description = "로그인한 사용자가 생성한 모든 매거진을 조회합니다.")
+    @Operation(summary = "내 매거진 목록 조회", description = "로그인한 사용자가 생성한 모든 매거진을 페이징하여 조회합니다.")
     @GetMapping
-    public ResponseEntity<List<Magazine>> getMyMagazines(@AuthenticationPrincipal UserDetails userDetails) {
-        List<Magazine> magazines = magazineService.getMagazinesByUser(userDetails.getUsername());
-        return ResponseEntity.ok(magazines);
+    public ResponseEntity<org.springframework.data.domain.Page<Magazine>> getMyMagazines(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+
+        return ResponseEntity.ok(magazineService.getMyMagazinesPage(userDetails.getUsername(), pageable));
     }
 
     @Operation(summary = "매거진 상세 조회", description = "특정 매거진의 상세 정보를 조회합니다. 본인의 매거진만 조회 가능합니다.")
@@ -192,5 +194,15 @@ public class MagazineController {
                 userDetails.getUsername(), pageable);
 
         return ResponseEntity.ok(magazines);
+    }
+
+    // ⭐ Phase 4: 개인화 피드
+    @Operation(summary = "개인화 피드", description = "팔로우한 사용자의 글과 관심사 기반 추천 글을 조회합니다.")
+    @GetMapping("/feed")
+    public ResponseEntity<org.springframework.data.domain.Page<Magazine>> getPersonalizedFeed(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+
+        return ResponseEntity.ok(magazineService.getPersonalizedFeed(userDetails.getUsername(), pageable));
     }
 }

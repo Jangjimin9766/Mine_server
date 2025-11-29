@@ -44,4 +44,15 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         org.springframework.data.domain.Pageable pageable);
 
         long countByUser(User user);
+
+        // ⭐ Phase 4: 개인화 피드 (팔로잉 + 관심사 키워드)
+        @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
+                        "WHERE (m.user IN :followings " +
+                        "OR (m.title LIKE %:keyword% OR m.introduction LIKE %:keyword%)) " +
+                        "AND m.isPublic = true " +
+                        "ORDER BY m.createdAt DESC")
+        org.springframework.data.domain.Page<Magazine> findPersonalizedFeed(
+                        @org.springframework.data.repository.query.Param("followings") List<User> followings,
+                        @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        org.springframework.data.domain.Pageable pageable);
 }

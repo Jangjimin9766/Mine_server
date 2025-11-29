@@ -16,8 +16,18 @@ public class InternalApiController {
 
     private final MagazineService magazineService;
 
+    @org.springframework.beans.factory.annotation.Value("${python.api.key}")
+    private String internalApiKey;
+
     @PostMapping("/magazine")
-    public ResponseEntity<Long> createMagazine(@RequestBody MagazineCreateRequest request) {
+    public ResponseEntity<?> createMagazine(
+            @RequestBody MagazineCreateRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
+
+        if (!internalApiKey.equals(apiKey)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
+        }
+
         Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
         return ResponseEntity.ok(magazineId);
     }
