@@ -17,6 +17,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final InterestService interestService;
 
     @Transactional
     public Long signup(AuthDto.SignupRequest request) {
@@ -35,7 +36,14 @@ public class AuthService {
                 .role(Role.USER)
                 .build();
 
-        return userRepository.save(user).getId();
+        User savedUser = userRepository.save(user);
+
+        // 관심사 저장 (선택사항)
+        if (request.getInterests() != null && !request.getInterests().isEmpty()) {
+            interestService.updateUserInterests(savedUser.getUsername(), request.getInterests());
+        }
+
+        return savedUser.getId();
     }
 
     @Transactional(readOnly = true)

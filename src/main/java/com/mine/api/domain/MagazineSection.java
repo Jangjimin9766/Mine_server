@@ -43,4 +43,17 @@ public class MagazineSection {
     public void setMagazine(Magazine magazine) {
         this.magazine = magazine;
     }
+
+    public void updateContent(String heading, String content, String imageUrl) {
+        this.heading = heading;
+        this.content = content;
+        this.imageUrl = imageUrl;
+    }
+
+    public void update(String heading, String content, String imageUrl, String layoutHint) {
+        this.heading = heading;
+        this.content = content;
+        this.imageUrl = imageUrl;
+        this.layoutHint = layoutHint;
+    }
 }

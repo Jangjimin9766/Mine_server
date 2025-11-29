@@ -70,7 +70,7 @@ public class AuthServiceTest {
     void login_Success() {
         // given
         AuthDto.LoginRequest request = new AuthDto.LoginRequest();
-        request.setEmail("test@example.com");
+        request.setUsername("testuser");
         request.setPassword("password");
 
         User user = User.builder()

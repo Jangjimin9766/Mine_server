@@ -10,6 +10,7 @@ public class AuthDto {
         private String email;
         private String password;
         private String nickname;
+        private java.util.List<String> interests; // 관심사 (선택사항, 최대 3개)
     }
 
     @Data

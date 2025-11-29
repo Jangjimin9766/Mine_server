@@ -15,6 +15,7 @@ public class MagazineService {
 
     private final MagazineRepository magazineRepository;
     private final com.mine.api.repository.UserRepository userRepository;
+    private final com.mine.api.repository.UserInterestRepository userInterestRepository;
     private final org.springframework.web.client.RestTemplate restTemplate;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
@@ -70,17 +71,20 @@ public class MagazineService {
 
     @Transactional
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
-        // 1. Python 서버로 요청
-        // Python 서버가 기대하는 요청 바디: {"topic": "...", "user_mood": "...", "user_email":
-        // "..."}
-        // 주의: Python 서버는 여전히 "user_email"이라는 키를 쓰고 있을 수 있습니다.
-        // 하지만 우리는 이제 식별자로 username을 씁니다. Python이 로깅용으로만 쓴다면 username을 보내도 무방합니다.
-        // 만약 Python이 진짜 이메일을 원한다면 DB에서 조회해서 보내야 합니다.
-        // 여기서는 일단 username을 보냅니다. (Python 서버 수정 없이 "user_email" 키에 username 값을 넣음)
-        java.util.Map<String, String> pythonRequest = new java.util.HashMap<>();
+        // 1. 사용자 관심사 조회
+        com.mine.api.domain.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        java.util.List<String> userInterests = userInterestRepository.findByUser(user).stream()
+                .map(ui -> ui.getInterest().name())
+                .collect(java.util.stream.Collectors.toList());
+
+        // 2. Python 서버로 요청 (관심사 포함)
+        java.util.Map<String, Object> pythonRequest = new java.util.HashMap<>();
         pythonRequest.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
         pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
         pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
+        pythonRequest.put("user_interests", userInterests); // 관심사 추가
 
         MagazineCreateRequest generatedData = restTemplate.postForObject(pythonApiUrl, pythonRequest,
                 MagazineCreateRequest.class);
@@ -89,7 +93,7 @@ public class MagazineService {
             throw new RuntimeException("Failed to generate magazine from AI server");
         }
 
-        // 2. 받은 데이터로 저장 로직 수행
+        // 3. 받은 데이터로 저장 로직 수행
         return saveMagazine(generatedData, username);
     }
 }
