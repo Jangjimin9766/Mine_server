@@ -4,6 +4,7 @@ import com.mine.api.domain.Role;
 import com.mine.api.domain.User;
 import com.mine.api.dto.AuthDto;
 import com.mine.api.repository.UserRepository;
+import com.mine.api.repository.RefreshTokenRepository;
 import com.mine.api.security.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,9 @@ public class AuthServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Test
     void signup_Success() {
@@ -79,7 +83,7 @@ public class AuthServiceTest {
                 .role(Role.USER)
                 .build();
 
-        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(any())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
         when(jwtTokenProvider.createToken(any(), any())).thenReturn("accessToken");
 

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "인증 (Authentication)", description = "회원가입 및 로그인 API")
+@Tag(name = "인증 (Authentication)", description = "회원가입, 로그인 및 토큰 관리 API")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -29,5 +29,34 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthDto.TokenResponse> login(@RequestBody AuthDto.LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    // ⭐ Phase 7: Refresh Token으로 Access Token 갱신
+    @Operation(summary = "토큰 갱신", description = "Refresh Token으로 새로운 Access Token을 발급받습니다.")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthDto.RefreshResponse> refresh(@RequestBody AuthDto.RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    // ⭐ Phase 7: 로그아웃
+    @Operation(summary = "로그아웃", description = "로그아웃하여 Refresh Token을 무효화합니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        authService.logout(userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+    // ⭐ Phase 7: 비밀번호 변경
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인하고 새 비밀번호로 변경합니다.")
+    @org.springframework.web.bind.annotation.PatchMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails,
+            @RequestBody AuthDto.PasswordChangeRequest request) {
+        authService.changePassword(
+                userDetails.getUsername(),
+                request.getCurrentPassword(),
+                request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 }

@@ -44,4 +44,9 @@ public class User {
         this.role = role;
         this.createdAt = LocalDateTime.now();
     }
+
+    // ⭐ Phase 7: 비밀번호 변경
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

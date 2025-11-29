@@ -23,9 +23,47 @@ public class AuthDto {
     public static class TokenResponse {
         private String accessToken;
         private String tokenType = "Bearer";
+        private String refreshToken; // ⭐ Phase 7: Refresh Token 추가
+        private Long expiresIn; // ⭐ Phase 7: 만료 시간 추가
 
         public TokenResponse(String accessToken) {
             this.accessToken = accessToken;
         }
+
+        public TokenResponse(String accessToken, String refreshToken, Long expiresIn) {
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+            this.expiresIn = expiresIn;
+        }
+    }
+
+    // ⭐ Phase 7: Refresh Token 요청
+    @Data
+    public static class RefreshRequest {
+        @jakarta.validation.constraints.NotBlank(message = "Refresh token is required")
+        private String refreshToken;
+    }
+
+    // ⭐ Phase 7: Refresh Token 응답
+    @Data
+    public static class RefreshResponse {
+        private String accessToken;
+        private Long expiresIn;
+
+        public RefreshResponse(String accessToken, Long expiresIn) {
+            this.accessToken = accessToken;
+            this.expiresIn = expiresIn;
+        }
+    }
+
+    // ⭐ Phase 7: 비밀번호 변경 요청
+    @Data
+    public static class PasswordChangeRequest {
+        @jakarta.validation.constraints.NotBlank(message = "Current password is required")
+        private String currentPassword;
+
+        @jakarta.validation.constraints.NotBlank(message = "New password is required")
+        @jakarta.validation.constraints.Size(min = 8, message = "Password must be at least 8 characters")
+        private String newPassword;
     }
 }

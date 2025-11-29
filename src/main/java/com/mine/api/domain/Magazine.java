@@ -40,6 +40,15 @@ public class Magazine {
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MagazineSection> sections = new ArrayList<>();
 
+    // ⭐ MagazineInteraction과의 관계 (CASCADE 추가)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MagazineInteraction> interactions = new ArrayList<>();
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MagazineLike> likes = new ArrayList<>();
+
     @Builder
     public Magazine(String title, String introduction, String coverImageUrl, User user) {
         this.title = title;
@@ -47,10 +56,65 @@ public class Magazine {
         this.coverImageUrl = coverImageUrl;
         this.user = user;
         this.createdAt = LocalDateTime.now();
+        this.isPublic = false; // 기본값: 비공개
     }
 
     public void addSection(MagazineSection section) {
-        this.sections.add(section);
+        sections.add(section);
         section.setMagazine(this);
+    }
+
+    // ⭐ Phase 1: 수정 메서드
+    public void updateInfo(String title, String introduction) {
+        if (title != null && !title.trim().isEmpty()) {
+            this.title = title;
+        }
+        if (introduction != null && !introduction.trim().isEmpty()) {
+            this.introduction = introduction;
+        }
+    }
+
+    // ⭐ Phase 1: 소유자 확인 메서드
+    public boolean isOwnedBy(User user) {
+        return this.user.getId().equals(user.getId());
+    }
+
+    // ⭐ Phase 2: 공개/비공개 필드
+    @Column(nullable = false)
+    private Boolean isPublic = false;
+
+    @Column(unique = true, length = 12)
+    private String shareToken;
+
+    // ⭐ Phase 2: 공개 설정 메서드
+    public String setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+
+        if (isPublic && this.shareToken == null) {
+            this.shareToken = generateShareToken();
+        } else if (!isPublic) {
+            this.shareToken = null;
+        }
+
+        return this.shareToken;
+    }
+
+    // ⭐ 낙관적 락 (동시 수정 방지)
+    @jakarta.persistence.Version
+    private Long version;
+
+    /**
+     * 보안 강화된 공유 토큰 생성
+     * - SecureRandom 사용으로 예측 불가능성 향상
+     * - Base64 URL-safe 인코딩
+     * - 16자 길이로 충돌 확률 최소화
+     */
+    private String generateShareToken() {
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        byte[] bytes = new byte[12];
+        random.nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(bytes);
     }
 }

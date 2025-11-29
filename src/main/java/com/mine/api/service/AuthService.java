@@ -18,6 +18,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final InterestService interestService;
+    private final com.mine.api.repository.RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
     public Long signup(AuthDto.SignupRequest request) {
@@ -46,7 +47,7 @@ public class AuthService {
         return savedUser.getId();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthDto.TokenResponse login(AuthDto.LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
@@ -55,7 +56,75 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        String token = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
-        return new AuthDto.TokenResponse(token);
+        // Access Token 생성
+        String accessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
+
+        // ⭐ Phase 7: Refresh Token 생성 및 저장
+        com.mine.api.domain.RefreshToken refreshToken = com.mine.api.domain.RefreshToken.builder()
+                .user(user)
+                .expiryDays(7) // 7일
+                .build();
+
+        // 기존 Refresh Token 삭제 후 새로 저장
+        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.save(refreshToken);
+
+        return new AuthDto.TokenResponse(accessToken, refreshToken.getToken(), 3600L);
+    }
+
+    // ⭐ Phase 7: Refresh Token으로 Access Token 갱신
+    @Transactional
+    public AuthDto.RefreshResponse refresh(String refreshTokenValue) {
+        // 1. Refresh Token 조회
+        com.mine.api.domain.RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+
+        // 2. 만료 확인
+        if (refreshToken.isExpired()) {
+            refreshTokenRepository.delete(refreshToken);
+            throw new IllegalArgumentException("Refresh token expired");
+        }
+
+        // 3. 새로운 Access Token 생성
+        User user = refreshToken.getUser();
+        String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
+
+        // 4. Refresh Token Rotation: 기존 토큰 삭제 후 새로 생성
+        refreshTokenRepository.delete(refreshToken);
+        com.mine.api.domain.RefreshToken newRefreshToken = com.mine.api.domain.RefreshToken.builder()
+                .user(user)
+                .expiryDays(7)
+                .build();
+        refreshTokenRepository.save(newRefreshToken);
+
+        return new AuthDto.RefreshResponse(newAccessToken, 3600L);
+    }
+
+    // ⭐ Phase 7: 로그아웃 (Refresh Token 삭제)
+    @Transactional
+    public void logout(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        refreshTokenRepository.deleteByUser(user);
+    }
+
+    // ⭐ Phase 7: 비밀번호 변경
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // 1. 현재 비밀번호 확인
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // 2. 새 비밀번호로 변경
+        user.changePassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
+        refreshTokenRepository.deleteByUser(user);
     }
 }
