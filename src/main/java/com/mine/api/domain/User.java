@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class User {
 
     @Id
@@ -35,6 +36,23 @@ public class User {
 
     private LocalDateTime createdAt;
 
+    private String bio;
+    private String profileImageUrl;
+    private LocalDateTime updatedAt;
+
+    private Boolean deleted = false;
+    private LocalDateTime deletedAt;
+
+    // ⭐ Optimization: N+1 문제 해결을 위한 가상 컬럼 (Subquery)
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follow f WHERE f.following_id = id)")
+    private int followerCount;
+
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follow f WHERE f.follower_id = id)")
+    private int followingCount;
+
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM magazine m WHERE m.user_id = id)")
+    private int magazineCount;
+
     @Builder
     public User(String username, String email, String password, String nickname, Role role) {
         this.username = username;
@@ -48,5 +66,22 @@ public class User {
     // ⭐ Phase 7: 비밀번호 변경
     public void changePassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    // ⭐ Phase 5: 프로필 수정
+    public void updateProfile(String nickname, String bio, String profileImageUrl) {
+        if (nickname != null)
+            this.nickname = nickname;
+        if (bio != null)
+            this.bio = bio;
+        if (profileImageUrl != null)
+            this.profileImageUrl = profileImageUrl;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ⭐ Phase 6: 회원 탈퇴 (Soft Delete)
+    public void softDelete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 }

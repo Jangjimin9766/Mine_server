@@ -42,4 +42,6 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         org.springframework.data.domain.Page<Magazine> findByUserUsername(
                         String username,
                         org.springframework.data.domain.Pageable pageable);
+
+        long countByUser(User user);
 }

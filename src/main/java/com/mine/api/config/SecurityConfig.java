@@ -23,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -43,7 +44,7 @@ public class SecurityConfig {
                                                                                                               // Swagger
                                                                                                               // UI
                         .anyRequest().authenticated())
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, blacklistedTokenRepository),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

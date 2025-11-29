@@ -15,12 +15,17 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String token = jwtTokenProvider.resolveToken(request);
         if (token != null && jwtTokenProvider.validateToken(token)) {
+            if (blacklistedTokenRepository.existsByToken(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
             Authentication auth = jwtTokenProvider.getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(auth);
         }

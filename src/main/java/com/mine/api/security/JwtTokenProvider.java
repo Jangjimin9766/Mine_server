@@ -55,6 +55,13 @@ public class JwtTokenProvider {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
     }
 
+    public long getExpiration(String token) {
+        Date expiration = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody()
+                .getExpiration();
+        long now = new Date().getTime();
+        return expiration.getTime() - now;
+    }
+
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
