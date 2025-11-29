@@ -61,12 +61,12 @@ public class AuthService {
 
         // ⭐ Phase 7: Refresh Token 생성 및 저장
         com.mine.api.domain.RefreshToken refreshToken = com.mine.api.domain.RefreshToken.builder()
-                .user(user)
+                .username(user.getUsername())
                 .expiryDays(7) // 7일
                 .build();
 
         // 기존 Refresh Token 삭제 후 새로 저장
-        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.deleteByUsername(user.getUsername());
         refreshTokenRepository.save(refreshToken);
 
         return new AuthDto.TokenResponse(accessToken, refreshToken.getToken(), 3600L);
@@ -79,20 +79,21 @@ public class AuthService {
         com.mine.api.domain.RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
 
-        // 2. 만료 확인
-        if (refreshToken.isExpired()) {
-            refreshTokenRepository.delete(refreshToken);
-            throw new IllegalArgumentException("Refresh token expired");
-        }
+        // 2. 만료 확인 (Redis는 TTL로 자동 삭제되지만, 혹시 남아있을 경우를 대비)
+        // RedisHash의 timeToLive가 동작하므로 별도 로직 불필요, 다만 조회된 시점에서 null 체크는 findByToken에서
+        // 처리됨
 
         // 3. 새로운 Access Token 생성
-        User user = refreshToken.getUser();
+        String username = refreshToken.getUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
 
         // 4. Refresh Token Rotation: 기존 토큰 삭제 후 새로 생성
         refreshTokenRepository.delete(refreshToken);
         com.mine.api.domain.RefreshToken newRefreshToken = com.mine.api.domain.RefreshToken.builder()
-                .user(user)
+                .username(username)
                 .expiryDays(7)
                 .build();
         refreshTokenRepository.save(newRefreshToken);
@@ -103,10 +104,12 @@ public class AuthService {
     // ⭐ Phase 7: 로그아웃 (Refresh Token 삭제)
     @Transactional
     public void logout(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // User 존재 여부 확인 (선택사항)
+        if (!userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("User not found");
+        }
 
-        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.deleteByUsername(username);
     }
 
     // ⭐ Phase 7: 비밀번호 변경
@@ -125,6 +128,6 @@ public class AuthService {
         userRepository.save(user);
 
         // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
-        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.deleteByUsername(username);
     }
 }

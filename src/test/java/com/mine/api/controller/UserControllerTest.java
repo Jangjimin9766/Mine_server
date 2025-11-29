@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -168,8 +169,10 @@ class UserControllerTest {
         @WithMockUser(username = "user")
         void withdrawUser() throws Exception {
                 doNothing().when(userService).withdrawUser("user");
+                doNothing().when(userService).logout(anyString());
 
                 mockMvc.perform(delete("/api/users/me")
+                                .header("Authorization", "Bearer test-token")
                                 .with(csrf()))
                                 .andExpect(status().isNoContent());
         }

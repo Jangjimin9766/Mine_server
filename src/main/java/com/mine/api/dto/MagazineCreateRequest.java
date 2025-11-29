@@ -6,7 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import lombok.Setter;
+
 @Getter
+@Setter
 @NoArgsConstructor
 public class MagazineCreateRequest {
 
