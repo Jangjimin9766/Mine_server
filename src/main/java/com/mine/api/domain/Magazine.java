@@ -111,7 +111,7 @@ public class Magazine {
      */
     private String generateShareToken() {
         java.security.SecureRandom random = new java.security.SecureRandom();
-        byte[] bytes = new byte[12];
+        byte[] bytes = new byte[9]; // 9 bytes * 8 = 72 bits -> Base64 12 chars
         random.nextBytes(bytes);
         return java.util.Base64.getUrlEncoder()
                 .withoutPadding()

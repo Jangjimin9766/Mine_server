@@ -45,13 +45,13 @@ public class User {
     private LocalDateTime deletedAt;
 
     // ⭐ Optimization: N+1 문제 해결을 위한 가상 컬럼 (Subquery)
-    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follow f WHERE f.following_id = id)")
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follows f WHERE f.following_id = id)")
     private int followerCount;
 
-    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follow f WHERE f.follower_id = id)")
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM follows f WHERE f.follower_id = id)")
     private int followingCount;
 
-    @org.hibernate.annotations.Formula("(SELECT count(*) FROM magazine m WHERE m.user_id = id)")
+    @org.hibernate.annotations.Formula("(SELECT count(*) FROM magazines m WHERE m.user_id = id)")
     private int magazineCount;
 
     @Builder

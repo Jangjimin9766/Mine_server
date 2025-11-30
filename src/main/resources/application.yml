@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:file:src/main/resources/application-secret.yml"
   datasource:
     url: jdbc:mysql://localhost:3306/mine_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
@@ -16,11 +18,23 @@ spring:
     redis:
       host: localhost
       port: 6379
+  cloud:
+    aws:
+      s3:
+        bucket: mine-moodboard-bucket
+      region:
+        static: ap-southeast-2
+      credentials:
+        access-key: "${AWS_ACCESS_KEY}"
+        secret-key: "${AWS_SECRET_KEY}"
+      stack:
+        auto: false
 
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 
 python:
   api:
-    url: http://localhost:8000/api/magazine/generate
-    key: "mine-secret-key-1234"
+    url: http://localhost:8000/api/magazine/create
+    key: "${PYTHON_API_KEY:mine-secret-key-1234}"
+    moodboard-url: http://localhost:8000/api/magazine/moodboard

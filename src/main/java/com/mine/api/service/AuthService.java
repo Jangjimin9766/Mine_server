@@ -66,7 +66,10 @@ public class AuthService {
                 .build();
 
         // 기존 Refresh Token 삭제 후 새로 저장
-        refreshTokenRepository.deleteByUsername(user.getUsername());
+        // 기존 Refresh Token 삭제 후 새로 저장
+        java.util.List<com.mine.api.domain.RefreshToken> oldTokens = refreshTokenRepository
+                .findByUsername(user.getUsername());
+        refreshTokenRepository.deleteAll(oldTokens);
         refreshTokenRepository.save(refreshToken);
 
         return new AuthDto.TokenResponse(accessToken, refreshToken.getToken(), 3600L);
@@ -109,7 +112,8 @@ public class AuthService {
             throw new IllegalArgumentException("User not found");
         }
 
-        refreshTokenRepository.deleteByUsername(username);
+        java.util.List<com.mine.api.domain.RefreshToken> tokens = refreshTokenRepository.findByUsername(username);
+        refreshTokenRepository.deleteAll(tokens);
     }
 
     // ⭐ Phase 7: 비밀번호 변경
@@ -128,6 +132,8 @@ public class AuthService {
         userRepository.save(user);
 
         // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
-        refreshTokenRepository.deleteByUsername(username);
+        // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
+        java.util.List<com.mine.api.domain.RefreshToken> tokens = refreshTokenRepository.findByUsername(username);
+        refreshTokenRepository.deleteAll(tokens);
     }
 }
