@@ -11,23 +11,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
-    @Bean
-    public OpenAPI openAPI() {
-        String jwtSchemeName = "jwtAuth";
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwtSchemeName);
-        Components components = new Components()
-                .addSecuritySchemes(jwtSchemeName, new SecurityScheme()
-                        .name(jwtSchemeName)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT"));
+        @Bean
+        public OpenAPI openAPI() {
+                String jwtSchemeName = "jwtAuth";
+                SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwtSchemeName);
+                Components components = new Components()
+                                .addSecuritySchemes(jwtSchemeName, new SecurityScheme()
+                                                .name(jwtSchemeName)
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT"));
 
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Mine Server API")
-                        .version("v1.0")
-                        .description("Mine Server API Documentation"))
-                .addSecurityItem(securityRequirement)
-                .components(components);
-    }
+                return new OpenAPI()
+                                .info(new Info()
+                                                .title("Mine Server API")
+                                                .version("v1.0")
+                                                .description("Mine Server API Documentation"))
+                                .addSecurityItem(securityRequirement)
+                                .components(components);
+        }
 }
