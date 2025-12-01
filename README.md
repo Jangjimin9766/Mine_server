@@ -8,9 +8,26 @@
 [![Redis](https://img.shields.io/badge/Redis-Latest-red.svg)](https://redis.io/)
 [![AWS S3](https://img.shields.io/badge/AWS-S3-yellow.svg)](https://aws.amazon.com/s3/)
 
-## 👥 기여자
+## 👥 Contributors
 
-- **장지민** - Backend deveop (개발팀장)
+<table align="center">
+  <tr>
+    <td align="center" width="150px">
+      <a href="https://github.com/jangjimin9766">
+        <img src="https://github.com/jangjimin9766.png" width="100px" style="border-radius:50%"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>Jimin Jang</b><br/>
+      <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
+      <br/>
+      Team Leader<br/>
+      Full-Stack Dev
+    </td>
+  </tr>
+</table>
 
 
 ## 📋 목차
