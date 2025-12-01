@@ -20,11 +20,9 @@
   </tr>
   <tr>
     <td align="center">
-      <b>Jimin Jang</b><br/>
-      <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
-      <br/>
-      Team Leader<br/>
-      Back-end Dev
+      <b> Tech Lead</b><br/>
+      System Architecture<br/>
+      Backend & DevOps
     </td>
   </tr>
 </table>
