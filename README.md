@@ -24,11 +24,10 @@
       <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
       <br/>
       Team Leader<br/>
-      Full-Stack Dev
+      Back-end Dev
     </td>
   </tr>
 </table>
-
 
 ## 📋 목차
 
