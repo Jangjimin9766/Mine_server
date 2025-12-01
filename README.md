@@ -8,6 +8,11 @@
 [![Redis](https://img.shields.io/badge/Redis-Latest-red.svg)](https://redis.io/)
 [![AWS S3](https://img.shields.io/badge/AWS-S3-yellow.svg)](https://aws.amazon.com/s3/)
 
+## 👥 기여자
+
+- **장지민** - Backend deveop (개발팀장)
+
+
 ## 📋 목차
 
 - [프로젝트 소개](#-프로젝트-소개)
@@ -632,10 +637,6 @@ brew services restart redis
 - [ ] CI/CD 파이프라인 구축
 - [ ] Kubernetes 배포
 
-## 👥 기여자
-
-- **장지민** - 풀스택 개발자
-
 ## 📄 라이선스
 
 이 프로젝트는 개인 프로젝트입니다.
@@ -646,4 +647,4 @@ brew services restart redis
 
 ---
 
-**Made with ❤️ by M:ine Team**
+**Made by M:ine Team**
