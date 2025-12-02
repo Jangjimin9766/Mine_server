@@ -20,7 +20,7 @@
   </tr>
   <tr>
     <td align="center">
-      <b> Tech Lead</b><br/>
+      <b> Tech Lead 장지민</b><br/>
       System Architecture<br/>
       Backend & DevOps
     </td>
