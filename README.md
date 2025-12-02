@@ -21,7 +21,8 @@
   <tr>
     <td align="center">
       <b> Tech Lead </b><br/>
-      장지민<br/>
+      <b>장지민</b><br/>
+      <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
       System Architecture<br/>
       Backend & DevOps
     </td>
