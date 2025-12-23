@@ -9,27 +9,6 @@
 [![Redis](https://img.shields.io/badge/Redis-Latest-red.svg)](https://redis.io/)
 [![AWS S3](https://img.shields.io/badge/AWS-S3-yellow.svg)](https://aws.amazon.com/s3/)
 
-## 👥 Contributors
-
-<table align="center">
-  <tr>
-    <td align="center" width="150px">
-      <a href="https://github.com/jangjimin9766">
-        <img src="https://github.com/jangjimin9766.png" width="100px" style="border-radius:50%"/>
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <b> Tech Lead </b><br/>
-      <b>장지민</b><br/>
-      <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
-      System Architecture<br/>
-      Backend & DevOps
-    </td>
-  </tr>
-</table>
-
 ## 📋 목차
 
 - [프로젝트 소개](#-프로젝트-소개)
@@ -714,3 +693,25 @@ brew services restart redis
 ---
 
 **Made by M:ine Team**
+
+## 👥 Contributors
+
+<table align="center">
+  <tr>
+    <td align="center" width="150px">
+      <a href="https://github.com/jangjimin9766">
+        <img src="https://github.com/jangjimin9766.png" width="100px" style="border-radius:50%"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b> Tech Lead </b><br/>
+      <b>장지민</b><br/>
+      <a href="https://github.com/jangjimin9766">@jangjimin9766</a><br/>
+      System Architecture<br/>
+      Backend & DevOps
+    </td>
+  </tr>
+</table>
+
