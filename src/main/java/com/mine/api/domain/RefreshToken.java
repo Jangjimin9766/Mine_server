@@ -20,7 +20,7 @@ public class RefreshToken implements Serializable {
     private String username;
 
     @Builder
-    public RefreshToken(String username, int expiryDays) {
+    public RefreshToken(String username) {
         this.token = UUID.randomUUID().toString();
         this.username = username;
     }

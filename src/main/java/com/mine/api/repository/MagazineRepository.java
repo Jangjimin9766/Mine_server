@@ -47,6 +47,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         // ⭐ Phase 4: 개인화 피드 (팔로잉 + 관심사 키워드)
         @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
+                        "LEFT JOIN FETCH m.user " +
+                        "LEFT JOIN FETCH m.sections " +
                         "WHERE (m.user IN :followings " +
                         "OR (m.title LIKE %:keyword% OR m.introduction LIKE %:keyword%)) " +
                         "AND m.isPublic = true " +

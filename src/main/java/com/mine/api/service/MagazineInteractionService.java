@@ -116,6 +116,8 @@ public class MagazineInteractionService {
                     map.put("content", section.getContent());
                     map.put("image_url", section.getImageUrl());
                     map.put("layout_hint", section.getLayoutHint());
+                    map.put("layout_type", section.getLayoutType());
+                    map.put("caption", section.getCaption());
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -137,8 +139,10 @@ public class MagazineInteractionService {
                 section.update(
                         (String) newSection.get("heading"),
                         (String) newSection.get("content"),
-                        (String) newSection.get("image_url"), // Python snake_case
-                        (String) newSection.get("layout_hint")); // Python snake_case
+                        (String) newSection.get("image_url"),
+                        (String) newSection.get("layout_hint"),
+                        (String) newSection.get("layout_type"),
+                        (String) newSection.get("caption"));
             }
         }
 
@@ -151,8 +155,10 @@ public class MagazineInteractionService {
                 MagazineSection section = MagazineSection.builder()
                         .heading((String) newSection.get("heading"))
                         .content((String) newSection.get("content"))
-                        .imageUrl((String) newSection.get("image_url")) // Python snake_case
-                        .layoutHint((String) newSection.get("layout_hint")) // Python snake_case
+                        .imageUrl((String) newSection.get("image_url"))
+                        .layoutHint((String) newSection.get("layout_hint"))
+                        .layoutType((String) newSection.get("layout_type"))
+                        .caption((String) newSection.get("caption"))
                         .build();
                 section.setMagazine(magazine);
                 magazine.getSections().add(section);
@@ -182,6 +188,8 @@ public class MagazineInteractionService {
                             .content((String) sec.get("content"))
                             .imageUrl((String) sec.get("image_url")) // Python snake_case
                             .layoutHint((String) sec.get("layout_hint")) // Python snake_case
+                            .layoutType((String) sec.get("layout_type"))
+                            .caption((String) sec.get("caption"))
                             .build();
                     section.setMagazine(magazine);
                     magazine.getSections().add(section);

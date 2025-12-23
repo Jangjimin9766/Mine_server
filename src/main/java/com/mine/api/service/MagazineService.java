@@ -5,11 +5,14 @@ import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.repository.MagazineRepository;
-import java.util.stream.Collectors;
-import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpMethod;
 
 @Service
 @RequiredArgsConstructor
@@ -27,20 +30,41 @@ public class MagazineService {
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
 
+    @org.springframework.beans.factory.annotation.Value("${python.api.key}")
+    private String pythonApiKey;
+
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String username) {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // 1. Magazine 엔티티 생성
+        // 1. 태그 리스트를 JSON 문자열로 변환
+        String tagsJson = null;
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            tagsJson = String.join(",", request.getTags());
+        }
+
+        // 2. 무드보드 정보 추출
+        String moodboardImageUrl = null;
+        String moodboardDescription = null;
+        if (request.getMoodboard() != null) {
+            moodboardImageUrl = request.getMoodboard().getImage_url();
+            moodboardDescription = request.getMoodboard().getDescription();
+        }
+
+        // 3. Magazine 엔티티 생성
         Magazine magazine = Magazine.builder()
                 .title(request.getTitle())
+                .subtitle(request.getSubtitle())
                 .introduction(request.getIntroduction())
                 .coverImageUrl(request.getCoverImageUrl())
+                .tags(tagsJson)
+                .moodboardImageUrl(moodboardImageUrl)
+                .moodboardDescription(moodboardDescription)
                 .user(user)
                 .build();
 
-        // 2. Section 엔티티 생성 및 연관관계 설정
+        // 4. Section 엔티티 생성 및 연관관계 설정
         if (request.getSections() != null) {
             for (MagazineCreateRequest.SectionDto sectionDto : request.getSections()) {
                 MagazineSection section = MagazineSection.builder()
@@ -48,12 +72,14 @@ public class MagazineService {
                         .content(sectionDto.getContent())
                         .imageUrl(sectionDto.getImageUrl())
                         .layoutHint(sectionDto.getLayoutHint())
+                        .layoutType(sectionDto.getLayoutType())
+                        .caption(sectionDto.getCaption())
                         .build();
                 magazine.addSection(section);
             }
         }
 
-        // 3. 저장 (CascadeType.ALL로 인해 Section도 함께 저장됨)
+        // 5. 저장 (CascadeType.ALL로 인해 Section도 함께 저장됨)
         Magazine savedMagazine = magazineRepository.save(magazine);
         return savedMagazine.getId();
     }
@@ -93,8 +119,20 @@ public class MagazineService {
         pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
         pythonRequest.put("user_interests", userInterests); // 관심사 추가
 
-        MagazineCreateRequest generatedData = restTemplate.postForObject(pythonApiUrl, pythonRequest,
+        // 헤더 설정 (API Key 포함)
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-KEY", pythonApiKey);
+
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(pythonRequest, headers);
+
+        ResponseEntity<MagazineCreateRequest> response = restTemplate.exchange(
+                pythonApiUrl,
+                HttpMethod.POST,
+                entity,
                 MagazineCreateRequest.class);
+
+        MagazineCreateRequest generatedData = response.getBody();
 
         if (generatedData == null) {
             throw new RuntimeException("Failed to generate magazine from AI server");
@@ -192,11 +230,16 @@ public class MagazineService {
             magazineLikeRepository.delete(like.get());
             return false; // 좋아요 취소됨
         } else {
-            magazineLikeRepository.save(com.mine.api.domain.MagazineLike.builder()
-                    .user(user)
-                    .magazine(magazine)
-                    .build());
-            return true; // 좋아요 추가됨
+            try {
+                magazineLikeRepository.save(com.mine.api.domain.MagazineLike.builder()
+                        .user(user)
+                        .magazine(magazine)
+                        .build());
+                return true; // 좋아요 추가됨
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // 동시성 문제로 이미 저장된 경우, 좋아요가 있는 것으로 간주
+                return true;
+            }
         }
     }
 

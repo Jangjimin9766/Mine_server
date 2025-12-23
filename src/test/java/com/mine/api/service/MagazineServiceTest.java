@@ -98,8 +98,11 @@ class MagazineServiceTest {
                 // Mocking
                 when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
                 when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
-                when(restTemplate.postForObject(anyString(), any(), eq(MagazineCreateRequest.class)))
-                                .thenReturn(generatedData);
+                org.springframework.http.ResponseEntity<MagazineCreateRequest> responseEntity = org.springframework.http.ResponseEntity
+                                .ok(generatedData);
+                when(restTemplate.exchange(anyString(), eq(org.springframework.http.HttpMethod.POST), any(),
+                                eq(MagazineCreateRequest.class)))
+                                .thenReturn(responseEntity);
                 when(magazineRepository.save(any(Magazine.class))).thenReturn(savedMagazine);
 
                 // When
@@ -119,7 +122,8 @@ class MagazineServiceTest {
                 // 3. saveMagazine(generatedData, username) -> calls
                 // userRepository.findByUsername (line 28)
 
-                verify(restTemplate).postForObject(anyString(), any(), eq(MagazineCreateRequest.class));
+                verify(restTemplate).exchange(anyString(), eq(org.springframework.http.HttpMethod.POST), any(),
+                                eq(MagazineCreateRequest.class));
                 verify(magazineRepository).save(any(Magazine.class));
         }
 
@@ -170,5 +174,30 @@ class MagazineServiceTest {
                 // Then
                 assertNotNull(result);
                 verify(magazineRepository).findPersonalizedFeed(eq(List.of()), eq(""), eq(pageable));
+        }
+
+        @Test
+        @DisplayName("좋아요 토글 - 동시성 문제 (DataIntegrityViolationException) 발생 시 처리")
+        void toggleLike_Concurrency() {
+                // Given
+                String username = "testuser";
+                Long magazineId = 1L;
+                User user = User.builder().username(username).build();
+                Magazine magazine = Magazine.builder().user(user).build();
+
+                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+                when(magazineRepository.findById(magazineId)).thenReturn(Optional.of(magazine));
+                // 좋아요가 없는 상태라고 가정했지만...
+                when(magazineLikeRepository.findByUserAndMagazine(user, magazine)).thenReturn(Optional.empty());
+                // 저장 시점에 이미 다른 스레드가 저장해서 DataIntegrityViolationException 발생
+                when(magazineLikeRepository.save(any(com.mine.api.domain.MagazineLike.class)))
+                                .thenThrow(new org.springframework.dao.DataIntegrityViolationException(
+                                                "Duplicate entry"));
+
+                // When
+                boolean result = magazineService.toggleLike(magazineId, username);
+
+                // Then
+                assertTrue(result); // 예외를 잡아서 좋아요 성공(true)으로 반환해야 함
         }
 }

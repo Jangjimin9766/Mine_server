@@ -22,11 +22,26 @@ public class Magazine {
 
     private String title;
 
+    // [NEW] 부제
+    private String subtitle;
+
     @Column(columnDefinition = "TEXT")
     private String introduction;
 
     @Column(name = "cover_image_url")
     private String coverImageUrl;
+
+    // [NEW] 태그 목록 (JSON 형태로 저장)
+    @Column(columnDefinition = "TEXT")
+    private String tags;
+
+    // [NEW] 무드보드 이미지 URL
+    @Column(name = "moodboard_image_url")
+    private String moodboardImageUrl;
+
+    // [NEW] 무드보드 설명
+    @Column(name = "moodboard_description", columnDefinition = "TEXT")
+    private String moodboardDescription;
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,10 +65,15 @@ public class Magazine {
     private List<MagazineLike> likes = new ArrayList<>();
 
     @Builder
-    public Magazine(String title, String introduction, String coverImageUrl, User user) {
+    public Magazine(String title, String subtitle, String introduction, String coverImageUrl,
+            String tags, String moodboardImageUrl, String moodboardDescription, User user) {
         this.title = title;
+        this.subtitle = subtitle;
         this.introduction = introduction;
         this.coverImageUrl = coverImageUrl;
+        this.tags = tags;
+        this.moodboardImageUrl = moodboardImageUrl;
+        this.moodboardDescription = moodboardDescription;
         this.user = user;
         this.createdAt = LocalDateTime.now();
         this.isPublic = false; // 기본값: 비공개

@@ -86,6 +86,9 @@ class MoodboardServiceTest {
         given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
 
         // Mock WebClient chain
+        given(webClientBuilder
+                .exchangeStrategies(any(org.springframework.web.reactive.function.client.ExchangeStrategies.class)))
+                .willReturn(webClientBuilder);
         given(webClientBuilder.build()).willReturn(webClient);
         given(webClient.post()).willReturn(requestBodyUriSpec);
         given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
@@ -99,7 +102,7 @@ class MoodboardServiceTest {
         // Then
         assertNotNull(resultUrl);
         // Check if it starts with the expected bucket URL
-        String expectedPrefix = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/";
+        String expectedPrefix = "https://test-bucket.s3.ap-southeast-2.amazonaws.com/";
         assertEquals(expectedPrefix, resultUrl.substring(0, expectedPrefix.length()));
 
         verify(s3Template).upload(eq("test-bucket"), anyString(), any(InputStream.class));

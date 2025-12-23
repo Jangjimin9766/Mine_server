@@ -74,8 +74,12 @@ public class MagazineDto {
     public static class Response {
         private Long id;
         private String title;
+        private String subtitle; // [NEW]
         private String introduction;
         private String coverImageUrl;
+        private String tags; // [NEW] 콤마로 구분된 태그 문자열
+        private String moodboardImageUrl; // [NEW]
+        private String moodboardDescription; // [NEW]
         private String username;
         private Boolean isPublic;
         private String shareToken;
@@ -89,6 +93,7 @@ public class MagazineDto {
     public static class ListItem {
         private Long id;
         private String title;
+        private String subtitle; // [NEW]
         private String introduction;
         private String coverImageUrl;
         private String username;
@@ -100,6 +105,7 @@ public class MagazineDto {
             return ListItem.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
+                    .subtitle(magazine.getSubtitle())
                     .introduction(magazine.getIntroduction())
                     .coverImageUrl(magazine.getCoverImageUrl())
                     .username(magazine.getUser().getUsername())

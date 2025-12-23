@@ -338,8 +338,12 @@ magazines
 ├── id (PK)
 ├── user_id (FK → users)
 ├── title
+├── subtitle                -- [NEW] 부제
 ├── introduction (TEXT)
 ├── cover_image_url
+├── tags (TEXT)             -- [NEW] 콤마로 구분된 태그
+├── moodboard_image_url     -- [NEW] 무드보드 이미지 URL
+├── moodboard_description   -- [NEW] 무드보드 설명
 ├── is_public (BOOLEAN)
 ├── share_token (UNIQUE, 12자)
 ├── version (낙관적 락)
@@ -354,7 +358,9 @@ magazine_sections
 ├── heading
 ├── content (TEXT)
 ├── image_url
-└── layout_hint
+├── layout_hint
+├── layout_type             -- [NEW] 'hero', 'quote', 'split_left', 'split_right', 'basic'
+└── caption                 -- [NEW] 이미지 캡션
 ```
 
 #### Moodboards (무드보드)
@@ -409,8 +415,12 @@ erDiagram
         bigint id PK
         bigint user_id FK
         string title
+        string subtitle
         text introduction
         string cover_image_url
+        text tags
+        string moodboard_image_url
+        text moodboard_description
         boolean is_public
         string share_token UK
         bigint version
@@ -424,6 +434,8 @@ erDiagram
         text content
         string image_url
         string layout_hint
+        string layout_type
+        string caption
     }
     
     MOODBOARDS {
@@ -566,6 +578,43 @@ Python FastAPI 서버와의 통합 가이드는 [FASTAPI_GUIDE.md](FASTAPI_GUIDE
 
 1. **매거진 생성**: Spring → Python (AI 생성) → Spring (저장)
 2. **무드보드 생성**: Spring → Python (Stable Diffusion) → AWS S3 → Spring (URL 저장)
+
+### AI 서버 응답 스펙 (v2.0)
+
+매거진 생성 시 AI 서버는 다음과 같은 확장된 JSON을 반환합니다:
+
+```json
+{
+  "title": "겨울철 패션 트렌드",
+  "subtitle": "따뜻함과 스타일을 동시에 잡는 법",
+  "introduction": "...",
+  "cover_image_url": "...",
+  "tags": ["패션", "겨울", "스타일"],
+  "moodboard": {
+    "image_url": "https://...",
+    "description": "따뜻한 겨울 분위기의 무드보드"
+  },
+  "sections": [
+    {
+      "heading": "코트 스타일링",
+      "content": "...",
+      "image_url": "...",
+      "layout_type": "hero",
+      "caption": "2024FW 트렌드"
+    }
+  ]
+}
+```
+
+#### 새로운 필드 설명
+
+| 필드 | 설명 |
+|------|------|
+| `subtitle` | 매거진 부제 |
+| `tags` | 매거진 태그 목록 |
+| `moodboard` | 매거진 전용 무드보드 (image_url, description) |
+| `layout_type` | 섹션 레이아웃 타입 (hero, quote, split_left, split_right, basic) |
+| `caption` | 이미지 캡션 (Optional) |
 
 ## 📈 성능 최적화
 

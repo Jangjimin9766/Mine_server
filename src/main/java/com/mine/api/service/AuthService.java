@@ -62,7 +62,6 @@ public class AuthService {
         // ⭐ Phase 7: Refresh Token 생성 및 저장
         com.mine.api.domain.RefreshToken refreshToken = com.mine.api.domain.RefreshToken.builder()
                 .username(user.getUsername())
-                .expiryDays(7) // 7일
                 .build();
 
         // 기존 Refresh Token 삭제 후 새로 저장
@@ -97,7 +96,6 @@ public class AuthService {
         refreshTokenRepository.delete(refreshToken);
         com.mine.api.domain.RefreshToken newRefreshToken = com.mine.api.domain.RefreshToken.builder()
                 .username(username)
-                .expiryDays(7)
                 .build();
         refreshTokenRepository.save(newRefreshToken);
 

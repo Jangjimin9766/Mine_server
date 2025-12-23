@@ -27,17 +27,27 @@ public class MagazineSection {
     @Column(name = "layout_hint")
     private String layoutHint;
 
+    // [NEW] 레이아웃 타입: 'hero', 'quote', 'split_left', 'split_right', 'basic' 등
+    @Column(name = "layout_type")
+    private String layoutType;
+
+    // [NEW] 이미지 캡션
+    private String caption;
+
     @com.fasterxml.jackson.annotation.JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "magazine_id")
     private Magazine magazine;
 
     @Builder
-    public MagazineSection(String heading, String content, String imageUrl, String layoutHint) {
+    public MagazineSection(String heading, String content, String imageUrl, String layoutHint,
+            String layoutType, String caption) {
         this.heading = heading;
         this.content = content;
         this.imageUrl = imageUrl;
         this.layoutHint = layoutHint;
+        this.layoutType = layoutType;
+        this.caption = caption;
     }
 
     public void setMagazine(Magazine magazine) {
@@ -50,10 +60,13 @@ public class MagazineSection {
         this.imageUrl = imageUrl;
     }
 
-    public void update(String heading, String content, String imageUrl, String layoutHint) {
+    public void update(String heading, String content, String imageUrl, String layoutHint,
+            String layoutType, String caption) {
         this.heading = heading;
         this.content = content;
         this.imageUrl = imageUrl;
         this.layoutHint = layoutHint;
+        this.layoutType = layoutType;
+        this.caption = caption;
     }
 }
