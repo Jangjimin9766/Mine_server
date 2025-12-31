@@ -14,8 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.io.InputStream;
 import java.util.Base64;
@@ -45,22 +43,7 @@ class MoodboardServiceTest {
     private S3Template s3Template;
 
     @Mock
-    private WebClient.Builder webClientBuilder;
-
-    @Mock
-    private WebClient webClient;
-
-    @Mock
-    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
-
-    @Mock
-    private WebClient.RequestBodySpec requestBodySpec;
-
-    @Mock
-    private WebClient.RequestHeadersSpec requestHeadersSpec;
-
-    @Mock
-    private WebClient.ResponseSpec responseSpec;
+    private RunPodService runPodService;
 
     @BeforeEach
     void setUp() {
@@ -85,16 +68,15 @@ class MoodboardServiceTest {
 
         given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
 
-        // Mock WebClient chain
-        given(webClientBuilder
-                .exchangeStrategies(any(org.springframework.web.reactive.function.client.ExchangeStrategies.class)))
-                .willReturn(webClientBuilder);
-        given(webClientBuilder.build()).willReturn(webClient);
-        given(webClient.post()).willReturn(requestBodyUriSpec);
-        given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
-        given(requestBodySpec.bodyValue(any(MoodboardRequestDto.class))).willReturn(requestHeadersSpec);
-        given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-        given(responseSpec.bodyToMono(MoodboardResponseDto.class)).willReturn(Mono.just(aiResponse));
+        // Mock WebClient chain -> RunPodService Mock
+        java.util.Map<String, Object> output = new java.util.HashMap<>();
+        output.put("image_url", base64Image);
+        output.put("description", "A cozy test image");
+
+        java.util.Map<String, Object> runPodResponse = new java.util.HashMap<>();
+        runPodResponse.put("output", output);
+
+        given(runPodService.sendRequest(anyString(), any(java.util.Map.class))).willReturn(runPodResponse);
 
         // When
         String resultUrl = moodboardService.createMoodboard(username, requestDto);

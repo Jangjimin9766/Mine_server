@@ -24,7 +24,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +56,7 @@ class MagazineServiceTest {
         private FollowRepository followRepository;
 
         @Mock
-        private RestTemplate restTemplate;
+        private RunPodService runPodService;
 
         @BeforeEach
         void setUp() {
@@ -98,11 +99,17 @@ class MagazineServiceTest {
                 // Mocking
                 when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
                 when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
-                org.springframework.http.ResponseEntity<MagazineCreateRequest> responseEntity = org.springframework.http.ResponseEntity
-                                .ok(generatedData);
-                when(restTemplate.exchange(anyString(), eq(org.springframework.http.HttpMethod.POST), any(),
-                                eq(MagazineCreateRequest.class)))
-                                .thenReturn(responseEntity);
+
+                Map<String, Object> outputMap = new HashMap<>();
+                outputMap.put("title", "Generated Magazine");
+                outputMap.put("introduction", "Intro");
+                outputMap.put("cover_image_url", "http://image.url");
+                // Add other fields if necessary for MagazineCreateRequest mapping
+
+                Map<String, Object> runPodResponse = new HashMap<>();
+                runPodResponse.put("output", outputMap);
+
+                when(runPodService.sendRequest(anyString(), any(Map.class))).thenReturn(runPodResponse);
                 when(magazineRepository.save(any(Magazine.class))).thenReturn(savedMagazine);
 
                 // When
@@ -122,8 +129,7 @@ class MagazineServiceTest {
                 // 3. saveMagazine(generatedData, username) -> calls
                 // userRepository.findByUsername (line 28)
 
-                verify(restTemplate).exchange(anyString(), eq(org.springframework.http.HttpMethod.POST), any(),
-                                eq(MagazineCreateRequest.class));
+                verify(runPodService).sendRequest(anyString(), any(Map.class));
                 verify(magazineRepository).save(any(Magazine.class));
         }
 
