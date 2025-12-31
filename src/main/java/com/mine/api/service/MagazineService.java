@@ -112,27 +112,44 @@ public class MagazineService {
                 .map(ui -> ui.getInterest().name())
                 .collect(java.util.stream.Collectors.toList());
 
-        // 2. Python 서버로 요청 (관심사 포함)
-        java.util.Map<String, Object> pythonRequest = new java.util.HashMap<>();
-        pythonRequest.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
-        pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
-        pythonRequest.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
-        pythonRequest.put("user_interests", userInterests); // 관심사 추가
+        // 2. RunPod Serverless로 요청 (input wrapper 형식)
+        java.util.Map<String, Object> inputData = new java.util.HashMap<>();
+        inputData.put("action", "create_magazine");
 
-        // 헤더 설정 (API Key 포함)
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
+        data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
+        data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
+        data.put("user_interests", userInterests);
+        inputData.put("data", data);
+
+        java.util.Map<String, Object> runpodRequest = new java.util.HashMap<>();
+        runpodRequest.put("input", inputData);
+
+        // 헤더 설정 (RunPod Authorization Bearer 형식)
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-KEY", pythonApiKey);
+        headers.set("Authorization", "Bearer " + pythonApiKey);
 
-        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(pythonRequest, headers);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(runpodRequest, headers);
 
-        ResponseEntity<MagazineCreateRequest> response = restTemplate.exchange(
+        // RunPod 응답 처리 (output 필드에서 실제 데이터 추출)
+        @SuppressWarnings("unchecked")
+        ResponseEntity<java.util.Map<String, Object>> response = restTemplate.exchange(
                 pythonApiUrl,
                 HttpMethod.POST,
                 entity,
-                MagazineCreateRequest.class);
+                (Class<java.util.Map<String, Object>>) (Class<?>) java.util.Map.class);
 
-        MagazineCreateRequest generatedData = response.getBody();
+        java.util.Map<String, Object> responseBody = response.getBody();
+        if (responseBody == null || !responseBody.containsKey("output")) {
+            throw new RuntimeException("Failed to generate magazine from AI server");
+        }
+
+        // output을 MagazineCreateRequest로 변환
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        MagazineCreateRequest generatedData = mapper.convertValue(
+                responseBody.get("output"), MagazineCreateRequest.class);
 
         if (generatedData == null) {
             throw new RuntimeException("Failed to generate magazine from AI server");
