@@ -66,7 +66,7 @@ public class MoodboardService {
                 .bodyValue(runpodRequest)
                 .retrieve()
                 .bodyToMono((Class<java.util.Map<String, Object>>) (Class<?>) java.util.Map.class)
-                .block();
+                .block(java.time.Duration.ofSeconds(180)); // RunPod 콜드스타트 대응
 
         if (runpodResponse == null || !runpodResponse.containsKey("output")) {
             throw new RuntimeException("Failed to generate moodboard image");
