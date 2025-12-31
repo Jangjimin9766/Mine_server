@@ -1,18 +1,18 @@
 package com.mine.api.service;
 
 import com.mine.api.domain.Magazine;
+import com.mine.api.domain.MagazineLike;
 import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.repository.MagazineRepository;
+import com.mine.api.repository.UserRepository;
+import com.mine.api.repository.MagazineLikeRepository;
+import com.mine.api.repository.UserInterestRepository;
+import com.mine.api.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpMethod;
 
 @Service
 @RequiredArgsConstructor
@@ -21,11 +21,11 @@ import org.springframework.http.HttpMethod;
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
-    private final com.mine.api.repository.UserRepository userRepository;
-    private final com.mine.api.repository.MagazineLikeRepository magazineLikeRepository;
-    private final com.mine.api.repository.UserInterestRepository userInterestRepository;
-    private final com.mine.api.repository.FollowRepository followRepository;
-    private final org.springframework.web.client.RestTemplate restTemplate;
+    private final UserRepository userRepository;
+    private final MagazineLikeRepository magazineLikeRepository;
+    private final UserInterestRepository userInterestRepository;
+    private final FollowRepository followRepository;
+    private final RunPodService runPodService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -123,28 +123,8 @@ public class MagazineService {
         data.put("user_interests", userInterests);
         inputData.put("data", data);
 
-        java.util.Map<String, Object> runpodRequest = new java.util.HashMap<>();
-        runpodRequest.put("input", inputData);
-
-        // 헤더 설정 (RunPod Authorization Bearer 형식)
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + pythonApiKey);
-
-        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(runpodRequest, headers);
-
-        // RunPod 응답 처리 (output 필드에서 실제 데이터 추출)
-        @SuppressWarnings("unchecked")
-        ResponseEntity<java.util.Map<String, Object>> response = restTemplate.exchange(
-                pythonApiUrl,
-                HttpMethod.POST,
-                entity,
-                (Class<java.util.Map<String, Object>>) (Class<?>) java.util.Map.class);
-
-        java.util.Map<String, Object> responseBody = response.getBody();
-        if (responseBody == null || !responseBody.containsKey("output")) {
-            throw new RuntimeException("Failed to generate magazine from AI server");
-        }
+        // RunPod Async Polling Request
+        java.util.Map<String, Object> responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
 
         // output을 MagazineCreateRequest로 변환
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();

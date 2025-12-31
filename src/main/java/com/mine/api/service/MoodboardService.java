@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
@@ -22,7 +20,7 @@ public class MoodboardService {
     private final MoodboardRepository moodboardRepository;
     private final com.mine.api.repository.UserRepository userRepository;
     private final S3Template s3Template;
-    private final WebClient.Builder webClientBuilder;
+    private final RunPodService runPodService;
 
     @Value("${python.api.moodboard-url}")
     private String moodboardApiUrl;
@@ -48,32 +46,19 @@ public class MoodboardService {
         inputData.put("magazine_tags", requestDto.getMagazine_tags());
         inputData.put("magazine_titles", requestDto.getMagazine_titles());
 
-        java.util.Map<String, Object> runpodRequest = new java.util.HashMap<>();
-        runpodRequest.put("input", inputData);
+        // 2. RunPod Serverless로 요청 (Async Polling)
+        java.util.Map<String, Object> runPodInput = new java.util.HashMap<>();
+        runPodInput.put("action", "generate_moodboard");
+        runPodInput.put("data", inputData); // Wrap the previous inputData as 'data'
 
-        // Increase buffer size to handle large Base64 images (default is 256KB)
-        ExchangeStrategies strategies = ExchangeStrategies
-                .builder()
-                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
-                .build();
+        java.util.Map<String, Object> responseBody = runPodService.sendRequest(moodboardApiUrl, runPodInput);
 
-        @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> runpodResponse = webClientBuilder.exchangeStrategies(strategies).build()
-                .post()
-                .uri(moodboardApiUrl)
-                .header("Authorization", "Bearer " + pythonApiKey)
-                .header("Content-Type", "application/json")
-                .bodyValue(runpodRequest)
-                .retrieve()
-                .bodyToMono((Class<java.util.Map<String, Object>>) (Class<?>) java.util.Map.class)
-                .block(java.time.Duration.ofSeconds(180)); // RunPod 콜드스타트 대응
-
-        if (runpodResponse == null || !runpodResponse.containsKey("output")) {
+        if (responseBody == null || !responseBody.containsKey("output")) {
             throw new RuntimeException("Failed to generate moodboard image");
         }
 
         @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> output = (java.util.Map<String, Object>) runpodResponse.get("output");
+        java.util.Map<String, Object> output = (java.util.Map<String, Object>) responseBody.get("output");
         String base64Image = (String) output.get("image_url");
         String description = (String) output.get("description");
 
