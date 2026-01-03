@@ -21,7 +21,7 @@ public class RunPodService {
     @Value("${python.api.key}")
     private String apiKey;
 
-    private static final int MAX_RETRIES = 60; // 5 seconds * 60 = 5 minutes
+    private static final int MAX_RETRIES = 180; // 5 seconds * 180 = 15 minutes
     private static final long RETRY_DELAY_MS = 5000;
 
     /**

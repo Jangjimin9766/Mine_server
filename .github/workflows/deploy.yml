@@ -46,3 +46,16 @@ jobs:
           sudo systemctl restart mine
           sleep 10
           sudo systemctl status mine
+
+    - name: Discord Notification
+      uses: sarisia/actions-status-discord@v1
+      if: always()
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "🚀 배포 ${{ job.status == 'success' && '완료!' || '실패 ❌' }}"
+        description: |
+          **환경**: Production (EC2)
+          **브랜치**: `${{ github.ref_name }}`
+          **커밋**: `${{ github.sha }}`
+          **실행자**: ${{ github.actor }}
+        color: ${{ job.status == 'success' && '0x00FF00' || 'FF0000' }}

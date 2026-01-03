@@ -60,3 +60,15 @@ jobs:
         SPRING_DATASOURCE_PASSWORD: "1234"
         SPRING_DATA_REDIS_HOST: localhost
         SPRING_DATA_REDIS_PORT: 6379
+
+    - name: Discord Notification
+      uses: sarisia/actions-status-discord@v1
+      if: always()
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "CI 테스트 ${{ job.status == 'success' && '성공 ✅' || '실패 ❌' }}"
+        description: |
+          **브랜치**: `${{ github.ref_name }}`
+          **커밋**: `${{ github.sha }}`
+          **실행자**: ${{ github.actor }}
+        color: ${{ job.status == 'success' && '0x00FF00' || 'FF0000' }}
