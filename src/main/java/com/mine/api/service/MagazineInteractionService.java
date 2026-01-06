@@ -66,24 +66,29 @@ public class MagazineInteractionService {
 
         log.info("RunPod response received: {}", pythonResponse);
 
-        String aiMessage = (String) pythonResponse.get("message");
-        String actionType = (String) pythonResponse.get("action");
+        // Python 응답 형식: {intent, success, updated_magazine: {heading, content, ...}}
+        String actionType = (String) pythonResponse.get("intent"); // "intent" 필드 사용
 
-        // 3. 응답에 따라 매거진 업데이트
+        // updated_magazine에서 메시지 추출
+        @SuppressWarnings("unchecked")
+        Map<String, Object> updatedMagazine = (Map<String, Object>) pythonResponse.get("updated_magazine");
+        String aiMessage = updatedMagazine != null ? (String) updatedMagazine.get("heading") : "매거진이 업데이트되었습니다.";
+
+        // 3. 응답에 따라 매거진 업데이트 (updated_magazine 전달)
         handlePythonResponse(magazine, pythonResponse);
 
         // 4. 상호작용 이력 저장
         MagazineInteraction interaction = MagazineInteraction.builder()
                 .magazine(magazine)
                 .userMessage(request.getMessage())
-                .aiResponse(aiMessage)
-                .actionType(actionType)
+                .aiResponse(aiMessage != null ? aiMessage : "업데이트 완료")
+                .actionType(actionType != null ? actionType : "unknown")
                 .build();
         interactionRepository.save(interaction);
 
         // 5. 응답 반환
         InteractionDto.InteractResponse response = new InteractionDto.InteractResponse();
-        response.setMessage(aiMessage);
+        response.setMessage(aiMessage != null ? aiMessage : "매거진이 업데이트되었습니다.");
         response.setActionType(actionType);
         response.setMagazineId(magazineId);
         return response;
@@ -129,40 +134,40 @@ public class MagazineInteractionService {
 
     @Transactional
     protected void handlePythonResponse(Magazine magazine, Map<String, Object> response) {
-        String action = (String) response.get("action");
+        // Python 응답: {intent, success, updated_magazine: {heading, content, image_url,
+        // layout_hint}}
+        String action = (String) response.get("intent"); // "intent" 필드 사용
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> updatedMagazine = (Map<String, Object>) response.get("updated_magazine");
 
         // 1. 섹션 재생성
         if ("regenerate_section".equals(action)) {
             Integer sectionIndex = (Integer) response.get("section_index");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> newSection = (Map<String, Object>) response.get("new_section");
 
-            if (sectionIndex != null && newSection != null && sectionIndex >= 0
+            if (sectionIndex != null && updatedMagazine != null && sectionIndex >= 0
                     && sectionIndex < magazine.getSections().size()) {
                 MagazineSection section = magazine.getSections().get(sectionIndex);
                 section.update(
-                        (String) newSection.get("heading"),
-                        (String) newSection.get("content"),
-                        (String) newSection.get("image_url"),
-                        (String) newSection.get("layout_hint"),
-                        (String) newSection.get("layout_type"),
-                        (String) newSection.get("caption"));
+                        (String) updatedMagazine.get("heading"),
+                        (String) updatedMagazine.get("content"),
+                        (String) updatedMagazine.get("image_url"),
+                        (String) updatedMagazine.get("layout_hint"),
+                        (String) updatedMagazine.get("layout_type"),
+                        (String) updatedMagazine.get("caption"));
             }
         }
 
         // 2. 섹션 추가
         else if ("add_section".equals(action)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> newSection = (Map<String, Object>) response.get("new_section");
-
-            if (newSection != null) {
+            if (updatedMagazine != null) {
                 MagazineSection section = MagazineSection.builder()
-                        .heading((String) newSection.get("heading"))
-                        .content((String) newSection.get("content"))
-                        .imageUrl((String) newSection.get("image_url"))
-                        .layoutHint((String) newSection.get("layout_hint"))
-                        .layoutType((String) newSection.get("layout_type"))
-                        .caption((String) newSection.get("caption"))
+                        .heading((String) updatedMagazine.get("heading"))
+                        .content((String) updatedMagazine.get("content"))
+                        .imageUrl((String) updatedMagazine.get("image_url"))
+                        .layoutHint((String) updatedMagazine.get("layout_hint"))
+                        .layoutType((String) updatedMagazine.get("layout_type"))
+                        .caption((String) updatedMagazine.get("caption"))
                         .build();
                 section.setMagazine(magazine);
                 magazine.getSections().add(section);
@@ -190,8 +195,8 @@ public class MagazineInteractionService {
                     MagazineSection section = MagazineSection.builder()
                             .heading((String) sec.get("heading"))
                             .content((String) sec.get("content"))
-                            .imageUrl((String) sec.get("image_url")) // Python snake_case
-                            .layoutHint((String) sec.get("layout_hint")) // Python snake_case
+                            .imageUrl((String) sec.get("image_url"))
+                            .layoutHint((String) sec.get("layout_hint"))
                             .layoutType((String) sec.get("layout_type"))
                             .caption((String) sec.get("caption"))
                             .build();
