@@ -2,7 +2,6 @@ package com.mine.api.controller;
 
 import com.mine.api.dto.InterestDto;
 import com.mine.api.service.InterestService;
-import com.mine.api.domain.Interest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,60 +26,63 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(InterestController.class)
 class InterestControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockBean
-    private InterestService interestService;
+        @MockBean
+        private InterestService interestService;
 
-    @Test
-    @DisplayName("전체 관심사 목록 조회 성공")
-    @WithMockUser
-    void getAllInterests_Success() throws Exception {
-        // Given
-        List<InterestDto.InterestResponse> interests = List.of(
-                new InterestDto.InterestResponse(Interest.TRAVEL),
-                new InterestDto.InterestResponse(Interest.FOOD));
-        given(interestService.getAllInterests()).willReturn(interests);
+        @Test
+        @DisplayName("전체 관심사 목록 조회 성공")
+        @WithMockUser
+        void getAllInterests_Success() throws Exception {
+                // Given - DB 엔티티 기반 Response
+                List<InterestDto.InterestResponse> interests = List.of(
+                                InterestDto.InterestResponse.builder()
+                                                .id(1L).code("TRAVEL").name("여행").category("활동").build(),
+                                InterestDto.InterestResponse.builder()
+                                                .id(2L).code("FOOD").name("푸드").category("라이프스타일").build());
+                given(interestService.getAllInterests()).willReturn(interests);
 
-        // When & Then
-        mockMvc.perform(get("/api/interests")
-                .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("TRAVEL"))
-                .andExpect(jsonPath("$[0].displayName").value("여행"));
-    }
+                // When & Then
+                mockMvc.perform(get("/api/interests")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].code").value("TRAVEL"))
+                                .andExpect(jsonPath("$[0].name").value("여행"));
+        }
 
-    @Test
-    @DisplayName("내 관심사 조회 성공")
-    @WithMockUser(username = "testuser")
-    void getMyInterests_Success() throws Exception {
-        // Given
-        List<InterestDto.InterestResponse> myInterests = List.of(
-                new InterestDto.InterestResponse(Interest.TRAVEL));
-        given(interestService.getUserInterests("testuser")).willReturn(myInterests);
+        @Test
+        @DisplayName("내 관심사 조회 성공")
+        @WithMockUser(username = "testuser")
+        void getMyInterests_Success() throws Exception {
+                // Given
+                List<InterestDto.InterestResponse> myInterests = List.of(
+                                InterestDto.InterestResponse.builder()
+                                                .id(1L).code("TRAVEL").name("여행").category("활동").build());
+                given(interestService.getUserInterests("testuser")).willReturn(myInterests);
 
-        // When & Then
-        mockMvc.perform(get("/api/interests/me")
-                .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("TRAVEL"));
-    }
+                // When & Then
+                mockMvc.perform(get("/api/interests/me")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].code").value("TRAVEL"));
+        }
 
-    @Test
-    @DisplayName("내 관심사 저장 성공")
-    @WithMockUser(username = "testuser")
-    void updateMyInterests_Success() throws Exception {
-        // Given
-        String requestBody = "{\"interests\": [\"TRAVEL\", \"FOOD\"]}";
+        @Test
+        @DisplayName("내 관심사 저장 성공")
+        @WithMockUser(username = "testuser")
+        void updateMyInterests_Success() throws Exception {
+                // Given
+                String requestBody = "{\"interests\": [\"TRAVEL\", \"FOOD\"]}";
 
-        // When & Then
-        mockMvc.perform(put("/api/interests/me")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isOk());
+                // When & Then
+                mockMvc.perform(put("/api/interests/me")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody))
+                                .andExpect(status().isOk());
 
-        verify(interestService).updateUserInterests(anyString(), anyList());
-    }
+                verify(interestService).updateUserInterests(anyString(), anyList());
+        }
 }

@@ -1,24 +1,38 @@
 package com.mine.api.domain;
 
-public enum Interest {
-    LIFESTYLE("생활"),
-    SPORTS("스포츠"),
-    MUSIC("음악"),
-    TRAVEL("여행"),
-    ART("예술"),
-    BEAUTY("뷰티"),
-    FOOD("푸드"),
-    HEALTH("건강"),
-    FASHION("패션"),
-    TECH("테크");
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-    private final String displayName;
+/**
+ * 관심분야 엔티티 (DB 테이블)
+ * 기존 Enum에서 마이그레이션됨
+ */
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "interests")
+public class Interest {
 
-    Interest(String displayName) {
-        this.displayName = displayName;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public String getDisplayName() {
-        return displayName;
+    @Column(unique = true, nullable = false, length = 50)
+    private String code; // "FASHION", "BEAUTY" 등
+
+    @Column(nullable = false, length = 50)
+    private String name; // "패션", "뷰티" 등
+
+    @Column(length = 50)
+    private String category; // "라이프스타일", "문화/예술" 등
+
+    @Builder
+    public Interest(String code, String name, String category) {
+        this.code = code;
+        this.name = name;
+        this.category = category;
     }
 }

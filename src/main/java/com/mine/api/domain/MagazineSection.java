@@ -27,6 +27,10 @@ public class MagazineSection {
     @Column(name = "layout_hint")
     private String layoutHint;
 
+    // 그리드 표시 순서
+    @Column(name = "display_order")
+    private Integer displayOrder;
+
     // [NEW] 레이아웃 타입: 'hero', 'quote', 'split_left', 'split_right', 'basic' 등
     @Column(name = "layout_type")
     private String layoutType;
@@ -68,5 +72,9 @@ public class MagazineSection {
         this.layoutHint = layoutHint;
         this.layoutType = layoutType;
         this.caption = caption;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
     }
 }

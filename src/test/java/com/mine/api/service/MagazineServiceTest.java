@@ -58,6 +58,17 @@ class MagazineServiceTest {
         @Mock
         private RunPodService runPodService;
 
+        // 테스트용 Interest 엔티티 생성 헬퍼
+        private Interest createInterest(Long id, String code, String name) {
+                Interest interest = Interest.builder()
+                                .code(code)
+                                .name(name)
+                                .category("활동")
+                                .build();
+                ReflectionTestUtils.setField(interest, "id", id);
+                return interest;
+        }
+
         @BeforeEach
         void setUp() {
                 ReflectionTestUtils.setField(magazineService, "pythonApiUrl",
@@ -80,9 +91,10 @@ class MagazineServiceTest {
                                 .nickname("Tester")
                                 .build();
 
+                Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
                 UserInterest interest = UserInterest.builder()
                                 .user(user)
-                                .interest(Interest.TRAVEL)
+                                .interest(travelInterest)
                                 .build();
 
                 MagazineCreateRequest generatedData = new MagazineCreateRequest();
@@ -104,7 +116,6 @@ class MagazineServiceTest {
                 outputMap.put("title", "Generated Magazine");
                 outputMap.put("introduction", "Intro");
                 outputMap.put("cover_image_url", "http://image.url");
-                // Add other fields if necessary for MagazineCreateRequest mapping
 
                 Map<String, Object> runPodResponse = new HashMap<>();
                 runPodResponse.put("output", outputMap);
@@ -119,16 +130,7 @@ class MagazineServiceTest {
                 assertNotNull(magazineId);
                 assertEquals(1L, magazineId);
 
-                verify(userRepository, times(2)).findByUsername(username); // generateAndSaveMagazine calls it,
-                                                                           // saveMagazine
-                                                                           // calls it too?
-                // Wait, saveMagazine also calls findByUsername.
-                // generateAndSaveMagazine calls:
-                // 1. userRepository.findByUsername (line 78)
-                // 2. restTemplate...
-                // 3. saveMagazine(generatedData, username) -> calls
-                // userRepository.findByUsername (line 28)
-
+                verify(userRepository, times(2)).findByUsername(username);
                 verify(runPodService).sendRequest(anyString(), any(Map.class));
                 verify(magazineRepository).save(any(Magazine.class));
         }
@@ -141,7 +143,9 @@ class MagazineServiceTest {
                 User user = User.builder().username(username).build();
                 User followingUser = User.builder().username("following").build();
                 Follow follow = Follow.builder().follower(user).following(followingUser).build();
-                UserInterest interest = UserInterest.builder().user(user).interest(Interest.TRAVEL).build();
+
+                Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
+                UserInterest interest = UserInterest.builder().user(user).interest(travelInterest).build();
 
                 Pageable pageable = PageRequest.of(0, 10);
                 Page<Magazine> page = new PageImpl<>(List.of());
@@ -193,9 +197,7 @@ class MagazineServiceTest {
 
                 when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
                 when(magazineRepository.findById(magazineId)).thenReturn(Optional.of(magazine));
-                // 좋아요가 없는 상태라고 가정했지만...
                 when(magazineLikeRepository.findByUserAndMagazine(user, magazine)).thenReturn(Optional.empty());
-                // 저장 시점에 이미 다른 스레드가 저장해서 DataIntegrityViolationException 발생
                 when(magazineLikeRepository.save(any(com.mine.api.domain.MagazineLike.class)))
                                 .thenThrow(new org.springframework.dao.DataIntegrityViolationException(
                                                 "Duplicate entry"));
@@ -204,6 +206,6 @@ class MagazineServiceTest {
                 boolean result = magazineService.toggleLike(magazineId, username);
 
                 // Then
-                assertTrue(result); // 예외를 잡아서 좋아요 성공(true)으로 반환해야 함
+                assertTrue(result);
         }
 }

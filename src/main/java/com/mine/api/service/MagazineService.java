@@ -109,7 +109,7 @@ public class MagazineService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         java.util.List<String> userInterests = userInterestRepository.findByUser(user).stream()
-                .map(ui -> ui.getInterest().name())
+                .map(ui -> ui.getInterest().getCode())
                 .collect(java.util.stream.Collectors.toList());
 
         // 2. RunPod Serverless로 요청 (input wrapper 형식)
@@ -300,7 +300,7 @@ public class MagazineService {
         String keyword = "";
         if (!interests.isEmpty()) {
             int randomIndex = new java.util.Random().nextInt(interests.size());
-            keyword = interests.get(randomIndex).getInterest().getDisplayName();
+            keyword = interests.get(randomIndex).getInterest().getName();
         }
 
         // 3. 쿼리 실행 (팔로잉 OR 관심사 키워드)
