@@ -47,7 +47,7 @@ public class MagazineInteractionService {
         Map<String, Object> data = new HashMap<>();
         data.put("magazine_id", magazineId);
         data.put("magazine_data", convertMagazineToMap(magazine));
-        data.put("user_message", request.getMessage());
+        data.put("message", request.getMessage());
         inputData.put("data", data);
 
         log.info("Sending edit_magazine request to RunPod: magazineId={}, message={}", magazineId,
