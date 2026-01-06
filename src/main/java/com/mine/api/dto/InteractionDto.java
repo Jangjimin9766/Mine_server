@@ -16,6 +16,7 @@ public class InteractionDto {
         private String message; // AI 응답 메시지
         private String actionType; // "regenerate_section", "add_section", "change_tone"
         private Long magazineId;
+        private com.mine.api.domain.Magazine magazine; // [NEW] 업데이트된 매거진 전체 정보
     }
 
     @Data

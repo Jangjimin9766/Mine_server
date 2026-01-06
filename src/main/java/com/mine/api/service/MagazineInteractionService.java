@@ -91,6 +91,7 @@ public class MagazineInteractionService {
         response.setMessage(aiMessage != null ? aiMessage : "매거진이 업데이트되었습니다.");
         response.setActionType(actionType);
         response.setMagazineId(magazineId);
+        response.setMagazine(magazine); // [NEW] 업데이트된 매거진 설정
         return response;
     }
 
