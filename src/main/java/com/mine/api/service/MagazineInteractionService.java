@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,11 +19,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@lombok.extern.slf4j.Slf4j
 public class MagazineInteractionService {
 
     private final MagazineRepository magazineRepository;
     private final MagazineInteractionRepository interactionRepository;
-    private final RestTemplate restTemplate;
+    private final RunPodService runPodService;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -40,27 +40,31 @@ public class MagazineInteractionService {
             throw new IllegalArgumentException("You don't have permission to modify this magazine");
         }
 
-        // 2. Python 서버로 요청 (chat endpoint)
-        String chatUrl = pythonApiUrl.replace("/api/magazine/create", "/api/magazine/chat");
+        // 2. RunPod Serverless로 요청 (edit_magazine action)
+        Map<String, Object> inputData = new HashMap<>();
+        inputData.put("action", "edit_magazine");
 
-        Map<String, Object> pythonRequest = new HashMap<>();
-        pythonRequest.put("magazine_id", magazineId);
-        pythonRequest.put("magazine_data", convertMagazineToMap(magazine));
-        pythonRequest.put("user_message", request.getMessage());
+        Map<String, Object> data = new HashMap<>();
+        data.put("magazine_id", magazineId);
+        data.put("magazine_data", convertMagazineToMap(magazine));
+        data.put("user_message", request.getMessage());
+        inputData.put("data", data);
 
-        // Python 응답 예상 구조: {"message": "...", "action": "regenerate_section",
-        // "section_index": 0, "new_section": {...}}
+        log.info("Sending edit_magazine request to RunPod: magazineId={}, message={}", magazineId,
+                request.getMessage());
+
+        // RunPod 요청 → 폴링 → 응답
+        Map<String, Object> runPodResponse = runPodService.sendRequest(pythonApiUrl, inputData);
+
+        // output 필드에서 실제 결과 추출
         @SuppressWarnings("unchecked")
-        Map<String, Object> pythonResponse = restTemplate.postForObject(chatUrl, pythonRequest, Map.class);
+        Map<String, Object> pythonResponse = (Map<String, Object>) runPodResponse.get("output");
 
         if (pythonResponse == null) {
-            throw new RuntimeException("Failed to get response from AI server");
+            throw new RuntimeException("Failed to get response from AI server: no output");
         }
 
-        // ⭐ 디버깅: Python 응답 로그
-        System.out.println("=== Python Response ===");
-        System.out.println(pythonResponse);
-        System.out.println("======================");
+        log.info("RunPod response received: {}", pythonResponse);
 
         String aiMessage = (String) pythonResponse.get("message");
         String actionType = (String) pythonResponse.get("action");
