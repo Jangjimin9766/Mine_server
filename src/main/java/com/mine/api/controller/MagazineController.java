@@ -165,7 +165,8 @@ public class MagazineController {
     public ResponseEntity<?> search(
             @org.springframework.web.bind.annotation.RequestParam String keyword,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size) {
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return ResponseEntity.badRequest()
@@ -175,8 +176,9 @@ public class MagazineController {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
                 page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
 
+        String username = userDetails != null ? userDetails.getUsername() : "";
         org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
-                .searchByKeyword(keyword, pageable);
+                .searchByKeyword(keyword, username, pageable);
 
         return ResponseEntity.ok(result);
     }

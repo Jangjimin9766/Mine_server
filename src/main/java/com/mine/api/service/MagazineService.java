@@ -306,8 +306,8 @@ public class MagazineService {
 
     // ⭐ Phase 2: 키워드 검색
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
-            String keyword, org.springframework.data.domain.Pageable pageable) {
-        return magazineRepository.searchByKeyword(keyword, pageable)
+            String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+        return magazineRepository.searchByKeyword(keyword, username, pageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 

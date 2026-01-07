@@ -22,6 +22,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.Optional<Magazine> findByShareToken(String shareToken);
 
         // ⭐ Phase 2: 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
+        // 본인 매거진은 비공개여도 검색됨
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN m.sections s " +
                         "WHERE (m.title LIKE %:keyword% " +
@@ -29,16 +30,18 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR m.tags LIKE %:keyword% " +
                         "OR s.heading LIKE %:keyword% " +
                         "OR s.content LIKE %:keyword%) " +
-                        "AND m.isPublic = true", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m " +
+                        "AND (m.isPublic = true OR m.user.username = :username)", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m "
+                                        +
                                         "LEFT JOIN m.sections s " +
                                         "WHERE (m.title LIKE %:keyword% " +
                                         "OR m.introduction LIKE %:keyword% " +
                                         "OR m.tags LIKE %:keyword% " +
                                         "OR s.heading LIKE %:keyword% " +
                                         "OR s.content LIKE %:keyword%) " +
-                                        "AND m.isPublic = true")
+                                        "AND (m.isPublic = true OR m.user.username = :username)")
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("username") String username,
                         org.springframework.data.domain.Pageable pageable);
 
         // ⭐ Phase 2: 태그 검색 (Magazine에 tags 필드 추가 후 사용)
