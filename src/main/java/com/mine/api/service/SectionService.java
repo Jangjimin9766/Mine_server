@@ -85,24 +85,34 @@ public class SectionService {
         Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
         MagazineSection section = getSectionFromMagazine(magazine, sectionId);
 
-        // RunPod로 edit_section 요청
-        Map<String, Object> inputData = new HashMap<>();
-        inputData.put("action", "edit_section");
-
         Map<String, Object> data = new HashMap<>();
+        data.put("action", "edit_section");
         data.put("magazine_id", magazineId);
         data.put("section_id", sectionId);
         data.put("section_data", convertSectionToMap(section));
         data.put("message", message);
-        inputData.put("data", data);
 
         log.info("Sending edit_section request: magazineId={}, sectionId={}, message={}",
                 magazineId, sectionId, message);
 
-        Map<String, Object> runPodResponse = runPodService.sendRequest(pythonApiUrl, inputData);
+        Map<String, Object> responseBody;
+        Map<String, Object> output;
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> output = (Map<String, Object>) runPodResponse.get("output");
+        // 로컬 환경 vs RunPod 환경 분기
+        if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+            // 로컬: sendSyncRequest 사용 (플랫 JSON)
+            responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+            output = responseBody; // 로컬은 output 래핑 없음
+        } else {
+            // RunPod: sendRequest 사용 (input 래핑 + 비동기 폴링)
+            Map<String, Object> inputData = new HashMap<>();
+            inputData.put("action", "edit_section");
+            inputData.put("data", data);
+            responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> outputTemp = (Map<String, Object>) responseBody.get("output");
+            output = outputTemp;
+        }
 
         if (output == null) {
             throw new RuntimeException("Failed to get response from AI server");

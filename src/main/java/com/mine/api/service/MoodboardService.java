@@ -37,28 +37,42 @@ public class MoodboardService {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 1. RunPod Serverless 요청 (input wrapper 형식)
-        java.util.Map<String, Object> inputData = new java.util.HashMap<>();
-        inputData.put("action", "generate_moodboard");
-        inputData.put("topic", requestDto.getTopic());
-        inputData.put("user_mood", requestDto.getUser_mood());
-        inputData.put("user_interests", requestDto.getUser_interests());
-        inputData.put("magazine_tags", requestDto.getMagazine_tags());
-        inputData.put("magazine_titles", requestDto.getMagazine_titles());
+        // 1. 요청 데이터 준비
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("action", "generate_moodboard");
+        data.put("topic", requestDto.getTopic());
+        data.put("user_mood", requestDto.getUser_mood());
+        data.put("user_interests", requestDto.getUser_interests());
+        data.put("magazine_tags", requestDto.getMagazine_tags());
+        data.put("magazine_titles", requestDto.getMagazine_titles());
 
-        // 2. RunPod Serverless로 요청 (Async Polling)
-        java.util.Map<String, Object> runPodInput = new java.util.HashMap<>();
-        runPodInput.put("action", "generate_moodboard");
-        runPodInput.put("data", inputData); // Wrap the previous inputData as 'data'
+        java.util.Map<String, Object> responseBody;
+        java.util.Map<String, Object> output;
 
-        java.util.Map<String, Object> responseBody = runPodService.sendRequest(moodboardApiUrl, runPodInput);
+        // 2. 로컬 vs RunPod 분기
+        if (moodboardApiUrl.contains("localhost") || moodboardApiUrl.contains("127.0.0.1")) {
+            // 로컬: sendSyncRequest 사용 (플랫 JSON)
+            responseBody = runPodService.sendSyncRequest(moodboardApiUrl, data);
+            output = responseBody; // 로컬은 output 래핑 없음
+        } else {
+            // RunPod: sendRequest 사용 (input 래핑 + 비동기 폴링)
+            java.util.Map<String, Object> runPodInput = new java.util.HashMap<>();
+            runPodInput.put("action", "generate_moodboard");
+            runPodInput.put("data", data);
+            responseBody = runPodService.sendRequest(moodboardApiUrl, runPodInput);
 
-        if (responseBody == null || !responseBody.containsKey("output")) {
-            throw new RuntimeException("Failed to generate moodboard image");
+            if (responseBody == null || !responseBody.containsKey("output")) {
+                throw new RuntimeException("Failed to generate moodboard image");
+            }
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> outputTemp = (java.util.Map<String, Object>) responseBody.get("output");
+            output = outputTemp;
         }
 
-        @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> output = (java.util.Map<String, Object>) responseBody.get("output");
+        if (output == null) {
+            throw new RuntimeException("Failed to generate moodboard: no output");
+        }
+
         String base64Image = (String) output.get("image_url");
         String description = (String) output.get("description");
 

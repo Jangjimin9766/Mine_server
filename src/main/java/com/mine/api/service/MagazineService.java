@@ -304,6 +304,20 @@ public class MagazineService {
         return magazine;
     }
 
+    // ⭐ 커버 이미지 변경
+    @org.springframework.transaction.annotation.Transactional
+    public void updateCover(Long magazineId, String newCoverUrl, String username) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다: " + magazineId));
+
+        if (!magazine.getUser().getUsername().equals(username)) {
+            throw new SecurityException("권한이 없습니다");
+        }
+
+        magazine.setCoverImageUrl(newCoverUrl);
+        magazineRepository.save(magazine);
+    }
+
     // ⭐ Phase 2: 키워드 검색
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {

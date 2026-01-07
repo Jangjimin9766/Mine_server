@@ -40,31 +40,40 @@ public class MagazineInteractionService {
             throw new IllegalArgumentException("You don't have permission to modify this magazine");
         }
 
-        // 2. RunPod Serverless로 요청 (edit_magazine action)
-        Map<String, Object> inputData = new HashMap<>();
-        inputData.put("action", "edit_magazine");
-
+        // 2. Python AI 서버로 요청 (edit_magazine action)
         Map<String, Object> data = new HashMap<>();
+        data.put("action", "edit_magazine");
         data.put("magazine_id", magazineId);
         data.put("magazine_data", convertMagazineToMap(magazine));
         data.put("message", request.getMessage());
-        inputData.put("data", data);
 
-        log.info("Sending edit_magazine request to RunPod: magazineId={}, message={}", magazineId,
+        log.info("Sending edit_magazine request: magazineId={}, message={}", magazineId,
                 request.getMessage());
 
-        // RunPod 요청 → 폴링 → 응답
-        Map<String, Object> runPodResponse = runPodService.sendRequest(pythonApiUrl, inputData);
+        Map<String, Object> responseBody;
+        Map<String, Object> pythonResponse;
 
-        // output 필드에서 실제 결과 추출
-        @SuppressWarnings("unchecked")
-        Map<String, Object> pythonResponse = (Map<String, Object>) runPodResponse.get("output");
+        // 로컬 환경 vs RunPod 환경 분기
+        if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+            // 로컬: sendSyncRequest 사용 (플랫 JSON)
+            responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+            pythonResponse = responseBody; // 로컬은 output 래핑 없음
+        } else {
+            // RunPod: sendRequest 사용 (input 래핑 + 비동기 폴링)
+            Map<String, Object> inputData = new HashMap<>();
+            inputData.put("action", "edit_magazine");
+            inputData.put("data", data);
+            responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> outputTemp = (Map<String, Object>) responseBody.get("output");
+            pythonResponse = outputTemp;
+        }
 
         if (pythonResponse == null) {
             throw new RuntimeException("Failed to get response from AI server: no output");
         }
 
-        log.info("RunPod response received: {}", pythonResponse);
+        log.info("Python response received: {}", pythonResponse);
 
         // Python 응답 형식: {intent, success, updated_magazine: {heading, content, ...}}
         String actionType = (String) pythonResponse.get("intent"); // "intent" 필드 사용

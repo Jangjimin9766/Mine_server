@@ -94,6 +94,11 @@ public class Magazine {
         }
     }
 
+    // ⭐ 커버 이미지 변경
+    public void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
+    }
+
     // ⭐ Phase 1: 소유자 확인 메서드
     public boolean isOwnedBy(User user) {
         return this.user.getId().equals(user.getId());

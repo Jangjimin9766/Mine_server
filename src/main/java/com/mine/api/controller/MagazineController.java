@@ -144,6 +144,36 @@ public class MagazineController {
         }
     }
 
+    // ⭐ 커버 이미지 변경
+    @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 섹션 이미지 URL을 그대로 사용할 수 있습니다.")
+    @org.springframework.web.bind.annotation.PatchMapping("/{id}/cover")
+    public ResponseEntity<?> updateCover(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            String newCoverUrl = request.get("coverImageUrl");
+            if (newCoverUrl == null || newCoverUrl.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("error", "coverImageUrl is required"));
+            }
+
+            magazineService.updateCover(id, newCoverUrl, userDetails.getUsername());
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "커버 이미지가 변경되었습니다",
+                    "coverImageUrl", newCoverUrl));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", e.getMessage()));
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(java.util.Map.of("error", "권한이 없습니다"));
+        }
+    }
+
     // ⭐ Phase 2: 공유 링크로 조회 (인증 불필요)
     @Operation(summary = "🔗 공유 받은 매거진 보기", description = "친구가 보내준 링크(공유 토큰)로 매거진을 봅니다. 로그인 안 해도 볼 수 있습니다.")
     @GetMapping("/share/{shareToken}")
