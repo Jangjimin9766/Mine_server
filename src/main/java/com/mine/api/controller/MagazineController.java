@@ -78,7 +78,7 @@ public class MagazineController {
     @org.springframework.web.bind.annotation.PatchMapping("/{id}")
     public ResponseEntity<?> updateMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.mine.api.dto.MagazineDto.UpdateRequest request,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 제목/소개", required = true, content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.mine.api.dto.MagazineDto.UpdateRequest.class))) @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.mine.api.dto.MagazineDto.UpdateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         try {

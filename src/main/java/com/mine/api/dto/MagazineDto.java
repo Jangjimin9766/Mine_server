@@ -31,6 +31,7 @@ public class MagazineDto {
         @Size(min = 1, max = 500, message = "소개는 1-500자 사이여야 합니다")
         private String introduction;
 
+        @com.fasterxml.jackson.annotation.JsonIgnore
         public boolean isValid() {
             return (title != null && !title.trim().isEmpty()) ||
                     (introduction != null && !introduction.trim().isEmpty());
