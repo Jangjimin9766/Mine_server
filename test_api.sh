@@ -15,7 +15,7 @@ LOGIN_RES=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -d "{\"username\": \"$USERNAME\", \"password\": \"password123\"}")
 echo "Login Res: $LOGIN_RES"
 
-TOKEN=$(echo $LOGIN_RES | grep -o '"accessToken":"[^"]*' | cut -d'"' -f3)
+TOKEN=$(echo $LOGIN_RES | python3 -c "import sys, json; print(json.load(sys.stdin)['accessToken'])")
 echo "Token: $TOKEN"
 
 if [ -z "$TOKEN" ]; then
@@ -31,6 +31,6 @@ curl -s -X POST http://localhost:8080/api/internal/magazine \
 echo ""
 
 echo ">>> 4. Listing My Magazines..."
-curl -s -X GET "http://localhost:8080/api/magazines/my?page=0&size=10" \
+curl -s -X GET "http://localhost:8080/api/magazines?page=0&size=10" \
   -H "Authorization: Bearer $TOKEN"
 echo ""

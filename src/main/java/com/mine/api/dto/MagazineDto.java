@@ -23,11 +23,11 @@ public class MagazineDto {
     @AllArgsConstructor
     public static class UpdateRequest {
 
-        @Schema(description = "수정할 제목 (1-100자)", example = "새로운 매거진 제목")
+        @Schema(description = "✏️ 수정할 제목 (1-100자)", example = "2024 F/W 패션 트렌드 (수정됨)")
         @Size(min = 1, max = 100, message = "제목은 1-100자 사이여야 합니다")
         private String title;
 
-        @Schema(description = "수정할 소개 (1-500자)", example = "새로운 매거진 소개문입니다.")
+        @Schema(description = "📝 수정할 소개 (1-500자)", example = "이번 시즌 놓쳐선 안 될 스타일링 팁을 모았습니다.")
         @Size(min = 1, max = 500, message = "소개는 1-500자 사이여야 합니다")
         private String introduction;
 

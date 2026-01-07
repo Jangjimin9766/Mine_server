@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "매거진 상호작용 (Magazine Interaction)", description = "AI와 대화하며 매거진을 동적으로 수정하는 API")
+@Tag(name = "3. 매거진 AI 편집 (전체/구조) 🤖", description = "AI와 대화하며 섹션을 추가하거나 삭제하고, 전체 분위기를 바꿉니다.")
 @RestController
 @RequestMapping("/api/magazines/{magazineId}/interact")
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class MagazineInteractionController {
 
     private final MagazineInteractionService interactionService;
 
-    @Operation(summary = "매거진과 상호작용", description = "AI에게 메시지를 보내 매거진 섹션을 수정합니다. 예: '첫 번째 섹션을 더 감성적으로 바꿔줘'")
+    @Operation(summary = "🤖 섹션 추가/삭제/수정 명령", description = "AI에게 명령을 내립니다.<br>예: '여행 섹션 추가해줘', '두 번째 섹션 지워줘', '전체적으로 밝게 바꿔줘'")
     @PostMapping
     public ResponseEntity<InteractionDto.InteractResponse> interact(
             @PathVariable Long magazineId,
@@ -29,7 +29,7 @@ public class MagazineInteractionController {
         return ResponseEntity.ok(interactionService.interact(magazineId, userDetails.getUsername(), request));
     }
 
-    @Operation(summary = "상호작용 이력 조회", description = "해당 매거진의 모든 상호작용 이력을 조회합니다.")
+    @Operation(summary = "📜 AI 대화 이력", description = "이 매거진에서 AI와 나눴던 대화 목록을 봅니다.")
     @GetMapping
     public ResponseEntity<List<InteractionDto.InteractionHistory>> getHistory(
             @PathVariable Long magazineId,

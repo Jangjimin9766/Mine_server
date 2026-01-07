@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "매거진 (Magazine)", description = "매거진 생성 및 조회 API")
+@Tag(name = "1. 매거진 (Magazine) 📘", description = "매거진의 생성, 조회, 수정, 삭제(CRUD) 및 검색/피드 기능을 제공합니다.")
 @RestController
 @RequestMapping("/api/magazines")
 @RequiredArgsConstructor
@@ -23,16 +23,16 @@ public class MagazineController {
 
     private final MagazineService magazineService;
 
-    @Operation(summary = "내 매거진 목록 조회", description = "로그인한 사용자가 생성한 모든 매거진을 페이징하여 조회합니다.")
+    @Operation(summary = "📂 내 매거진 목록", description = "내가 만든 매거진들을 최신순으로 모아봅니다.")
     @GetMapping
-    public ResponseEntity<org.springframework.data.domain.Page<Magazine>> getMyMagazines(
+    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getMyMagazines(
             @AuthenticationPrincipal UserDetails userDetails,
             @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
 
         return ResponseEntity.ok(magazineService.getMyMagazinesPage(userDetails.getUsername(), pageable));
     }
 
-    @Operation(summary = "매거진 상세 조회", description = "특정 매거진의 상세 정보를 조회합니다. 본인의 매거진만 조회 가능합니다.")
+    @Operation(summary = "📖 매거진 상세 보기", description = "매거진의 모든 내용(섹션 포함)을 상세하게 봅니다. 모든 카드가 순서대로 보여집니다.")
     @GetMapping("/{id}")
     public ResponseEntity<Magazine> getMagazineDetail(@org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -40,7 +40,7 @@ public class MagazineController {
         return ResponseEntity.ok(magazine);
     }
 
-    @Operation(summary = "매거진 생성 (AI)", description = "주제와 기분을 입력하면 AI가 매거진을 자동 생성합니다. Python 서버와 연동됩니다.")
+    @Operation(summary = "✨ AI 매거진 만들기", description = "주제와 기분을 입력하면 AI가 제목, 소개, 그리고 내용(섹션)까지 자동으로 만들어줍니다. (로컬 생성 시 1~2분 이상 소요될 수 있습니다)")
     @org.springframework.web.bind.annotation.PostMapping
     public ResponseEntity<Long> createMagazine(
             @org.springframework.web.bind.annotation.RequestBody com.mine.api.dto.MagazineGenerationRequest request,
@@ -50,7 +50,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 1: 매거진 삭제
-    @Operation(summary = "매거진 삭제", description = "매거진을 삭제합니다. 본인의 매거진만 삭제 가능합니다.")
+    @Operation(summary = "🗑️ 매거진 삭제", description = "매거진을 완전히 삭제합니다. 되돌릴 수 없습니다.")
     @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
@@ -74,7 +74,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 1: 매거진 수정
-    @Operation(summary = "매거진 수정", description = "매거진 제목/소개를 수정합니다. 본인의 매거진만 수정 가능합니다.")
+    @Operation(summary = "✏️ 제목/소개 수정", description = "매거진의 이름이나 소개글만 살짝 고칩니다. (내용 수정은 섹션 API 사용)")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}")
     public ResponseEntity<?> updateMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
@@ -100,7 +100,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 3: 좋아요 토글
-    @Operation(summary = "매거진 좋아요", description = "매거진에 좋아요를 하거나 취소합니다.")
+    @Operation(summary = "❤️ 좋아요 누르기/취소", description = "마음에 드는 매거진에 좋아요를 누르거나 취소합니다.")
     @org.springframework.web.bind.annotation.PostMapping("/{id}/likes")
     public ResponseEntity<java.util.Map<String, Object>> toggleLike(
             @org.springframework.web.bind.annotation.PathVariable Long id,
@@ -111,7 +111,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 3: 내가 좋아요한 매거진 목록
-    @Operation(summary = "좋아요한 매거진 목록", description = "내가 좋아요한 매거진 목록을 조회합니다.")
+    @Operation(summary = "💘 내가 찜한 매거진", description = "내가 좋아요를 누른 매거진들을 모아봅니다.")
     @GetMapping("/liked")
     public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getLikedMagazines(
             @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails,
@@ -121,7 +121,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 2: 공개/비공개 설정
-    @Operation(summary = "공개/비공개 설정", description = "매거진을 공개하거나 비공개로 설정합니다. 공개 시 공유 링크가 생성됩니다.")
+    @Operation(summary = "🔒/🔓 공개 여부 설정", description = "매거진을 나만 볼지, 남에게 보여줄지 설정합니다. 공개하면 공유 링크가 생성됩니다.")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/visibility")
     public ResponseEntity<?> setVisibility(
             @org.springframework.web.bind.annotation.PathVariable Long id,
@@ -145,7 +145,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 2: 공유 링크로 조회 (인증 불필요)
-    @Operation(summary = "공유 링크로 조회", description = "공유 토큰으로 매거진을 조회합니다. 인증이 필요 없습니다.")
+    @Operation(summary = "🔗 공유 받은 매거진 보기", description = "친구가 보내준 링크(공유 토큰)로 매거진을 봅니다. 로그인 안 해도 볼 수 있습니다.")
     @GetMapping("/share/{shareToken}")
     public ResponseEntity<?> getByShareToken(@org.springframework.web.bind.annotation.PathVariable String shareToken) {
         try {
@@ -160,7 +160,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 2: 검색 (키워드)
-    @Operation(summary = "매거진 검색", description = "키워드로 공개 매거진을 검색합니다.")
+    @Operation(summary = "🔍 매거진 검색", description = "키워드로 원하는 매거진을 찾습니다.")
     @GetMapping("/search")
     public ResponseEntity<?> search(
             @org.springframework.web.bind.annotation.RequestParam String keyword,
@@ -175,31 +175,15 @@ public class MagazineController {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
                 page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
 
-        org.springframework.data.domain.Page<Magazine> result = magazineService.searchByKeyword(keyword, pageable);
+        org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
+                .searchByKeyword(keyword, pageable);
 
         return ResponseEntity.ok(result);
     }
 
-    // ⭐ Phase 2: 내 매거진 조회
-    @Operation(summary = "내 매거진 조회", description = "로그인한 사용자의 모든 매거진을 페이징하여 조회합니다.")
-    @GetMapping("/my")
-    public ResponseEntity<?> getMyMagazinesPage(
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
-                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
-        org.springframework.data.domain.Page<Magazine> magazines = magazineService.getMyMagazinesPage(
-                userDetails.getUsername(), pageable);
-
-        return ResponseEntity.ok(magazines);
-    }
-
-    // ⭐ Phase 4: 개인화 피드
-    @Operation(summary = "개인화 피드", description = "팔로우한 사용자의 글과 관심사 기반 추천 글을 조회합니다.")
+    @Operation(summary = "📡 추천 피드", description = "내 관심사와 팔로우한 사람들의 새 글을 모아서 보여줍니다.")
     @GetMapping("/feed")
-    public ResponseEntity<org.springframework.data.domain.Page<Magazine>> getPersonalizedFeed(
+    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getPersonalizedFeed(
             @AuthenticationPrincipal UserDetails userDetails,
             @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
 

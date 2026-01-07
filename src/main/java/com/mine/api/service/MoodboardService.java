@@ -66,17 +66,8 @@ public class MoodboardService {
             throw new RuntimeException("Failed to generate moodboard image");
         }
 
-        // 2. Decode Base64 -> Image Bytes
-        if (base64Image.contains(",")) {
-            base64Image = base64Image.split(",")[1];
-        }
-        byte[] imageBytes = Base64.getDecoder().decode(base64Image);
-
-        // 3. Upload to S3
-        String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
-        s3Template.upload(bucketName, s3FileName, new ByteArrayInputStream(imageBytes));
-
-        String s3Url = "https://" + bucketName + ".s3.ap-southeast-2.amazonaws.com/" + s3FileName;
+        // 2, 3. Decode & Upload to S3
+        String s3Url = uploadBase64ToS3(base64Image);
 
         // 4. Save to DB
         moodboardRepository.save(Moodboard.builder()
@@ -86,5 +77,23 @@ public class MoodboardService {
                 .build());
 
         return s3Url;
+    }
+
+    /**
+     * Base64 이미지 S3 업로드 (공용)
+     */
+    public String uploadBase64ToS3(String base64Image) {
+        if (base64Image == null)
+            return null;
+
+        if (base64Image.contains(",")) {
+            base64Image = base64Image.split(",")[1];
+        }
+        byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+
+        String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
+        s3Template.upload(bucketName, s3FileName, new ByteArrayInputStream(imageBytes));
+
+        return "https://" + bucketName + ".s3.ap-southeast-2.amazonaws.com/" + s3FileName;
     }
 }

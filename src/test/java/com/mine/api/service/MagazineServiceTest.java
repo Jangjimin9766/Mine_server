@@ -156,7 +156,8 @@ class MagazineServiceTest {
                 when(magazineRepository.findPersonalizedFeed(anyList(), anyString(), eq(pageable))).thenReturn(page);
 
                 // When
-                Page<Magazine> result = magazineService.getPersonalizedFeed(username, pageable);
+                org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
+                                .getPersonalizedFeed(username, pageable);
 
                 // Then
                 assertNotNull(result);
@@ -179,7 +180,8 @@ class MagazineServiceTest {
                 when(magazineRepository.findPersonalizedFeed(anyList(), eq(""), eq(pageable))).thenReturn(page);
 
                 // When
-                Page<Magazine> result = magazineService.getPersonalizedFeed(username, pageable);
+                org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
+                                .getPersonalizedFeed(username, pageable);
 
                 // Then
                 assertNotNull(result);

@@ -62,8 +62,13 @@ class MagazineControllerTest {
         @Test
         @WithMockUser(username = "testuser")
         void getMyMagazines() throws Exception {
-                Page<Magazine> page = new PageImpl<>(new java.util.ArrayList<>(java.util.Arrays.asList(magazine)),
+                MagazineDto.ListItem listItem = MagazineDto.ListItem.builder()
+                                .title("Test Magazine")
+                                .build();
+                org.springframework.data.domain.Page<MagazineDto.ListItem> page = new org.springframework.data.domain.PageImpl<>(
+                                java.util.Collections.singletonList(listItem),
                                 org.springframework.data.domain.PageRequest.of(0, 10), 1);
+
                 given(magazineService.getMyMagazinesPage(eq("testuser"), any(Pageable.class))).willReturn(page);
 
                 mockMvc.perform(get("/api/magazines"))

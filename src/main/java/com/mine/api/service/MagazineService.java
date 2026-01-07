@@ -26,6 +26,7 @@ public class MagazineService {
     private final UserInterestRepository userInterestRepository;
     private final FollowRepository followRepository;
     private final RunPodService runPodService;
+    private final MoodboardService moodboardService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -50,6 +51,12 @@ public class MagazineService {
         if (request.getMoodboard() != null) {
             moodboardImageUrl = request.getMoodboard().getImage_url();
             moodboardDescription = request.getMoodboard().getDescription();
+
+            // Base64 이미지인 경우 S3 업로드 처리
+            if (moodboardImageUrl != null
+                    && (moodboardImageUrl.startsWith("data:image") || moodboardImageUrl.length() > 255)) {
+                moodboardImageUrl = moodboardService.uploadBase64ToS3(moodboardImageUrl);
+            }
         }
 
         // 3. Magazine 엔티티 생성
@@ -66,7 +73,8 @@ public class MagazineService {
 
         // 4. Section 엔티티 생성 및 연관관계 설정
         if (request.getSections() != null) {
-            for (MagazineCreateRequest.SectionDto sectionDto : request.getSections()) {
+            for (int i = 0; i < request.getSections().size(); i++) {
+                MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
                         .content(sectionDto.getContent())
@@ -74,6 +82,7 @@ public class MagazineService {
                         .layoutHint(sectionDto.getLayoutHint())
                         .layoutType(sectionDto.getLayoutType())
                         .caption(sectionDto.getCaption())
+                        .displayOrder(i) // 생성 순서대로 0부터 할당
                         .build();
                 magazine.addSection(section);
             }
@@ -99,6 +108,13 @@ public class MagazineService {
             throw new IllegalArgumentException("Unauthorized access to this magazine");
         }
 
+        // displayOrder 순으로 섹션 정렬
+        magazine.getSections().sort((s1, s2) -> {
+            Integer o1 = s1.getDisplayOrder() != null ? s1.getDisplayOrder() : Integer.MAX_VALUE;
+            Integer o2 = s2.getDisplayOrder() != null ? s2.getDisplayOrder() : Integer.MAX_VALUE;
+            return o1.compareTo(o2);
+        });
+
         return magazine;
     }
 
@@ -112,24 +128,41 @@ public class MagazineService {
                 .map(ui -> ui.getInterest().getCode())
                 .collect(java.util.stream.Collectors.toList());
 
-        // 2. RunPod Serverless로 요청 (input wrapper 형식)
-        java.util.Map<String, Object> inputData = new java.util.HashMap<>();
-        inputData.put("action", "create_magazine");
-
+        // 2. Python 서버 요청 준비
         java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
         data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
         data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
         data.put("user_interests", userInterests);
-        inputData.put("data", data);
 
-        // RunPod Async Polling Request
-        java.util.Map<String, Object> responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+        java.util.Map<String, Object> responseBody;
+
+        // 3. 호출 방식 분기 (Local vs RunPod)
+        if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+            // Local FastAPI 호출 (직접 전송, 동기식)
+            // { "topic": ..., "user_mood": ..., "user_email": ... } 형태로 전송
+            responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+        } else {
+            // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
+            // { "input": { "action": "create_magazine", "data": { ... } } } 형태로 전송
+            java.util.Map<String, Object> inputData = new java.util.HashMap<>();
+            inputData.put("action", "create_magazine");
+            inputData.put("data", data);
+
+            // 응답은 { "status": "COMPLETED", "output": { ... } } 형태
+            responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+        }
+
+        // 4. 결과 파싱 (RunPod는 output 안에, 로컬은 body 자체가 결과일 수 있음)
+        Object outputData = responseBody;
+        if (responseBody.containsKey("output")) {
+            outputData = responseBody.get("output");
+        }
 
         // output을 MagazineCreateRequest로 변환
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        MagazineCreateRequest generatedData = mapper.convertValue(
-                responseBody.get("output"), MagazineCreateRequest.class);
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
 
         if (generatedData == null) {
             throw new RuntimeException("Failed to generate magazine from AI server");
@@ -261,31 +294,33 @@ public class MagazineService {
             throw new SecurityException("비공개 매거진입니다");
         }
 
+        // displayOrder 순으로 섹션 정렬
+        magazine.getSections().sort((s1, s2) -> {
+            Integer o1 = s1.getDisplayOrder() != null ? s1.getDisplayOrder() : Integer.MAX_VALUE;
+            Integer o2 = s2.getDisplayOrder() != null ? s2.getDisplayOrder() : Integer.MAX_VALUE;
+            return o1.compareTo(o2);
+        });
+
         return magazine;
     }
 
     // ⭐ Phase 2: 키워드 검색
-    public org.springframework.data.domain.Page<Magazine> searchByKeyword(
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
             String keyword, org.springframework.data.domain.Pageable pageable) {
-        return magazineRepository.searchByKeyword(keyword, pageable);
+        return magazineRepository.searchByKeyword(keyword, pageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
-    // ⭐ Phase 2: 태그 검색 (Magazine에 tags 필드 추가 후 사용)
-    // public org.springframework.data.domain.Page<Magazine> searchByTags(
-    // java.util.List<String> tags, org.springframework.data.domain.Pageable
-    // pageable) {
-    // return magazineRepository.findByTagsIn(tags, pageable);
-    // }
-
     // ⭐ Phase 2: 내 매거진 조회
-    // ⭐ Phase 2: 내 매거진 조회
-    public org.springframework.data.domain.Page<Magazine> getMyMagazinesPage(
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getMyMagazinesPage(
             String username, org.springframework.data.domain.Pageable pageable) {
-        return magazineRepository.findByUserUsername(username, pageable);
+        return magazineRepository.findByUserUsername(username, pageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
     // ⭐ Phase 4: 개인화 피드
-    public org.springframework.data.domain.Page<Magazine> getPersonalizedFeed(String username,
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeed(
+            String username,
             org.springframework.data.domain.Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
@@ -304,6 +339,7 @@ public class MagazineService {
         }
 
         // 3. 쿼리 실행 (팔로잉 OR 관심사 키워드)
-        return magazineRepository.findPersonalizedFeed(followings, keyword, pageable);
+        return magazineRepository.findPersonalizedFeed(followings, keyword, pageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 }

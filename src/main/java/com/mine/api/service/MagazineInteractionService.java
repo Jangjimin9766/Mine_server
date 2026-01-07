@@ -91,6 +91,14 @@ public class MagazineInteractionService {
         response.setMessage(aiMessage != null ? aiMessage : "매거진이 업데이트되었습니다.");
         response.setActionType(actionType);
         response.setMagazineId(magazineId);
+
+        // [UX 최적화] 클라이언트가 바로 사용할 수 있도록 섹션 정렬
+        magazine.getSections().sort((s1, s2) -> {
+            Integer o1 = s1.getDisplayOrder() != null ? s1.getDisplayOrder() : Integer.MAX_VALUE;
+            Integer o2 = s2.getDisplayOrder() != null ? s2.getDisplayOrder() : Integer.MAX_VALUE;
+            return o1.compareTo(o2);
+        });
+
         response.setMagazine(magazine); // [NEW] 업데이트된 매거진 설정
         return response;
     }
@@ -169,6 +177,7 @@ public class MagazineInteractionService {
                         .layoutHint((String) updatedMagazine.get("layout_hint"))
                         .layoutType((String) updatedMagazine.get("layout_type"))
                         .caption((String) updatedMagazine.get("caption"))
+                        .displayOrder(magazine.getSections().size()) // 맨 마지막에 추가
                         .build();
                 section.setMagazine(magazine);
                 magazine.getSections().add(section);
@@ -181,6 +190,11 @@ public class MagazineInteractionService {
 
             if (sectionIndex != null && sectionIndex >= 0 && sectionIndex < magazine.getSections().size()) {
                 magazine.getSections().remove(sectionIndex.intValue());
+
+                // 삭제 후 순서 재정렬
+                for (int i = 0; i < magazine.getSections().size(); i++) {
+                    magazine.getSections().get(i).setDisplayOrder(i);
+                }
             }
         }
 
@@ -200,6 +214,7 @@ public class MagazineInteractionService {
                             .layoutHint((String) sec.get("layout_hint"))
                             .layoutType((String) sec.get("layout_type"))
                             .caption((String) sec.get("caption"))
+                            .displayOrder(magazine.getSections().size()) // 순서대로 추가
                             .build();
                     section.setMagazine(magazine);
                     magazine.getSections().add(section);

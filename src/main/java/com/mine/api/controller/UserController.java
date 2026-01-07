@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "사용자 (User)", description = "사용자 팔로우 및 프로필 관리 API")
+@Tag(name = "5. 사용자 (User) 👤", description = "사용자 프로필 조회/수정 및 팔로우 관리 API")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "관심사 (Interest)", description = "사용자 관심사 선택 및 조회 API")
+@Tag(name = "6. 관심사 (Interest) ❤️", description = "사용자 관심사 선택(초기설정) 및 조회 API")
 @RestController
 @RequestMapping("/api/interests")
 @RequiredArgsConstructor

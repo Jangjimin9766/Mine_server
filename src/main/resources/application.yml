@@ -1,6 +1,10 @@
 spring:
   config:
     import: "optional:file:src/main/resources/application-secret.yml"
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
   datasource:
     url: jdbc:mysql://localhost:3306/mine_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
@@ -9,6 +13,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -39,3 +44,9 @@ python:
     url: ${PYTHON_API_URL:http://localhost:8000/api/magazine/create}
     key: "${PYTHON_API_KEY:mine-secret-key-1234}"
     moodboard-url: ${PYTHON_MOODBOARD_URL:http://localhost:8000/api/magazine/moodboard}
+
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true

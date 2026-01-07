@@ -15,13 +15,13 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/magazines/{magazineId}/sections")
 @RequiredArgsConstructor
-@Tag(name = "Section", description = "섹션 관리 API")
+@Tag(name = "2. 섹션 편집 (수동/개별AI) 🧩", description = "각각의 문단(카드)을 수정하거나 순서를 바꿉니다. 개별 섹션의 내용을 AI로 고칠 수도 있습니다.")
 public class SectionController {
 
     private final SectionService sectionService;
 
     @GetMapping("/{sectionId}")
-    @Operation(summary = "섹션 상세 조회", description = "매거진 내 특정 섹션의 상세 정보를 조회합니다.")
+    @Operation(summary = "👁️ 섹션 상세 보기", description = "하나의 카드 내용을 상세히 봅니다.")
     public ResponseEntity<SectionDto.Response> getSection(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,
@@ -31,7 +31,7 @@ public class SectionController {
     }
 
     @DeleteMapping("/{sectionId}")
-    @Operation(summary = "섹션 삭제", description = "매거진 내 특정 섹션을 삭제합니다. AI 프롬프트 없이 직접 삭제됩니다.")
+    @Operation(summary = "🩹 섹션 삭제 (즉시)", description = "AI에게 말하지 않고 바로 지웁니다. 되돌릴 수 없습니다.")
     public ResponseEntity<Void> deleteSection(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,
@@ -41,7 +41,7 @@ public class SectionController {
     }
 
     @PatchMapping("/reorder")
-    @Operation(summary = "섹션 순서 변경", description = "드래그 앤 드롭으로 섹션 순서를 변경합니다.")
+    @Operation(summary = "🔢 섹션 순서 바꾸기 (드래그앤드롭)", description = "드래그 앤 드롭으로 카드의 위치를 바꿉니다.")
     public ResponseEntity<Void> reorderSections(
             @PathVariable Long magazineId,
             @RequestBody @Valid SectionDto.ReorderRequest request,
@@ -51,7 +51,7 @@ public class SectionController {
     }
 
     @PostMapping("/{sectionId}/interact")
-    @Operation(summary = "섹션 AI 상호작용", description = "AI 프롬프트로 섹션 본문을 수정합니다.")
+    @Operation(summary = "🤖 섹션 내용 다듬기 (AI)", description = "이 카드(본문)만 좀 더 부드럽게 고쳐줘~ 할 때 씁니다.<br>예: '더 감성적으로 바꿔줘', '길게 늘려줘'")
     public ResponseEntity<SectionDto.InteractResponse> interact(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,

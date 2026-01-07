@@ -45,13 +45,14 @@ public class MagazineSection {
 
     @Builder
     public MagazineSection(String heading, String content, String imageUrl, String layoutHint,
-            String layoutType, String caption) {
+            String layoutType, String caption, Integer displayOrder) {
         this.heading = heading;
         this.content = content;
         this.imageUrl = imageUrl;
         this.layoutHint = layoutHint;
         this.layoutType = layoutType;
         this.caption = caption;
+        this.displayOrder = displayOrder;
     }
 
     public void setMagazine(Magazine magazine) {

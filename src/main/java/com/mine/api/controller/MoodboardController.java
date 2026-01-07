@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Moodboard", description = "무드보드(AI 배경화면) 관련 API")
+@Tag(name = "4. 무드보드 (Moodboard) 🎨", description = "무드보드(AI 배경화면) 생성 및 관리 API")
 @RestController
 @RequestMapping("/api/moodboards")
 @RequiredArgsConstructor

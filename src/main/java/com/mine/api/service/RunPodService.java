@@ -114,4 +114,27 @@ public class RunPodService {
 
         throw new RuntimeException("RunPod job timed out after " + (MAX_RETRIES * RETRY_DELAY_MS / 1000) + " seconds");
     }
+
+    /**
+     * Local Python Server (FastAPI) Sync Request
+     */
+    public Map<String, Object> sendSyncRequest(String url, Map<String, Object> requestBody) {
+        log.info("Sending Sync request to: {}", url);
+
+        // Increase buffer size for large responses (Base64 images)
+        ExchangeStrategies strategies = ExchangeStrategies.builder()
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
+                .build();
+
+        return webClientBuilder.exchangeStrategies(strategies).build()
+                .post()
+                .uri(url)
+                .header("x-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
+                })
+                .block(Duration.ofMinutes(5));
+    }
 }

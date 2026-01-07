@@ -21,10 +21,22 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         // ⭐ Phase 2: 공유 토큰으로 조회
         java.util.Optional<Magazine> findByShareToken(String shareToken);
 
-        // ⭐ Phase 2: 키워드 검색 (제목 + 소개)
-        @org.springframework.data.jpa.repository.Query("SELECT m FROM Magazine m WHERE " +
-                        "(m.title LIKE %:keyword% OR m.introduction LIKE %:keyword%) " +
-                        "AND m.isPublic = true")
+        // ⭐ Phase 2: 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
+                        "LEFT JOIN m.sections s " +
+                        "WHERE (m.title LIKE %:keyword% " +
+                        "OR m.introduction LIKE %:keyword% " +
+                        "OR m.tags LIKE %:keyword% " +
+                        "OR s.heading LIKE %:keyword% " +
+                        "OR s.content LIKE %:keyword%) " +
+                        "AND m.isPublic = true", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m " +
+                                        "LEFT JOIN m.sections s " +
+                                        "WHERE (m.title LIKE %:keyword% " +
+                                        "OR m.introduction LIKE %:keyword% " +
+                                        "OR m.tags LIKE %:keyword% " +
+                                        "OR s.heading LIKE %:keyword% " +
+                                        "OR s.content LIKE %:keyword%) " +
+                                        "AND m.isPublic = true")
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         org.springframework.data.domain.Pageable pageable);
