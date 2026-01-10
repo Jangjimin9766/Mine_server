@@ -59,6 +59,36 @@ public class SectionService {
     }
 
     /**
+     * 섹션 직접 수정 (AI 없이)
+     */
+    @Transactional
+    public SectionDto.Response updateSection(Long magazineId, Long sectionId,
+            SectionDto.UpdateRequest request, String username) {
+        Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
+        MagazineSection section = getSectionFromMagazine(magazine, sectionId);
+
+        // 요청에 포함된 필드만 업데이트
+        if (request.getHeading() != null) {
+            section.setHeading(request.getHeading());
+        }
+        if (request.getContent() != null) {
+            section.setContent(request.getContent());
+        }
+        if (request.getImageUrl() != null) {
+            section.setImageUrl(request.getImageUrl());
+        }
+        if (request.getCaption() != null) {
+            section.setCaption(request.getCaption());
+        }
+
+        sectionRepository.save(section);
+        log.info("Section updated: magazineId={}, sectionId={}, username={}",
+                magazineId, sectionId, username);
+
+        return toResponse(section);
+    }
+
+    /**
      * 섹션 순서 변경 (드래그 앤 드롭)
      */
     @Transactional

@@ -78,4 +78,20 @@ public class MagazineSection {
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
     }
+
+    public void setHeading(String heading) {
+        this.heading = heading;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
+    }
 }

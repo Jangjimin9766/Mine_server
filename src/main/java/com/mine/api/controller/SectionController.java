@@ -40,6 +40,17 @@ public class SectionController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{sectionId}")
+    @Operation(summary = "✏️ 섹션 직접 수정", description = "AI 없이 직접 본문/제목/이미지를 수정합니다. 에디터에서 수정 후 저장할 때 사용합니다.")
+    public ResponseEntity<SectionDto.Response> updateSection(
+            @PathVariable Long magazineId,
+            @PathVariable Long sectionId,
+            @RequestBody SectionDto.UpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                sectionService.updateSection(magazineId, sectionId, request, userDetails.getUsername()));
+    }
+
     @PatchMapping("/reorder")
     @Operation(summary = "🔢 섹션 순서 바꾸기 (드래그앤드롭)", description = "드래그 앤 드롭으로 카드의 위치를 바꿉니다.")
     public ResponseEntity<Void> reorderSections(
