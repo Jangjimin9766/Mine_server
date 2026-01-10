@@ -36,8 +36,9 @@ public class MagazineService {
 
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String username) {
-        com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        com.mine.api.domain.User user = userRepository.findByEmail(username)
+                .or(() -> userRepository.findByUsername(username))
+                .orElseThrow(() -> new IllegalArgumentException("User not found for identifier: " + username));
 
         // 1. 태그 리스트를 JSON 문자열로 변환
         String tagsJson = null;

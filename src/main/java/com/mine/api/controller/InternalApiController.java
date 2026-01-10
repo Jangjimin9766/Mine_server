@@ -31,6 +31,6 @@ public class InternalApiController {
         }
 
         Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
-        return ResponseEntity.ok(magazineId);
+        return ResponseEntity.ok(java.util.Map.of("magazineId", magazineId));
     }
 }
