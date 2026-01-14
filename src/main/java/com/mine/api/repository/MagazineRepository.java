@@ -25,19 +25,19 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         // 본인 매거진은 비공개여도 검색됨
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN m.sections s " +
-                        "WHERE (m.title LIKE %:keyword% " +
-                        "OR m.introduction LIKE %:keyword% " +
-                        "OR m.tags LIKE %:keyword% " +
-                        "OR s.heading LIKE %:keyword% " +
-                        "OR s.content LIKE %:keyword%) " +
+                        "WHERE (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+                        "OR s.content LIKE CONCAT('%', :keyword, '%')) " +
                         "AND (m.isPublic = true OR m.user.username = :username)", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m "
                                         +
                                         "LEFT JOIN m.sections s " +
-                                        "WHERE (m.title LIKE %:keyword% " +
-                                        "OR m.introduction LIKE %:keyword% " +
-                                        "OR m.tags LIKE %:keyword% " +
-                                        "OR s.heading LIKE %:keyword% " +
-                                        "OR s.content LIKE %:keyword%) " +
+                                        "WHERE (m.title LIKE CONCAT('%', :keyword, '%') " +
+                                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+                                        "OR s.content LIKE CONCAT('%', :keyword, '%')) " +
                                         "AND (m.isPublic = true OR m.user.username = :username)")
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,

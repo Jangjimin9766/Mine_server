@@ -36,8 +36,13 @@ public class MagazineService {
 
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String username) {
-        com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        /*
+         * com.mine.api.domain.User user = userRepository.findByUsername(username)
+         * .orElseThrow(() -> new IllegalArgumentException("User not found"));
+         */
+        com.mine.api.domain.User user = userRepository.findByEmail(username)
+                .or(() -> userRepository.findByUsername(username))
+                .orElseThrow(() -> new IllegalArgumentException("User not found for identifier: " + username));
 
         // 1. 태그 리스트를 JSON 문자열로 변환
         String tagsJson = null;
@@ -132,31 +137,37 @@ public class MagazineService {
         java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
         data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
-        data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
+        data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, user.getEmail()); // username 대신 실제 email 전달
         data.put("user_interests", userInterests);
 
         java.util.Map<String, Object> responseBody;
 
-        // 3. 호출 방식 분기 (Local vs RunPod)
-        if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
-            // Local FastAPI 호출 (직접 전송, 동기식)
-            // { "topic": ..., "user_mood": ..., "user_email": ... } 형태로 전송
-            responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
-        } else {
-            // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
-            // { "input": { "action": "create_magazine", "data": { ... } } } 형태로 전송
-            java.util.Map<String, Object> inputData = new java.util.HashMap<>();
-            inputData.put("action", "create_magazine");
-            inputData.put("data", data);
+        try {
+            // 3. 호출 방식 분기 (Local vs RunPod)
+            if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+                // Local FastAPI 호출 (직접 전송, 동기식)
+                responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+            } else {
+                // RunPod Serverless 호출
+                java.util.Map<String, Object> inputData = new java.util.HashMap<>();
+                inputData.put("action", "create_magazine");
+                inputData.put("data", data);
 
-            // 응답은 { "status": "COMPLETED", "output": { ... } } 형태
-            responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+                responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+            }
+        } catch (Exception e) {
+            log.error("Error communicating with AI server: {}", e.getMessage());
+            throw new RuntimeException("AI 서버와의 통신에 실패했습니다: " + e.getMessage());
         }
 
         // 4. 결과 파싱 (RunPod는 output 안에, 로컬은 body 자체가 결과일 수 있음)
         Object outputData = responseBody;
-        if (responseBody.containsKey("output")) {
+        if (responseBody != null && responseBody.containsKey("output")) {
             outputData = responseBody.get("output");
+        }
+
+        if (outputData == null) {
+            throw new RuntimeException("AI 서버로부터 빈 응답을 받았습니다.");
         }
 
         // output을 MagazineCreateRequest로 변환
@@ -165,11 +176,11 @@ public class MagazineService {
         MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
 
         if (generatedData == null) {
-            throw new RuntimeException("Failed to generate magazine from AI server");
+            throw new RuntimeException("AI 서버 응답을 데이터 모델로 변환하는 데 실패했습니다.");
         }
 
-        // 3. 받은 데이터로 저장 로직 수행
-        return saveMagazine(generatedData, username);
+        // 3. 받은 데이터로 저장 로직 수행 (이메일 전달)
+        return saveMagazine(generatedData, user.getEmail());
     }
 
     // ⭐ Phase 1: 매거진 삭제
