@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender for local development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Better Stack (Logtail) appender -->
+    <appender name="LOGTAIL" class="com.logtail.logback.LogtailAppender">
+        <sourceToken>zca2nHNjMXaTc6dEaf4XXXjX</sourceToken>
+    </appender>
+    
+    <!-- Root logger: INFO level to both Console and Better Stack -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOGTAIL"/>
+    </root>
+    
+    <!-- Reduce noise from verbose libraries -->
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    
+    <!-- Your application logs at DEBUG level if needed -->
+    <logger name="com.mine" level="DEBUG"/>
+</configuration>
