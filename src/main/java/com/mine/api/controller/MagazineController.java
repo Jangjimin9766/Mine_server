@@ -22,6 +22,7 @@ import java.util.List;
 public class MagazineController {
 
     private final MagazineService magazineService;
+    private final com.mine.api.service.MoodboardService moodboardService;
 
     @Operation(summary = "📂 내 매거진 목록", description = "내가 만든 매거진들을 최신순으로 모아봅니다.")
     @GetMapping
@@ -220,5 +221,36 @@ public class MagazineController {
             @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
 
         return ResponseEntity.ok(magazineService.getPersonalizedFeed(userDetails.getUsername(), pageable));
+    }
+
+    // ⭐ 매거진 기반 무드보드 생성
+    @Operation(summary = "🎨 매거진 무드보드 생성", description = "매거진 정보를 기반으로 AI 무드보드를 생성합니다. 매거진 제목과 태그가 자동으로 사용됩니다.")
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/moodboards")
+    public ResponseEntity<?> createMoodboardForMagazine(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            String imageUrl = moodboardService.createMoodboardForMagazine(id, userDetails.getUsername());
+
+            com.mine.api.dto.MoodboardResponseDto response = com.mine.api.dto.MoodboardResponseDto.builder()
+                    .image_url(imageUrl)
+                    .description("Moodboard generated for magazine #" + id)
+                    .build();
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build(); // 404 Not Found
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(java.util.Map.of("error", "무드보드 생성 권한이 없습니다")); // 403 Forbidden
+
+        } catch (Exception e) {
+            log.error("Failed to create moodboard for magazine {}: {}", id, e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", "무드보드 생성 실패: " + e.getMessage())); // 500
+        }
     }
 }

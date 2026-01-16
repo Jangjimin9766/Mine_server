@@ -69,14 +69,12 @@ class MoodboardServiceTest {
         given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
 
         // Mock WebClient chain -> RunPodService Mock
+        // 로컬 URL이므로 sendSyncRequest가 호출됨
         java.util.Map<String, Object> output = new java.util.HashMap<>();
         output.put("image_url", base64Image);
         output.put("description", "A cozy test image");
 
-        java.util.Map<String, Object> runPodResponse = new java.util.HashMap<>();
-        runPodResponse.put("output", output);
-
-        given(runPodService.sendRequest(anyString(), any(java.util.Map.class))).willReturn(runPodResponse);
+        given(runPodService.sendSyncRequest(anyString(), any(java.util.Map.class))).willReturn(output);
 
         // When
         String resultUrl = moodboardService.createMoodboard(username, requestDto);

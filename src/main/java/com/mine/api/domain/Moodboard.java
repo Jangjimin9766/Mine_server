@@ -27,14 +27,18 @@ public class Moodboard {
     @Column(columnDefinition = "TEXT")
     private String prompt;
 
+    @Column(name = "magazine_id")
+    private Long magazineId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    public Moodboard(Long userId, String imageUrl, String prompt) {
+    public Moodboard(Long userId, String imageUrl, String prompt, Long magazineId) {
         this.userId = userId;
         this.imageUrl = imageUrl;
         this.prompt = prompt;
+        this.magazineId = magazineId;
         this.createdAt = LocalDateTime.now();
     }
 }

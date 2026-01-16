@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MoodboardRepository extends JpaRepository<Moodboard, Long> {
     List<Moodboard> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<Moodboard> findByMagazineIdOrderByCreatedAtDesc(Long magazineId);
 }

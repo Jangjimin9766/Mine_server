@@ -117,10 +117,8 @@ class MagazineServiceTest {
                 outputMap.put("introduction", "Intro");
                 outputMap.put("cover_image_url", "http://image.url");
 
-                Map<String, Object> runPodResponse = new HashMap<>();
-                runPodResponse.put("output", outputMap);
-
-                when(runPodService.sendRequest(anyString(), any(Map.class))).thenReturn(runPodResponse);
+                // 로컬 URL이므로 sendSyncRequest가 호출됨
+                when(runPodService.sendSyncRequest(anyString(), any(Map.class))).thenReturn(outputMap);
                 when(magazineRepository.save(any(Magazine.class))).thenReturn(savedMagazine);
 
                 // When
@@ -131,7 +129,7 @@ class MagazineServiceTest {
                 assertEquals(1L, magazineId);
 
                 verify(userRepository, times(2)).findByUsername(username);
-                verify(runPodService).sendRequest(anyString(), any(Map.class));
+                verify(runPodService).sendSyncRequest(anyString(), any(Map.class));
                 verify(magazineRepository).save(any(Magazine.class));
         }
 

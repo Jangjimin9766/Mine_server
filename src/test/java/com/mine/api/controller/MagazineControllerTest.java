@@ -40,6 +40,9 @@ class MagazineControllerTest {
         @MockBean
         private MagazineService magazineService;
 
+        @MockBean
+        private com.mine.api.service.MoodboardService moodboardService;
+
         @Autowired
         private ObjectMapper objectMapper;
 

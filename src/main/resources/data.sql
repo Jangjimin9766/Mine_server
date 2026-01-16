@@ -68,7 +68,7 @@ INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크')
 -- =====================================================
 -- 비밀번호: password (BCrypt 해시)
 -- 공용 계정: shared_user (팀 공용)
--- 개인 계정: antigravity_user (인재씨 테스트용)
+-- 개인 계정: antigravity_user (테스트용)
 -- =====================================================
 
 INSERT INTO users (username, password, email, nickname, created_at) 
