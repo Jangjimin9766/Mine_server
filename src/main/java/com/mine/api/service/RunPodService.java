@@ -135,6 +135,6 @@ public class RunPodService {
                 .retrieve()
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
                 })
-                .block(Duration.ofMinutes(5));
+                .block(Duration.ofMinutes(15));
     }
 }
