@@ -122,17 +122,12 @@ public class MoodboardService {
             magazineTags = java.util.Arrays.asList(magazine.getTags().split(","));
         }
 
-        // 5. User 관심사 조회
-        java.util.List<String> userInterests = userInterestRepository.findByUser(user).stream()
-                .map(ui -> ui.getInterest().getCode())
-                .collect(java.util.stream.Collectors.toList());
-
-        // 6. Python 서버 요청 준비
+        // 5. Python 서버 요청 준비 (user_interests는 빈 리스트로 - 매거진 제목에 집중)
         java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put("action", "generate_moodboard");
         data.put("topic", topic);
         data.put("user_mood", ""); // 매거진 기반이므로 기본값
-        data.put("user_interests", userInterests);
+        data.put("user_interests", java.util.List.of()); // 빈 리스트 - 착오 방지
         data.put("magazine_tags", magazineTags);
         data.put("magazine_titles", java.util.List.of(topic));
 
