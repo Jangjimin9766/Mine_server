@@ -59,10 +59,12 @@
 - ✅ **순서 변경**: 드래그 앤 드롭 방식 섹션 재정렬
 - ✅ **AI 상호작용**: 개별 섹션에 대한 AI 대화형 편집 (톤 변경, 내용 추가 등)
 
-### 4. 무드보드 생성 (`/api/moodboards`)
-- ✅ **AI 배경화면 생성**: 사용자 취향 기반 Stable Diffusion 이미지 생성
+### 4. 무드보드 생성 (`/api/moodboards`, `/api/magazines/{id}/moodboards`)
+- ✅ **매거진 기반 무드보드**: 매거진 제목/태그로 자동 생성 (magazineId만 필요)
+- ✅ **AI 배경화면 생성**: Stable Diffusion 이미지 생성
 - ✅ **S3 저장**: AWS S3에 안전하게 이미지 저장
-- ✅ **Re-roll 기능**: 마음에 들지 않으면 새로운 이미지 생성 가능
+- ✅ **배경 자동 업데이트**: 무드보드 재생성 시 매거진 배경 자동 변경
+- ✅ **히스토리 보관**: 이전 무드보드 기록 유지
 
 ### 5. 소셜 기능 (`/api/users`)
 - ✅ 팔로우/언팔로우
@@ -264,7 +266,7 @@ http://localhost:8080/swagger-ui.html
 | PATCH | `/api/magazines/{id}/visibility` | 공개/비공개 설정 | ✅ |
 | PATCH | `/api/magazines/{id}/cover` | 커버 이미지 변경 | ✅ |
 | GET | `/api/magazines/share/{shareToken}` | 공유 링크로 조회 | ❌ |
-| GET | `/api/magazines/search` | 키워드 검색 | ✅ |
+| GET | `/api/magazines/search` | 키워드 검색 | ❌ |
 | POST | `/api/magazines/{id}/likes` | 좋아요 토글 | ✅ |
 | GET | `/api/magazines/liked` | 좋아요한 매거진 목록 | ✅ |
 | GET | `/api/magazines/feed` | 개인화 피드 | ✅ |
@@ -284,7 +286,8 @@ http://localhost:8080/swagger-ui.html
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/moodboards` | 무드보드 생성 | ✅ |
+| POST | `/api/moodboards` | 무드보드 생성 (standalone) | ✅ |
+| POST | `/api/magazines/{id}/moodboards` | 매거진 기반 무드보드 생성 ⭐ NEW | ✅ |
 
 ### 사용자 API
 
@@ -370,6 +373,7 @@ magazine_sections
 moodboards
 ├── id (PK)
 ├── user_id (FK → users)
+├── magazine_id (FK → magazines) -- [NEW] 매거진 연동
 ├── image_url (S3 URL)
 ├── prompt (TEXT)
 └── created_at
@@ -443,6 +447,7 @@ erDiagram
     MOODBOARDS {
         bigint id PK
         bigint user_id FK
+        bigint magazine_id FK
         string image_url
         text prompt
         timestamp created_at
@@ -488,7 +493,7 @@ erDiagram
 open build/reports/tests/test/index.html
 ```
 
-### 테스트 커버리지
+### 테스트 커버리지 (30개 테스트 통과)
 
 - ✅ Controller Layer Tests (7개)
   - AuthControllerTest
@@ -504,6 +509,9 @@ open build/reports/tests/test/index.html
   - MagazineServiceTest
   - MoodboardServiceTest
   - S3ConnectionTest
+
+### 모니터링
+- ✅ **Better Stack (Logtail)**: 팀 공용 로그 모니터링 시스템 연동
 
 ## 📦 배포
 
