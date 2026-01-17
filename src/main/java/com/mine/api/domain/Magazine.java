@@ -99,6 +99,15 @@ public class Magazine {
         this.coverImageUrl = coverImageUrl;
     }
 
+    // ⭐ 무드보드 이미지/설명 변경
+    public void setMoodboardImageUrl(String moodboardImageUrl) {
+        this.moodboardImageUrl = moodboardImageUrl;
+    }
+
+    public void setMoodboardDescription(String moodboardDescription) {
+        this.moodboardDescription = moodboardDescription;
+    }
+
     // ⭐ Phase 1: 소유자 확인 메서드
     public boolean isOwnedBy(User user) {
         return this.user.getId().equals(user.getId());
