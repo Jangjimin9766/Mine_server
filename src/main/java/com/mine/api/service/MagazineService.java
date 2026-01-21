@@ -27,6 +27,7 @@ public class MagazineService {
     private final FollowRepository followRepository;
     private final RunPodService runPodService;
     private final MoodboardService moodboardService;
+    private final com.mine.api.repository.MoodboardRepository moodboardRepository;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -93,6 +94,18 @@ public class MagazineService {
 
         // 5. 저장 (CascadeType.ALL로 인해 Section도 함께 저장됨)
         Magazine savedMagazine = magazineRepository.save(magazine);
+
+        // 6. 무드보드가 있으면 moodboards 테이블에도 저장 (히스토리 용)
+        if (moodboardImageUrl != null && moodboardDescription != null) {
+            com.mine.api.domain.Moodboard moodboard = com.mine.api.domain.Moodboard.builder()
+                    .userId(user.getId())
+                    .magazineId(savedMagazine.getId())
+                    .imageUrl(moodboardImageUrl)
+                    .prompt(moodboardDescription)
+                    .build();
+            moodboardRepository.save(moodboard);
+        }
+
         return savedMagazine.getId();
     }
 
