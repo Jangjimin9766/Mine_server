@@ -140,7 +140,7 @@ public class MagazineService {
         // 3. 호출 방식 분기 (Local vs RunPod)
         if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
             // Local FastAPI 호출 (직접 전송, 동기식)
-            // { "topic": ..., "user_mood": ..., "user_email": ... } 형태로 전송
+            data.put("action", "create_magazine"); // 로컬에서도 action 필수
             responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
         } else {
             // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
