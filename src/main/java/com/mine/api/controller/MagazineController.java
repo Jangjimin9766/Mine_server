@@ -253,4 +253,35 @@ public class MagazineController {
                     .body(java.util.Map.of("error", "무드보드 생성 실패: " + e.getMessage())); // 500
         }
     }
+
+    // ⭐ 무드보드 히스토리 조회
+    @Operation(summary = "📜 무드보드 히스토리", description = "매거진에서 생성한 무드보드 목록을 최신순으로 조회합니다.")
+    @GetMapping("/{id}/moodboards/history")
+    public ResponseEntity<?> getMoodboardHistory(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            java.util.List<com.mine.api.domain.Moodboard> history = moodboardService.getMoodboardHistory(id,
+                    userDetails.getUsername());
+
+            // 간단한 응답 형태로 변환 (id, imageUrl, createdAt)
+            java.util.List<java.util.Map<String, Object>> response = history.stream()
+                    .map(m -> java.util.Map.<String, Object>of(
+                            "id", m.getId(),
+                            "imageUrl", m.getImageUrl(),
+                            "description", m.getPrompt() != null ? m.getPrompt() : "",
+                            "createdAt", m.getCreatedAt().toString()))
+                    .collect(java.util.stream.Collectors.toList());
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(java.util.Map.of("error", "무드보드 히스토리 조회 권한이 없습니다"));
+        }
+    }
 }

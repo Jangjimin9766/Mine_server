@@ -60,11 +60,14 @@ public class MagazineService {
         }
 
         // 3. Magazine 엔티티 생성
+        // 무드보드가 있으면 커버 이미지도 무드보드로 설정
+        String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
+
         Magazine magazine = Magazine.builder()
                 .title(request.getTitle())
                 .subtitle(request.getSubtitle())
                 .introduction(request.getIntroduction())
-                .coverImageUrl(request.getCoverImageUrl())
+                .coverImageUrl(coverImageUrl)
                 .tags(tagsJson)
                 .moodboardImageUrl(moodboardImageUrl)
                 .moodboardDescription(moodboardDescription)

@@ -217,4 +217,22 @@ public class MoodboardService {
 
         return "https://" + bucketName + ".s3.ap-southeast-2.amazonaws.com/" + s3FileName;
     }
+
+    /**
+     * 매거진의 무드보드 히스토리 조회
+     */
+    public java.util.List<Moodboard> getMoodboardHistory(Long magazineId, String username) {
+        // 매거진 조회 및 소유자 확인
+        com.mine.api.domain.Magazine magazine = magazineRepository.findById(magazineId)
+                .orElseThrow(() -> new IllegalArgumentException("Magazine not found: " + magazineId));
+
+        com.mine.api.domain.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!magazine.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("무드보드 히스토리 조회 권한이 없습니다");
+        }
+
+        return moodboardRepository.findByMagazineIdOrderByCreatedAtDesc(magazineId);
+    }
 }
