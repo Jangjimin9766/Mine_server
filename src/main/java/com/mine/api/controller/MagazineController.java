@@ -146,11 +146,11 @@ public class MagazineController {
     }
 
     // ⭐ 커버 이미지 변경
-    @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 섹션 이미지 URL을 그대로 사용할 수 있습니다.")
+    @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 무드보드 이미지 URL을 사용하세요.")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/cover")
     public ResponseEntity<?> updateCover(
             @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> request,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "새 커버 이미지 URL", required = true, content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(example = "{\"coverImageUrl\": \"https://your-bucket.s3.amazonaws.com/moodboard.png\"}"))) @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         try {
