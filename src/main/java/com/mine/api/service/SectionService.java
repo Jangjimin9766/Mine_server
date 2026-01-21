@@ -165,7 +165,10 @@ public class SectionService {
             sectionRepository.save(section);
         }
 
-        String aiMessage = updatedSection != null ? (String) updatedSection.get("heading") : "섹션이 업데이트되었습니다.";
+        String aiMessage = "섹션이 업데이트되었습니다.";
+        if (updatedSection != null && updatedSection.get("heading") != null) {
+            aiMessage = (String) updatedSection.get("heading");
+        }
 
         return SectionDto.InteractResponse.builder()
                 .message(aiMessage)

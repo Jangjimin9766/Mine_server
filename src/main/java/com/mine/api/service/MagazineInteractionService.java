@@ -64,6 +64,10 @@ public class MagazineInteractionService {
             inputData.put("action", "edit_magazine");
             inputData.put("data", data);
             responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+
+            if (responseBody == null || !responseBody.containsKey("output")) {
+                throw new RuntimeException("Failed to get response from AI server: no output field");
+            }
             @SuppressWarnings("unchecked")
             Map<String, Object> outputTemp = (Map<String, Object>) responseBody.get("output");
             pythonResponse = outputTemp;
@@ -81,7 +85,10 @@ public class MagazineInteractionService {
         // updated_magazine에서 메시지 추출
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedMagazine = (Map<String, Object>) pythonResponse.get("updated_magazine");
-        String aiMessage = updatedMagazine != null ? (String) updatedMagazine.get("heading") : "매거진이 업데이트되었습니다.";
+        String aiMessage = "매거진이 업데이트되었습니다.";
+        if (updatedMagazine != null && updatedMagazine.get("heading") != null) {
+            aiMessage = (String) updatedMagazine.get("heading");
+        }
 
         // 3. 응답에 따라 매거진 업데이트 (updated_magazine 전달)
         handlePythonResponse(magazine, pythonResponse);

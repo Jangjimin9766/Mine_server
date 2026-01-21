@@ -28,19 +28,14 @@ public class RunPodService {
      * RunPod Serverless Async Request (POST /run -> Poll /status/{id})
      */
     public Map<String, Object> sendRequest(String url, Map<String, Object> inputData) {
-        // 1. Convert /runsync URL to /run
+        // 1. Convert /runsync URL to /run (if applicable)
         String runUrl = url.replace("/runsync", "/run");
-        if (!runUrl.endsWith("/run")) {
-            // If the URL was just the base ID, append /run
+        if (!runUrl.contains("/run")) {
+            // If the URL doesn't contain /run, append it
             if (!runUrl.endsWith("/"))
                 runUrl += "/";
             runUrl += "run";
         }
-        // Correction: if url was valid /runsync, replacement is enough.
-        // If it was just base url, we might need to handle it.
-        // Assuming current config is .../runsync.
-        // Resetting logic to simple replacement for robustness with current env.
-        runUrl = url.replace("/runsync", "/run");
 
         // 2. Prepare Request
         Map<String, Object> requestBody = Map.of("input", inputData);

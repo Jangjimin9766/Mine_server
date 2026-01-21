@@ -5,6 +5,7 @@ import com.mine.api.dto.MoodboardRequestDto;
 import com.mine.api.repository.MoodboardRepository;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Base64;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MoodboardService {
@@ -39,9 +41,8 @@ public class MoodboardService {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 1. 요청 데이터 준비
+        // 1. 요청 데이터 준비 (로컬용: action 포함, RunPod용: data에는 제외)
         java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("action", "generate_moodboard");
         data.put("topic", requestDto.getTopic());
         data.put("user_mood", requestDto.getUser_mood());
         data.put("user_interests", requestDto.getUser_interests());
@@ -53,7 +54,8 @@ public class MoodboardService {
 
         // 2. 로컬 vs RunPod 분기
         if (moodboardApiUrl.contains("localhost") || moodboardApiUrl.contains("127.0.0.1")) {
-            // 로컬: sendSyncRequest 사용 (플랫 JSON)
+            // 로컬: sendSyncRequest 사용 (플랫 JSON, action 포함)
+            data.put("action", "generate_moodboard");
             responseBody = runPodService.sendSyncRequest(moodboardApiUrl, data);
             output = responseBody; // 로컬은 output 래핑 없음
         } else {
@@ -73,6 +75,13 @@ public class MoodboardService {
 
         if (output == null) {
             throw new RuntimeException("Failed to generate moodboard: no output");
+        }
+
+        // Python 서버 success 필드 확인 및 로깅
+        Boolean success = (Boolean) output.get("success");
+        if (success != null && !success) {
+            String errorType = (String) output.get("error_type");
+            log.warn("Moodboard generation failed, using fallback image. error_type={}", errorType);
         }
 
         String base64Image = (String) output.get("image_url");
@@ -124,7 +133,6 @@ public class MoodboardService {
 
         // 5. Python 서버 요청 준비 (user_interests는 빈 리스트로 - 매거진 제목에 집중)
         java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("action", "generate_moodboard");
         data.put("topic", topic);
         data.put("user_mood", ""); // 매거진 기반이므로 기본값
         data.put("user_interests", java.util.List.of()); // 빈 리스트 - 착오 방지
@@ -136,6 +144,8 @@ public class MoodboardService {
 
         // 7. 로컬 vs RunPod 분기
         if (moodboardApiUrl.contains("localhost") || moodboardApiUrl.contains("127.0.0.1")) {
+            // 로컬: action 직접 포함
+            data.put("action", "generate_moodboard");
             responseBody = runPodService.sendSyncRequest(moodboardApiUrl, data);
             output = responseBody;
         } else {
@@ -154,6 +164,14 @@ public class MoodboardService {
 
         if (output == null) {
             throw new RuntimeException("Failed to generate moodboard: no output");
+        }
+
+        // Python 서버 success 필드 확인 및 로깅
+        Boolean success = (Boolean) output.get("success");
+        if (success != null && !success) {
+            String errorType = (String) output.get("error_type");
+            log.warn("Moodboard generation failed for magazine, using fallback image. magazineId={}, error_type={}",
+                    magazineId, errorType);
         }
 
         String base64Image = (String) output.get("image_url");
