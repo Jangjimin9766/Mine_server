@@ -38,27 +38,6 @@ public class MagazineDto {
         }
     }
 
-    @Schema(description = "공개/비공개 설정 요청")
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class VisibilityRequest {
-        @Schema(description = "공개 여부 (true: 공개, false: 비공개)", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull(message = "isPublic 값은 필수입니다")
-        private Boolean isPublic;
-    }
-
-    @Schema(description = "공개/비공개 설정 응답")
-    @Getter
-    @AllArgsConstructor
-    public static class VisibilityResponse {
-        @Schema(description = "공개 여부", example = "true")
-        private Boolean isPublic;
-
-        @Schema(description = "공유 URL (공개 시에만 제공)", example = "http://localhost:3000/share/abc123xyz")
-        private String shareUrl;
-    }
-
     @Schema(description = "매거진 검색 요청")
     @Getter
     @Data

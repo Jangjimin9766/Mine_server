@@ -168,6 +168,16 @@ public class UserService {
                 }
         }
 
+        /**
+         * 계정 공개/비공개 설정
+         */
+        @Transactional
+        public void setAccountVisibility(String username, boolean isPublic) {
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                user.setPublic(isPublic);
+        }
+
         private UserDto.ProfileResponse convertToProfileResponse(User user, User currentUser) {
                 boolean isFollowing = false;
                 if (currentUser != null && !currentUser.getId().equals(user.getId())) {

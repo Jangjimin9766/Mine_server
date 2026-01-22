@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/**").permitAll() // Allow internal API access
                         .requestMatchers("/api/magazines/search").permitAll() // 검색은 로그인 없이 허용
                         .requestMatchers("/api/magazines/share/**").permitAll() // 공유 링크는 로그인 없이 접근 가능
+                        .requestMatchers("/api/interests").permitAll() // 전체 관심사 목록은 로그인 없이 조회 가능
+                        .requestMatchers("/api/magazines/public/**").permitAll() // 공개 매거진 조회
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // Allow
                                                                                                               // Swagger

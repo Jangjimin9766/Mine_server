@@ -66,6 +66,21 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    // ⭐ 계정 공개/비공개 설정
+    @Operation(summary = "🔒 계정 공개 설정", description = "계정을 공개 또는 비공개로 설정합니다. 비공개 계정의 매거진은 다른 사용자에게 보이지 않습니다.")
+    @PatchMapping("/me/visibility")
+    public ResponseEntity<?> setAccountVisibility(
+            @RequestBody java.util.Map<String, Boolean> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Boolean isPublic = request.get("isPublic");
+        if (isPublic == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "isPublic 값이 필요합니다"));
+        }
+        userService.setAccountVisibility(userDetails.getUsername(), isPublic);
+        return ResponseEntity.ok(
+                java.util.Map.of("isPublic", isPublic, "message", isPublic ? "계정이 공개로 설정되었습니다" : "계정이 비공개로 설정되었습니다"));
+    }
+
     // ⭐ Phase 4: 팔로우
     @Operation(summary = "팔로우", description = "특정 사용자를 팔로우합니다.")
     @PostMapping("/{userId}/follow")

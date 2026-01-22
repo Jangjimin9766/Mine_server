@@ -121,30 +121,6 @@ public class MagazineController {
         return ResponseEntity.ok(magazineService.getLikedMagazines(userDetails.getUsername(), pageable));
     }
 
-    // ⭐ Phase 2: 공개/비공개 설정
-    @Operation(summary = "🔒/🔓 공개 여부 설정", description = "매거진을 나만 볼지, 남에게 보여줄지 설정합니다. 공개하면 공유 링크가 생성됩니다.")
-    @org.springframework.web.bind.annotation.PatchMapping("/{id}/visibility")
-    public ResponseEntity<?> setVisibility(
-            @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.mine.api.dto.MagazineDto.VisibilityRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        try {
-            com.mine.api.dto.MagazineDto.VisibilityResponse response = magazineService.setVisibility(
-                    id, request.getIsPublic(), userDetails.getUsername());
-
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("error", e.getMessage()));
-
-        } catch (SecurityException e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
-                    .body(java.util.Map.of("error", "권한이 없습니다"));
-        }
-    }
-
     // ⭐ 커버 이미지 변경
     @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 무드보드 이미지 URL을 사용하세요.")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/cover")
@@ -175,18 +151,18 @@ public class MagazineController {
         }
     }
 
-    // ⭐ Phase 2: 공유 링크로 조회 (인증 불필요)
-    @Operation(summary = "🔗 공유 받은 매거진 보기", description = "친구가 보내준 링크(공유 토큰)로 매거진을 봅니다. 로그인 안 해도 볼 수 있습니다.")
-    @GetMapping("/share/{shareToken}")
-    public ResponseEntity<?> getByShareToken(@org.springframework.web.bind.annotation.PathVariable String shareToken) {
+    // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
+    @Operation(summary = "🔍 공개 매거진 보기", description = "공개 계정의 매거진을 조회합니다. 로그인 없이도 볼 수 있습니다.")
+    @GetMapping("/public/{id}")
+    public ResponseEntity<?> getPublicMagazine(@org.springframework.web.bind.annotation.PathVariable Long id) {
         try {
-            Magazine magazine = magazineService.getByShareToken(shareToken);
+            Magazine magazine = magazineService.getPublicMagazine(id);
             return ResponseEntity.ok(magazine);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (SecurityException e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
-                    .body(java.util.Map.of("error", "비공개 매거진입니다"));
+                    .body(java.util.Map.of("error", "비공개 계정의 매거진입니다"));
         }
     }
 

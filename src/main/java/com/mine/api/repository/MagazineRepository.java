@@ -18,11 +18,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
-        // ⭐ Phase 2: 공유 토큰으로 조회
-        java.util.Optional<Magazine> findByShareToken(String shareToken);
-
-        // ⭐ Phase 2: 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
-        // 본인 매거진은 비공개여도 검색됨
+        // ⭐ 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
+        // 본인 매거진 또는 공개 계정의 매거진만 검색됨
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN m.sections s " +
                         "WHERE (m.title LIKE %:keyword% " +
@@ -30,7 +27,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR m.tags LIKE %:keyword% " +
                         "OR s.heading LIKE %:keyword% " +
                         "OR s.content LIKE %:keyword%) " +
-                        "AND (m.isPublic = true OR m.user.username = :username)", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m "
+                        "AND (m.user.isPublic = true OR m.user.username = :username)", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m "
                                         +
                                         "LEFT JOIN m.sections s " +
                                         "WHERE (m.title LIKE %:keyword% " +
@@ -38,7 +35,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                                         "OR m.tags LIKE %:keyword% " +
                                         "OR s.heading LIKE %:keyword% " +
                                         "OR s.content LIKE %:keyword%) " +
-                                        "AND (m.isPublic = true OR m.user.username = :username)")
+                                        "AND (m.user.isPublic = true OR m.user.username = :username)")
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         @org.springframework.data.repository.query.Param("username") String username,
@@ -64,13 +61,13 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         long countByUser(User user);
 
-        // ⭐ Phase 4: 개인화 피드 (팔로잉 + 관심사 키워드)
+        // ⭐ 개인화 피드 (팔로잉 + 관심사 키워드)
         @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN FETCH m.user " +
                         "LEFT JOIN FETCH m.sections " +
                         "WHERE (m.user IN :followings " +
                         "OR (m.title LIKE %:keyword% OR m.introduction LIKE %:keyword%)) " +
-                        "AND m.isPublic = true " +
+                        "AND m.user.isPublic = true " +
                         "ORDER BY m.createdAt DESC")
         org.springframework.data.domain.Page<Magazine> findPersonalizedFeed(
                         @org.springframework.data.repository.query.Param("followings") List<User> followings,

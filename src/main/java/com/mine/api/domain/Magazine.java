@@ -76,7 +76,6 @@ public class Magazine {
         this.moodboardDescription = moodboardDescription;
         this.user = user;
         this.createdAt = LocalDateTime.now();
-        this.isPublic = false; // 기본값: 비공개
     }
 
     public void addSection(MagazineSection section) {
@@ -113,42 +112,7 @@ public class Magazine {
         return this.user.getId().equals(user.getId());
     }
 
-    // ⭐ Phase 2: 공개/비공개 필드
-    @Column(nullable = false)
-    private Boolean isPublic = false;
-
-    @Column(unique = true, length = 12)
-    private String shareToken;
-
-    // ⭐ Phase 2: 공개 설정 메서드
-    public String setPublic(boolean isPublic) {
-        this.isPublic = isPublic;
-
-        if (isPublic && this.shareToken == null) {
-            this.shareToken = generateShareToken();
-        } else if (!isPublic) {
-            this.shareToken = null;
-        }
-
-        return this.shareToken;
-    }
-
     // ⭐ 낙관적 락 (동시 수정 방지)
     @jakarta.persistence.Version
     private Long version;
-
-    /**
-     * 보안 강화된 공유 토큰 생성
-     * - SecureRandom 사용으로 예측 불가능성 향상
-     * - Base64 URL-safe 인코딩
-     * - 16자 길이로 충돌 확률 최소화
-     */
-    private String generateShareToken() {
-        java.security.SecureRandom random = new java.security.SecureRandom();
-        byte[] bytes = new byte[9]; // 9 bytes * 8 = 72 bits -> Base64 12 chars
-        random.nextBytes(bytes);
-        return java.util.Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(bytes);
-    }
 }

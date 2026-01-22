@@ -229,35 +229,6 @@ public class MagazineService {
         log.info("Magazine updated successfully: magazineId={}, username={}", magazineId, username);
     }
 
-    // ⭐ Phase 2: 공개/비공개 설정
-    @Transactional
-    public com.mine.api.dto.MagazineDto.VisibilityResponse setVisibility(
-            Long magazineId, Boolean isPublic, String username) {
-
-        Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다"));
-
-        com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-
-        if (!magazine.isOwnedBy(user)) {
-            throw new SecurityException("권한이 없습니다");
-        }
-
-        String shareToken = magazine.setPublic(isPublic);
-        magazineRepository.save(magazine);
-
-        String shareUrl = null;
-        if (isPublic && shareToken != null) {
-            shareUrl = "http://localhost:3000/share/" + shareToken;
-        }
-
-        log.info("Magazine visibility updated: magazineId={}, isPublic={}, shareToken={}",
-                magazineId, isPublic, shareToken);
-
-        return new com.mine.api.dto.MagazineDto.VisibilityResponse(isPublic, shareUrl);
-    }
-
     /**
      * 좋아요 토글 (좋아요 <-> 좋아요 취소)
      */
@@ -301,13 +272,14 @@ public class MagazineService {
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
-    // ⭐ Phase 2: 공유 토큰으로 조회 (인증 불필요)
-    public Magazine getByShareToken(String shareToken) {
-        Magazine magazine = magazineRepository.findByShareToken(shareToken)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 공유 링크입니다"));
+    // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
+    public Magazine getPublicMagazine(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다"));
 
-        if (!magazine.getIsPublic()) {
-            throw new SecurityException("비공개 매거진입니다");
+        // 계정이 비공개면 접근 불가
+        if (!magazine.getUser().getIsPublic()) {
+            throw new SecurityException("비공개 계정의 매거진입니다");
         }
 
         // displayOrder 순으로 섹션 정렬
