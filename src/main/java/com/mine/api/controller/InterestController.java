@@ -26,12 +26,20 @@ public class InterestController {
         return ResponseEntity.ok(interestService.getAllInterests());
     }
 
-    @Operation(summary = "내 관심사 조회", description = "로그인한 사용자가 선택한 관심사 목록을 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<List<InterestDto.InterestResponse>> getMyInterests(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(interestService.getUserInterests(userDetails.getUsername()));
-    }
+    // 내 관심사 조회 (프로필 조회 API로 통합됨)
+    /*
+     * @Operation(summary = "내 관심사 조회", description =
+     * "로그인한 사용자가 선택한 관심사 목록을 조회합니다.")
+     * 
+     * @GetMapping("/me")
+     * public ResponseEntity<List<InterestDto.InterestResponse>> getMyInterests(
+     * 
+     * @AuthenticationPrincipal UserDetails userDetails) {
+     * return
+     * ResponseEntity.ok(interestService.getUserInterests(userDetails.getUsername())
+     * );
+     * }
+     */
 
     @Operation(summary = "내 관심사 저장", description = "관심사를 선택합니다. 최대 3개까지 선택 가능합니다.")
     @PutMapping("/me")
