@@ -120,8 +120,12 @@ public class MagazineService {
         Magazine magazine = magazineRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
 
-        if (!magazine.getUser().getUsername().equals(username)) {
-            throw new IllegalArgumentException("Unauthorized access to this magazine");
+        // 본인 매거진이 아니고 비공개 계정이면 접근 불가
+        boolean isOwner = magazine.getUser().getUsername().equals(username);
+        boolean isPublicAccount = magazine.getUser().getIsPublic();
+
+        if (!isOwner && !isPublicAccount) {
+            throw new SecurityException("비공개 계정의 매거진입니다");
         }
 
         // displayOrder 순으로 섹션 정렬
