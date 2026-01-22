@@ -24,6 +24,8 @@ public class UserDto {
         private Integer followerCount;
         private Integer followingCount;
         private Integer magazineCount;
+        private Boolean isPublic; // 계정 공개 여부
+        private java.util.List<String> interests; // 관심사 목록
 
         // 팔로우 여부 (로그인한 사용자가 이 사람을 팔로우하는지)
         private Boolean isFollowing;

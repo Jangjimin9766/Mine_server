@@ -20,7 +20,7 @@ public class MagazineInteractionController {
 
     private final MagazineInteractionService interactionService;
 
-    @Operation(summary = "🤖 섹션 추가/삭제/수정 명령", description = "AI에게 명령을 내립니다.<br>예: '여행 섹션 추가해줘', '두 번째 섹션 지워줘', '전체적으로 밝게 바꿔줘'")
+    @Operation(summary = "🤖 섹션 추가 (AI)", description = "AI에게 새 섹션 추가를 요청합니다.<br>예: '여행 섹션 추가해줘', '디저트 소개 추가해줘'")
     @PostMapping
     public ResponseEntity<InteractionDto.InteractResponse> interact(
             @PathVariable Long magazineId,

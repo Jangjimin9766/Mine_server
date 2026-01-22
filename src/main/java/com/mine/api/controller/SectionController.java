@@ -62,7 +62,7 @@ public class SectionController {
     }
 
     @PostMapping("/{sectionId}/interact")
-    @Operation(summary = "🤖 섹션 내용 다듬기 (AI)", description = "이 카드(본문)만 좀 더 부드럽게 고쳐줘~ 할 때 씁니다.<br>예: '더 감성적으로 바꿔줘', '길게 늘려줘'")
+    @Operation(summary = "🤖 섹션 내용 수정 (AI)", description = "AI에게 섹션 본문 수정을 요청합니다.<br>예: '더 감성적으로 바꿔줘', '길게 늘려줘', '내용 추가해줘'")
     public ResponseEntity<SectionDto.InteractResponse> interact(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,

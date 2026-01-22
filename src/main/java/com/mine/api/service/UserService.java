@@ -21,6 +21,7 @@ public class UserService {
         private final com.mine.api.repository.MagazineRepository magazineRepository;
         private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
         private final com.mine.api.security.JwtTokenProvider jwtTokenProvider;
+        private final com.mine.api.repository.UserInterestRepository userInterestRepository;
 
         /**
          * 팔로우 하기
@@ -184,16 +185,24 @@ public class UserService {
                         isFollowing = followRepository.existsByFollowerAndFollowing(currentUser, user);
                 }
 
+                // 관심사 목록 조회
+                java.util.List<String> interests = userInterestRepository.findByUser(user)
+                                .stream()
+                                .map(ui -> ui.getInterest().getName())
+                                .toList();
+
                 return UserDto.ProfileResponse.builder()
                                 .id(user.getId())
                                 .username(user.getUsername())
-                                .nickname(user.getNickname()) // Phase 5: User 엔티티에 필드 추가 필요
+                                .nickname(user.getNickname())
                                 .email(user.getEmail())
-                                .bio(user.getBio()) // Phase 5
-                                .profileImageUrl(user.getProfileImageUrl()) // Phase 5
-                                .followerCount(user.getFollowerCount()) // Optimized
-                                .followingCount(user.getFollowingCount()) // Optimized
-                                .magazineCount(user.getMagazineCount()) // Optimized
+                                .bio(user.getBio())
+                                .profileImageUrl(user.getProfileImageUrl())
+                                .followerCount(user.getFollowerCount())
+                                .followingCount(user.getFollowingCount())
+                                .magazineCount(user.getMagazineCount())
+                                .isPublic(user.getIsPublic())
+                                .interests(interests)
                                 .isFollowing(isFollowing)
                                 .build();
         }
