@@ -14,7 +14,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "5. 사용자 (User) 👤", description = "사용자 프로필 조회/수정 및 팔로우 관리 API")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -23,6 +22,7 @@ public class UserController {
     private final UserService userService;
 
     // ⭐ Phase 5: 내 프로필 조회
+    @Tag(name = "5. 사용자 (User) 👤", description = "사용자 프로필 조회/수정 및 팔로우 관리 API")
     @Operation(summary = "내 프로필 조회", description = "로그인한 사용자의 프로필 정보를 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<UserDto.ProfileResponse> getMyProfile(
@@ -31,6 +31,7 @@ public class UserController {
     }
 
     // ⭐ Phase 5: 프로필 수정
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 소개, 이미지)을 수정합니다.")
     @PatchMapping("/me")
     public ResponseEntity<UserDto.ProfileResponse> updateMyProfile(
@@ -40,6 +41,7 @@ public class UserController {
     }
 
     // ⭐ Phase 5: 다른 사용자 프로필 조회
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "사용자 프로필 조회", description = "다른 사용자의 프로필 정보를 조회합니다.")
     @GetMapping("/{userId}")
     public ResponseEntity<UserDto.ProfileResponse> getUserProfile(
@@ -51,6 +53,7 @@ public class UserController {
     }
 
     // ⭐ Phase 6: 회원 탈퇴
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다. (Soft Delete)")
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdrawUser(
@@ -67,6 +70,7 @@ public class UserController {
     }
 
     // ⭐ 계정 공개/비공개 설정
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "🔒 계정 공개 설정", description = "계정을 공개 또는 비공개로 설정합니다. 비공개 계정의 매거진은 다른 사용자에게 보이지 않습니다.")
     @PatchMapping("/me/visibility")
     public ResponseEntity<?> setAccountVisibility(
@@ -82,6 +86,7 @@ public class UserController {
     }
 
     // ⭐ Phase 4: 팔로우
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로우", description = "특정 사용자를 팔로우합니다.")
     @PostMapping("/{userId}/follow")
     public ResponseEntity<UserDto.FollowResponse> followUser(
@@ -92,6 +97,7 @@ public class UserController {
     }
 
     // ⭐ Phase 4: 언팔로우
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "언팔로우", description = "특정 사용자를 언팔로우합니다.")
     @DeleteMapping("/{userId}/follow")
     public ResponseEntity<UserDto.FollowResponse> unfollowUser(
@@ -102,6 +108,7 @@ public class UserController {
     }
 
     // ⭐ Phase 4: 팔로워 목록
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로워 목록", description = "특정 사용자를 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/followers")
     public ResponseEntity<Page<UserDto.ProfileResponse>> getFollowers(
@@ -114,6 +121,7 @@ public class UserController {
     }
 
     // ⭐ Phase 4: 팔로잉 목록
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로잉 목록", description = "특정 사용자가 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/following")
     public ResponseEntity<Page<UserDto.ProfileResponse>> getFollowing(

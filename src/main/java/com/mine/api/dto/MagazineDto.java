@@ -17,7 +17,7 @@ import java.util.List;
 
 public class MagazineDto {
 
-    @Schema(description = "매거진 수정 요청")
+    @Schema(name = "MagazineUpdateRequest", description = "매거진 수정 요청")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

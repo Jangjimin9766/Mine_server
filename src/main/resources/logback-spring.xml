@@ -15,7 +15,7 @@
     <!-- Root logger: INFO level to both Console and Better Stack -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="LOGTAIL"/>
+        <!-- <appender-ref ref="LOGTAIL"/> -->
     </root>
     
     <!-- Reduce noise from verbose libraries -->

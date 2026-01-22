@@ -18,6 +18,25 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
+        // ⭐ 공개된 매거진 전체 조회 (최신순)
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
+                        "LEFT JOIN FETCH m.user " +
+                        "LEFT JOIN FETCH m.sections " +
+                        "WHERE m.user.isPublic = true " +
+                        "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.isPublic = true")
+        org.springframework.data.domain.Page<Magazine> findByPublicUser(
+                        org.springframework.data.domain.Pageable pageable);
+
+        // ⭐ 특정 유저의 공개 매거진 목록 조회
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
+                        "LEFT JOIN FETCH m.user " +
+                        "LEFT JOIN FETCH m.sections " +
+                        "WHERE m.user.id = :userId AND m.user.isPublic = true " +
+                        "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.id = :userId AND m.user.isPublic = true")
+        org.springframework.data.domain.Page<Magazine> findByPublicUserId(
+                        @org.springframework.data.repository.query.Param("userId") Long userId,
+                        org.springframework.data.domain.Pageable pageable);
+
         // ⭐ 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
         // 본인 매거진 또는 공개 계정의 매거진만 검색됨
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
@@ -61,7 +80,22 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         long countByUser(User user);
 
-        // ⭐ 개인화 피드 (팔로잉 + 관심사 키워드)
+        // ⭐ 개인화 피드 (커서 기반)
+        @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
+                        "LEFT JOIN FETCH m.user " +
+                        "LEFT JOIN FETCH m.sections " +
+                        "WHERE (m.user IN :followings " +
+                        "OR (m.title LIKE %:keyword% OR m.introduction LIKE %:keyword%)) " +
+                        "AND m.user.isPublic = true " +
+                        "AND (:lastId IS NULL OR m.id < :lastId) " +
+                        "ORDER BY m.id DESC")
+        java.util.List<Magazine> findPersonalizedFeedCursor(
+                        @org.springframework.data.repository.query.Param("followings") List<User> followings,
+                        @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("lastId") Long lastId,
+                        org.springframework.data.domain.Pageable pageable);
+
+        // ⭐ 개인화 피드 (기존 Pageable - deprecated)
         @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN FETCH m.user " +
                         "LEFT JOIN FETCH m.sections " +

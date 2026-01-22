@@ -14,12 +14,12 @@ public class UserDto {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
+    @io.swagger.v3.oas.annotations.media.Schema(name = "UserProfileResponse")
     public static class ProfileResponse {
         private Long id;
         private String username;
         private String nickname;
         private String email;
-        private String bio;
         private String profileImageUrl;
         private Integer followerCount;
         private Integer followingCount;
@@ -34,16 +34,17 @@ public class UserDto {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
+    @io.swagger.v3.oas.annotations.media.Schema(name = "UserUpdateRequest", description = "프로필 수정 요청")
     public static class UpdateRequest {
         @Size(min = 2, max = 20, message = "닉네임은 2-20자 사이여야 합니다")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "닉네임", example = "감성충전")
         private String nickname;
 
-        @Size(max = 200, message = "소개는 200자 이내여야 합니다")
-        private String bio;
-
         @Email(message = "이메일 형식이 올바르지 않습니다")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "이메일", example = "user@example.com")
         private String email;
 
+        @io.swagger.v3.oas.annotations.media.Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
         private String profileImageUrl;
     }
 

@@ -79,7 +79,7 @@ public class SectionDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(description = "섹션 직접 수정 요청")
+    @Schema(name = "SectionUpdateRequest", description = "섹션 직접 수정 요청")
     public static class UpdateRequest {
         @Schema(description = "수정할 소제목", example = "체크 패턴의 매력")
         private String heading;

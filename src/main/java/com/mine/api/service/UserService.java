@@ -139,7 +139,7 @@ public class UserService {
                         }
                 }
 
-                user.updateProfile(request.getNickname(), request.getBio(), request.getProfileImageUrl());
+                user.updateProfile(request.getNickname(), request.getProfileImageUrl());
 
                 return convertToProfileResponse(user, user);
         }
@@ -196,7 +196,6 @@ public class UserService {
                                 .username(user.getUsername())
                                 .nickname(user.getNickname())
                                 .email(user.getEmail())
-                                .bio(user.getBio())
                                 .profileImageUrl(user.getProfileImageUrl())
                                 .followerCount(user.getFollowerCount())
                                 .followingCount(user.getFollowingCount())

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "1. 매거진 (Magazine) 📘", description = "매거진의 생성, 조회, 수정, 삭제(CRUD) 및 검색/피드 기능을 제공합니다.")
 @RestController
 @RequestMapping("/api/magazines")
 @RequiredArgsConstructor
@@ -24,6 +23,7 @@ public class MagazineController {
     private final MagazineService magazineService;
     private final com.mine.api.service.MoodboardService moodboardService;
 
+    @Tag(name = "1. 매거진 (Magazine) 📘", description = "매거진의 생성, 조회, 수정, 삭제(CRUD) 및 검색/피드 기능을 제공합니다.")
     @Operation(summary = "📂 내 매거진 목록", description = "내가 만든 매거진들을 최신순으로 모아봅니다.")
     @GetMapping
     public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getMyMagazines(
@@ -33,6 +33,7 @@ public class MagazineController {
         return ResponseEntity.ok(magazineService.getMyMagazinesPage(userDetails.getUsername(), pageable));
     }
 
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "📖 매거진 상세 보기", description = "매거진의 모든 내용(섹션 포함)을 상세하게 봅니다. 모든 카드가 순서대로 보여집니다.")
     @GetMapping("/{id}")
     public ResponseEntity<Magazine> getMagazineDetail(@org.springframework.web.bind.annotation.PathVariable Long id,
@@ -41,6 +42,7 @@ public class MagazineController {
         return ResponseEntity.ok(magazine);
     }
 
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "✨ AI 매거진 만들기", description = "주제와 기분을 입력하면 AI가 제목, 소개, 그리고 내용(섹션)까지 자동으로 만들어줍니다. (로컬 생성 시 1~2분 이상 소요될 수 있습니다)")
     @org.springframework.web.bind.annotation.PostMapping
     public ResponseEntity<Long> createMagazine(
@@ -51,6 +53,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 1: 매거진 삭제
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🗑️ 매거진 삭제", description = "매거진을 완전히 삭제합니다. 되돌릴 수 없습니다.")
     @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMagazine(
@@ -75,6 +78,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 1: 매거진 수정
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "✏️ 제목/소개 수정", description = "매거진의 이름이나 소개글만 살짝 고칩니다. (내용 수정은 섹션 API 사용)")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}")
     public ResponseEntity<?> updateMagazine(
@@ -101,6 +105,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 3: 좋아요 토글
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "❤️ 좋아요 누르기/취소", description = "마음에 드는 매거진에 좋아요를 누르거나 취소합니다.")
     @org.springframework.web.bind.annotation.PostMapping("/{id}/likes")
     public ResponseEntity<java.util.Map<String, Object>> toggleLike(
@@ -112,6 +117,7 @@ public class MagazineController {
     }
 
     // ⭐ Phase 3: 내가 좋아요한 매거진 목록
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "💘 내가 찜한 매거진", description = "내가 좋아요를 누른 매거진들을 모아봅니다.")
     @GetMapping("/liked")
     public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getLikedMagazines(
@@ -122,6 +128,7 @@ public class MagazineController {
     }
 
     // ⭐ 커버 이미지 변경
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 무드보드 이미지 URL을 사용하세요.")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/cover")
     public ResponseEntity<?> updateCover(
@@ -151,7 +158,18 @@ public class MagazineController {
         }
     }
 
+    // ⭐ 공개 매거진 목록 조회 (인증 불필요)
+    @Tag(name = "1. 매거진 (Magazine) 📘")
+    @Operation(summary = "🌍 공개 매거진 목록", description = "공개된 계정의 모든 매거진을 최신순으로 조회합니다. 로그인 없이 볼 수 있습니다.")
+    @GetMapping("/public")
+    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getPublicMagazines(
+            @io.swagger.v3.oas.annotations.Parameter(description = "특정 유저 ID (선택)", required = false) @org.springframework.web.bind.annotation.RequestParam(required = false) Long userId,
+            @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(magazineService.getPublicMagazines(userId, pageable));
+    }
+
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
+    @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🔍 공개 매거진 보기", description = "공개 계정의 매거진을 조회합니다. 로그인 없이도 볼 수 있습니다.")
     @GetMapping("/public/{id}")
     public ResponseEntity<?> getPublicMagazine(@org.springframework.web.bind.annotation.PathVariable Long id) {
@@ -166,7 +184,16 @@ public class MagazineController {
         }
     }
 
+    // ⭐ 공유된 매거진 조회 (공개 계정 매거진을 ID로 조회)
+    @Tag(name = "1. 매거진 (Magazine) 📘")
+    @Operation(summary = "🔗 공유된 매거진 보기", description = "링크를 통해 공유된 매거진을 봅니다. (실제로는 공개 매거진 보기와 동일합니다)")
+    @GetMapping("/share/{id}")
+    public ResponseEntity<?> getSharedMagazine(@org.springframework.web.bind.annotation.PathVariable Long id) {
+        return getPublicMagazine(id);
+    }
+
     // ⭐ Phase 2: 검색 (키워드)
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "🔍 매거진 검색", description = "키워드로 원하는 매거진을 찾습니다.")
     @GetMapping("/search")
     public ResponseEntity<?> search(
@@ -190,16 +217,19 @@ public class MagazineController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "📡 추천 피드", description = "내 관심사와 팔로우한 사람들의 새 글을 모아서 보여줍니다.")
+    @Tag(name = "1. 매거진 (Magazine) 📘")
+    @Operation(summary = "📡 추천 피드 (커서 기반)", description = "내 관심사와 팔로우한 사람들의 새 글을 모아서 보여줍니다. (무한 스크롤)")
     @GetMapping("/feed")
-    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getPersonalizedFeed(
+    public ResponseEntity<com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem>> getPersonalizedFeed(
             @AuthenticationPrincipal UserDetails userDetails,
-            @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "마지막으로 조회한 매거진 ID (첫 조회 시 null)") @org.springframework.web.bind.annotation.RequestParam(required = false) Long cursorId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "한 번에 가져올 개수") @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int limit) {
 
-        return ResponseEntity.ok(magazineService.getPersonalizedFeed(userDetails.getUsername(), pageable));
+        return ResponseEntity.ok(magazineService.getPersonalizedFeedCursor(userDetails.getUsername(), cursorId, limit));
     }
 
     // ⭐ 매거진 기반 무드보드 생성
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "🎨 매거진 무드보드 생성", description = "매거진 정보를 기반으로 AI 무드보드를 생성합니다. 매거진 제목과 태그가 자동으로 사용됩니다.")
     @org.springframework.web.bind.annotation.PostMapping("/{id}/moodboards")
     public ResponseEntity<?> createMoodboardForMagazine(
@@ -231,6 +261,7 @@ public class MagazineController {
     }
 
     // ⭐ 무드보드 히스토리 조회
+    @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "📜 무드보드 히스토리", description = "매거진에서 생성한 무드보드 목록을 최신순으로 조회합니다.")
     @GetMapping("/{id}/moodboards/history")
     public ResponseEntity<?> getMoodboardHistory(

@@ -125,13 +125,11 @@ class UserControllerTest {
         @Test
         @WithMockUser(username = "user")
         void updateMyProfile() throws Exception {
-                UserDto.UpdateRequest request = new UserDto.UpdateRequest("NewNick", "NewBio", "new@example.com",
-                                "img.jpg");
+                UserDto.UpdateRequest request = new UserDto.UpdateRequest("NewNick", "new@example.com", "img.jpg");
                 UserDto.ProfileResponse response = UserDto.ProfileResponse.builder()
                                 .id(1L)
                                 .username("user")
                                 .nickname("NewNick")
-                                .bio("NewBio")
                                 .email("new@example.com")
                                 .profileImageUrl("img.jpg")
                                 .build();
@@ -143,8 +141,7 @@ class UserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.nickname").value("NewNick"))
-                                .andExpect(jsonPath("$.bio").value("NewBio"));
+                                .andExpect(jsonPath("$.nickname").value("NewNick"));
         }
 
         @Test

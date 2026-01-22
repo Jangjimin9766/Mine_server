@@ -37,7 +37,6 @@ public class User {
 
     private LocalDateTime createdAt;
 
-    private String bio;
     private String profileImageUrl;
     private LocalDateTime updatedAt;
 
@@ -72,11 +71,9 @@ public class User {
     }
 
     // ⭐ Phase 5: 프로필 수정
-    public void updateProfile(String nickname, String bio, String profileImageUrl) {
+    public void updateProfile(String nickname, String profileImageUrl) {
         if (nickname != null)
             this.nickname = nickname;
-        if (bio != null)
-            this.bio = bio;
         if (profileImageUrl != null)
             this.profileImageUrl = profileImageUrl;
         this.updatedAt = LocalDateTime.now();

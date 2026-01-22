@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "4. 무드보드 (Moodboard) 🎨", description = "무드보드(AI 배경화면) 생성 및 관리 API")
 @RestController
 @RequestMapping("/api/moodboards")
 @RequiredArgsConstructor
+@Tag(name = "99. 기타 (보류) 💤", description = "무드보드(AI 배경화면), 검색, 팔로우 등 지금 당장 쓰지 않는 기능들입니다.")
 public class MoodboardController {
 
     private final MoodboardService moodboardService;

@@ -276,6 +276,22 @@ public class MagazineService {
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
+    // ⭐ 공개된 매거진 전체 조회 (인증 불필요)
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getPublicMagazines(
+            Long userId,
+            org.springframework.data.domain.Pageable pageable) {
+
+        org.springframework.data.domain.Page<Magazine> magazines;
+
+        if (userId != null) {
+            magazines = magazineRepository.findByPublicUserId(userId, pageable);
+        } else {
+            magazines = magazineRepository.findByPublicUser(pageable);
+        }
+
+        return magazines.map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
     public Magazine getPublicMagazine(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
@@ -324,10 +340,9 @@ public class MagazineService {
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
-    // ⭐ Phase 4: 개인화 피드
-    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeed(
-            String username,
-            org.springframework.data.domain.Pageable pageable) {
+    // ⭐ Phase 4: 개인화 피드 (커서 기반)
+    public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeedCursor(
+            String username, Long cursorId, int limit) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
@@ -344,8 +359,28 @@ public class MagazineService {
             keyword = interests.get(randomIndex).getInterest().getName();
         }
 
-        // 3. 쿼리 실행 (팔로잉 OR 관심사 키워드)
-        return magazineRepository.findPersonalizedFeed(followings, keyword, pageable)
-                .map(com.mine.api.dto.MagazineDto.ListItem::from);
+        // 3. 쿼리 실행 (limit + 1개 조회)
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0,
+                limit + 1);
+        java.util.List<Magazine> magazines = magazineRepository.findPersonalizedFeedCursor(followings, keyword,
+                cursorId,
+                pageable);
+
+        boolean hasNext = false;
+        if (magazines.size() > limit) {
+            hasNext = true;
+            magazines.remove(limit);
+        }
+
+        Long nextCursor = null;
+        if (!magazines.isEmpty()) {
+            nextCursor = magazines.get(magazines.size() - 1).getId();
+        }
+
+        java.util.List<com.mine.api.dto.MagazineDto.ListItem> content = magazines.stream()
+                .map(com.mine.api.dto.MagazineDto.ListItem::from)
+                .collect(java.util.stream.Collectors.toList());
+
+        return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
     }
 }

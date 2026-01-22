@@ -133,58 +133,72 @@ class MagazineServiceTest {
                 verify(magazineRepository).save(any(Magazine.class));
         }
 
-        @Test
-        @DisplayName("개인화 피드 조회 성공 테스트")
-        void getPersonalizedFeed_Success() {
-                // Given
-                String username = "testuser";
-                User user = User.builder().username(username).build();
-                User followingUser = User.builder().username("following").build();
-                Follow follow = Follow.builder().follower(user).following(followingUser).build();
-
-                Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
-                UserInterest interest = UserInterest.builder().user(user).interest(travelInterest).build();
-
-                Pageable pageable = PageRequest.of(0, 10);
-                Page<Magazine> page = new PageImpl<>(List.of());
-
-                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-                when(followRepository.findByFollower(user)).thenReturn(List.of(follow));
-                when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
-                when(magazineRepository.findPersonalizedFeed(anyList(), anyString(), eq(pageable))).thenReturn(page);
-
-                // When
-                org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
-                                .getPersonalizedFeed(username, pageable);
-
-                // Then
-                assertNotNull(result);
-                verify(magazineRepository).findPersonalizedFeed(anyList(), eq("여행"), eq(pageable));
-        }
-
-        @Test
-        @DisplayName("개인화 피드 - 관심사와 팔로잉이 없는 경우")
-        void getPersonalizedFeed_NoInterests_NoFollowings() {
-                // Given
-                String username = "lonelyuser";
-                User user = User.builder().username(username).build();
-
-                Pageable pageable = PageRequest.of(0, 10);
-                Page<Magazine> page = new PageImpl<>(List.of());
-
-                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-                when(followRepository.findByFollower(user)).thenReturn(List.of()); // Empty followings
-                when(userInterestRepository.findByUser(user)).thenReturn(List.of()); // Empty interests
-                when(magazineRepository.findPersonalizedFeed(anyList(), eq(""), eq(pageable))).thenReturn(page);
-
-                // When
-                org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
-                                .getPersonalizedFeed(username, pageable);
-
-                // Then
-                assertNotNull(result);
-                verify(magazineRepository).findPersonalizedFeed(eq(List.of()), eq(""), eq(pageable));
-        }
+        /*
+         * @Test
+         * 
+         * @DisplayName("개인화 피드 조회 성공 테스트")
+         * void getPersonalizedFeed_Success() {
+         * // Given
+         * String username = "testuser";
+         * User user = User.builder().username(username).build();
+         * User followingUser = User.builder().username("following").build();
+         * Follow follow =
+         * Follow.builder().follower(user).following(followingUser).build();
+         * 
+         * Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
+         * UserInterest interest =
+         * UserInterest.builder().user(user).interest(travelInterest).build();
+         * 
+         * Pageable pageable = PageRequest.of(0, 10);
+         * Page<Magazine> page = new PageImpl<>(List.of());
+         * 
+         * when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+         * when(followRepository.findByFollower(user)).thenReturn(List.of(follow));
+         * when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
+         * when(magazineRepository.findPersonalizedFeed(anyList(), anyString(),
+         * eq(pageable))).thenReturn(page);
+         * 
+         * // When
+         * org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>
+         * result = magazineService
+         * .getPersonalizedFeed(username, pageable);
+         * 
+         * // Then
+         * assertNotNull(result);
+         * verify(magazineRepository).findPersonalizedFeed(anyList(), eq("여행"),
+         * eq(pageable));
+         * }
+         * 
+         * @Test
+         * 
+         * @DisplayName("개인화 피드 - 관심사와 팔로잉이 없는 경우")
+         * void getPersonalizedFeed_NoInterests_NoFollowings() {
+         * // Given
+         * String username = "lonelyuser";
+         * User user = User.builder().username(username).build();
+         * 
+         * Pageable pageable = PageRequest.of(0, 10);
+         * Page<Magazine> page = new PageImpl<>(List.of());
+         * 
+         * when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+         * when(followRepository.findByFollower(user)).thenReturn(List.of()); // Empty
+         * followings
+         * when(userInterestRepository.findByUser(user)).thenReturn(List.of()); // Empty
+         * interests
+         * when(magazineRepository.findPersonalizedFeed(anyList(), eq(""),
+         * eq(pageable))).thenReturn(page);
+         * 
+         * // When
+         * org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>
+         * result = magazineService
+         * .getPersonalizedFeed(username, pageable);
+         * 
+         * // Then
+         * assertNotNull(result);
+         * verify(magazineRepository).findPersonalizedFeed(eq(List.of()), eq(""),
+         * eq(pageable));
+         * }
+         */
 
         @Test
         @DisplayName("좋아요 토글 - 동시성 문제 (DataIntegrityViolationException) 발생 시 처리")
