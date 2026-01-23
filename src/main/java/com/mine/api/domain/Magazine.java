@@ -107,9 +107,28 @@ public class Magazine {
         this.moodboardDescription = moodboardDescription;
     }
 
+    // ⭐ 공개 여부 (기본값: true)
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic = true;
+
     // ⭐ Phase 1: 소유자 확인 메서드
     public boolean isOwnedBy(User user) {
         return this.user.getId().equals(user.getId());
+    }
+
+    @Builder
+    public Magazine(String title, String subtitle, String introduction, String coverImageUrl,
+            String tags, String moodboardImageUrl, String moodboardDescription, User user, Boolean isPublic) {
+        this.title = title;
+        this.subtitle = subtitle;
+        this.introduction = introduction;
+        this.coverImageUrl = coverImageUrl;
+        this.tags = tags;
+        this.moodboardImageUrl = moodboardImageUrl;
+        this.moodboardDescription = moodboardDescription;
+        this.user = user;
+        this.isPublic = isPublic != null ? isPublic : true;
+        this.createdAt = LocalDateTime.now();
     }
 
     // ⭐ 낙관적 락 (동시 수정 방지)

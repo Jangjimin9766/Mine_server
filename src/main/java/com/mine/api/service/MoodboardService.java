@@ -207,6 +207,11 @@ public class MoodboardService {
         if (base64Image == null)
             return null;
 
+        // 이미 URL인 경우 그대로 반환
+        if (base64Image.startsWith("http")) {
+            return base64Image;
+        }
+
         if (base64Image.contains(",")) {
             base64Image = base64Image.split(",")[1];
         }

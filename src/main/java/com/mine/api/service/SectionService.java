@@ -148,10 +148,15 @@ public class SectionService {
             throw new RuntimeException("Failed to get response from AI server");
         }
 
+        // [DEBUG] Python 응답 전체 로깅
+        log.info("[DEBUG] Full Python response: {}", output);
+
         String actionType = (String) output.get("intent");
+        log.info("[DEBUG] Parsed intent: {}", actionType);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedSection = (Map<String, Object>) output.get("updated_section");
+        log.info("[DEBUG] updated_section: {}", updatedSection);
 
         // 섹션 업데이트
         if (updatedSection != null) {

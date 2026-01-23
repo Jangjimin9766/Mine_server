@@ -190,7 +190,19 @@ public class MagazineService {
             }
 
             // 3. 받은 데이터로 저장 로직 수행
-            return saveMagazine(generatedData, username);
+            Long magazineId = saveMagazine(generatedData, username);
+
+            // 4. [FIX] 무드보드 자동 생성 및 커버 이미지 교체
+            try {
+                log.info("Starting automatic moodboard generation for magazine: {}", magazineId);
+                moodboardService.createMoodboardForMagazine(magazineId, username);
+                log.info("Moodboard generated and cover updated for magazine: {}", magazineId);
+            } catch (Exception e) {
+                log.error("Failed to generate moodboard for magazine {}: {}", magazineId, e.getMessage());
+                // 무드보드 생성 실패해도 매거진 생성은 성공으로 처리
+            }
+
+            return magazineId;
         } catch (Exception e) {
             log.error("Error in generateAndSaveMagazine", e);
             throw new RuntimeException("Detailed error: " + e.getMessage(), e);
