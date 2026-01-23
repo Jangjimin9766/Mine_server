@@ -140,56 +140,61 @@ public class MagazineService {
 
     @Transactional
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
-        // 1. 사용자 관심사 조회
-        com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        try {
+            // 1. 사용자 관심사 조회
+            com.mine.api.domain.User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        java.util.List<String> userInterests = userInterestRepository.findByUser(user).stream()
-                .map(ui -> ui.getInterest().getCode())
-                .collect(java.util.stream.Collectors.toList());
+            java.util.List<String> userInterests = userInterestRepository.findByUser(user).stream()
+                    .map(ui -> ui.getInterest().getCode())
+                    .collect(java.util.stream.Collectors.toList());
 
-        // 2. Python 서버 요청 준비
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
-        data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
-        data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
-        data.put("user_interests", userInterests);
+            // 2. Python 서버 요청 준비
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put(com.mine.api.common.AppConstants.KEY_TOPIC, request.getTopic());
+            data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
+            data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
+            data.put("user_interests", userInterests);
 
-        java.util.Map<String, Object> responseBody;
+            java.util.Map<String, Object> responseBody;
 
-        // 3. 호출 방식 분기 (Local vs RunPod)
-        if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
-            // Local FastAPI 호출 (직접 전송, 동기식)
-            data.put("action", "create_magazine"); // 로컬에서도 action 필수
-            responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
-        } else {
-            // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
-            // { "input": { "action": "create_magazine", "data": { ... } } } 형태로 전송
-            java.util.Map<String, Object> inputData = new java.util.HashMap<>();
-            inputData.put("action", "create_magazine");
-            inputData.put("data", data);
+            // 3. 호출 방식 분기 (Local vs RunPod)
+            if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+                // Local FastAPI 호출 (직접 전송, 동기식)
+                data.put("action", "create_magazine"); // 로컬에서도 action 필수
+                responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+            } else {
+                // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
+                // { "input": { "action": "create_magazine", "data": { ... } } } 형태로 전송
+                java.util.Map<String, Object> inputData = new java.util.HashMap<>();
+                inputData.put("action", "create_magazine");
+                inputData.put("data", data);
 
-            // 응답은 { "status": "COMPLETED", "output": { ... } } 형태
-            responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+                // 응답은 { "status": "COMPLETED", "output": { ... } } 형태
+                responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+            }
+
+            // 4. 결과 파싱 (RunPod는 output 안에, 로컬은 body 자체가 결과일 수 있음)
+            Object outputData = responseBody;
+            if (responseBody.containsKey("output")) {
+                outputData = responseBody.get("output");
+            }
+
+            // output을 MagazineCreateRequest로 변환
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
+
+            if (generatedData == null) {
+                throw new RuntimeException("Failed to generate magazine from AI server");
+            }
+
+            // 3. 받은 데이터로 저장 로직 수행
+            return saveMagazine(generatedData, username);
+        } catch (Exception e) {
+            log.error("Error in generateAndSaveMagazine", e);
+            throw new RuntimeException("Detailed error: " + e.getMessage(), e);
         }
-
-        // 4. 결과 파싱 (RunPod는 output 안에, 로컬은 body 자체가 결과일 수 있음)
-        Object outputData = responseBody;
-        if (responseBody.containsKey("output")) {
-            outputData = responseBody.get("output");
-        }
-
-        // output을 MagazineCreateRequest로 변환
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
-
-        if (generatedData == null) {
-            throw new RuntimeException("Failed to generate magazine from AI server");
-        }
-
-        // 3. 받은 데이터로 저장 로직 수행
-        return saveMagazine(generatedData, username);
     }
 
     // ⭐ Phase 1: 매거진 삭제

@@ -52,6 +52,7 @@ public class RunPodService {
         java.util.Map<String, Object> response = client.post()
                 .uri(runUrl)
                 .header("Authorization", "Bearer " + apiKey)
+                .header("x-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()
