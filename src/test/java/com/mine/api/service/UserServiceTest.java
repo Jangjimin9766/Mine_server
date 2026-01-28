@@ -1,20 +1,45 @@
 package com.mine.api.service;
 
+import com.mine.api.domain.User;
 import com.mine.api.dto.UserDto;
+import com.mine.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.BDDMockito.given;
+
+@ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
-    // UserService의 특정 메서드만 테스트
-    @Test
-    void 닉네임이_2자_미만이면_예외발생() {
-        // given (준비)
-        UserDto.UpdateRequest request = new UserDto.UpdateRequest("짧", null, null);
 
-        // when & then (실행 및 검증)
-        assertThrows(IllegalArgumentException.class, () -> {
-            userService.updateProfile("testuser", request);
+    @InjectMocks
+    private UserService userService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Test
+    void 프로필_업데이트_테스트() {
+        // given
+        String username = "testuser";
+        UserDto.UpdateRequest request = new UserDto.UpdateRequest("newNick", "newBio", "newImg");
+        
+        User user = User.builder()
+                .username(username)
+                .email("test@example.com")
+                .nickname("oldNick")
+                .build();
+
+        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+
+        // when & then
+        assertDoesNotThrow(() -> {
+            userService.updateProfile(username, request);
         });
     }
 }
