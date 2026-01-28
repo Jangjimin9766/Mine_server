@@ -122,3 +122,6 @@ FROM magazines m JOIN users u ON m.user_id = u.id
 WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
 LIMIT 1
 ON DUPLICATE KEY UPDATE heading=heading;
+
+-- 마이그레이션: 기존 유저 public 설정 보장
+UPDATE users SET is_public = true WHERE is_public IS NULL;
