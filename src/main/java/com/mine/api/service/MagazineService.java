@@ -9,7 +9,6 @@ import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserRepository;
 import com.mine.api.repository.MagazineLikeRepository;
 import com.mine.api.repository.UserInterestRepository;
-import com.mine.api.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +23,6 @@ public class MagazineService {
     private final UserRepository userRepository;
     private final MagazineLikeRepository magazineLikeRepository;
     private final UserInterestRepository userInterestRepository;
-    private final FollowRepository followRepository;
     private final RunPodService runPodService;
     private final MoodboardService moodboardService;
     private final com.mine.api.repository.MoodboardRepository moodboardRepository;
@@ -309,7 +307,7 @@ public class MagazineService {
         return magazines.map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
-    // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
+    // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
     public Magazine getPublicMagazine(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
                 .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다"));
@@ -317,6 +315,11 @@ public class MagazineService {
         // 계정이 비공개면 접근 불가
         if (!magazine.getUser().getIsPublic()) {
             throw new SecurityException("비공개 계정의 매거진입니다");
+        }
+
+        // 매거진이 비공개면 접근 불가
+        if (!magazine.isPublic()) {
+            throw new SecurityException("비공개 매거진입니다");
         }
 
         // displayOrder 순으로 섹션 정렬
@@ -357,31 +360,48 @@ public class MagazineService {
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
-    // ⭐ Phase 4: 개인화 피드 (커서 기반)
+    // ⭐ Phase 4: 개인화 피드 (커서 기반) - 좋아요 + 관심사 기반
     public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeedCursor(
             String username, Long cursorId, int limit) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
-        // 1. 팔로잉 목록 가져오기
-        java.util.List<User> followings = followRepository.findByFollower(user).stream()
-                .map(com.mine.api.domain.Follow::getFollowing)
+        // 1. 사용자 관심사 가져오기
+        java.util.List<String> interestKeywords = userInterestRepository.findByUser(user).stream()
+                .map(ui -> ui.getInterest().getName())
                 .collect(java.util.stream.Collectors.toList());
 
-        // 2. 관심사 중 하나 랜덤 선택
-        java.util.List<com.mine.api.domain.UserInterest> interests = userInterestRepository.findByUser(user);
-        String keyword = "";
-        if (!interests.isEmpty()) {
-            int randomIndex = new java.util.Random().nextInt(interests.size());
-            keyword = interests.get(randomIndex).getInterest().getName();
+        // 2. 좋아요한 매거진의 태그 가져오기
+        java.util.List<Magazine> likedMagazines = magazineLikeRepository.findAllLikedMagazinesByUser(user);
+        java.util.Set<String> likedTags = new java.util.HashSet<>();
+        for (Magazine m : likedMagazines) {
+            if (m.getTags() != null && !m.getTags().isEmpty()) {
+                String[] tags = m.getTags().split(",");
+                for (String tag : tags) {
+                    likedTags.add(tag.trim());
+                }
+            }
         }
 
-        // 3. 쿼리 실행 (limit + 1개 조회)
+        // 3. 키워드 조합 (관심사 + 좋아요 태그에서 최대 3개 선택)
+        java.util.List<String> allKeywords = new java.util.ArrayList<>();
+        allKeywords.addAll(interestKeywords);
+        allKeywords.addAll(likedTags);
+
+        // 중복 제거 후 셔플
+        java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
+        java.util.Collections.shuffle(uniqueKeywords);
+
+        // 최대 3개 키워드 선택 (부족하면 빈 문자열)
+        String keyword1 = uniqueKeywords.size() > 0 ? uniqueKeywords.get(0) : "";
+        String keyword2 = uniqueKeywords.size() > 1 ? uniqueKeywords.get(1) : "";
+        String keyword3 = uniqueKeywords.size() > 2 ? uniqueKeywords.get(2) : "";
+
+        // 4. 쿼리 실행 (limit + 1개 조회)
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0,
                 limit + 1);
-        java.util.List<Magazine> magazines = magazineRepository.findPersonalizedFeedCursor(followings, keyword,
-                cursorId,
-                pageable);
+        java.util.List<Magazine> magazines = magazineRepository.findRecommendedFeedCursor(
+                keyword1, keyword2, keyword3, user.getId(), cursorId, pageable);
 
         boolean hasNext = false;
         if (magazines.size() > limit) {
