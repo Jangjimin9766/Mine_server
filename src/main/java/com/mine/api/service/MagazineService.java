@@ -308,11 +308,24 @@ public class MagazineService {
             }
 
             magazines = magazineRepository.findAllByUserId(user.getId(), pageable);
-        } else {
-            magazines = magazineRepository.findByUserIsPublicTrue(pageable);
-        }
 
-        return magazines.map(com.mine.api.dto.MagazineDto.ListItem::from);
+            // 이미 유저 정보를 알고 있으므로, DTO 변환 시 이를 재사용 (Lazy Loading 방지)
+            return magazines.map(m -> com.mine.api.dto.MagazineDto.ListItem.builder()
+                    .id(m.getId())
+                    .title(m.getTitle())
+                    .subtitle(m.getSubtitle())
+                    .introduction(m.getIntroduction())
+                    .coverImageUrl(m.getCoverImageUrl())
+                    .username(user.getUsername()) // 조회한 유저 이름 사용
+                    .likeCount(0)
+                    .commentCount(0)
+                    .createdAt(m.getCreatedAt().toString())
+                    .build());
+        } else {
+            // 전체 조회 시에는 EntityGraph가 적용된 쿼리를 사용하므로 기존 방식 유지
+            magazines = magazineRepository.findByUserIsPublicTrue(pageable);
+            return magazines.map(com.mine.api.dto.MagazineDto.ListItem::from);
+        }
     }
 
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
