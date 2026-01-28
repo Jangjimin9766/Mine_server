@@ -307,7 +307,7 @@ public class MagazineService {
                 throw new SecurityException("비공개 계정의 매거진입니다");
             }
 
-            magazines = magazineRepository.findAllByUser(user, pageable);
+            magazines = magazineRepository.findAllByUserId(user.getId(), pageable);
         } else {
             magazines = magazineRepository.findByUserIsPublicTrue(pageable);
         }

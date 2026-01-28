@@ -18,7 +18,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
-        org.springframework.data.domain.Page<Magazine> findAllByUser(User user,
+        // ⭐ 특정 유저의 매거진 목록 조회 (페이징)
+        org.springframework.data.domain.Page<Magazine> findAllByUserId(Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
         // ⭐ 공개된 매거진 전체 조회

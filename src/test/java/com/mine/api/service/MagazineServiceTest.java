@@ -222,4 +222,47 @@ class MagazineServiceTest {
                 // Then
                 assertTrue(result);
         }
+
+        @Test
+        @DisplayName("특정 유저의 공개 매거진 목록 조회 - 공개 계정일 경우 findAllByUserId 호출")
+        void getPublicMagazines_WithUserId_Success() {
+                // Given
+                Long userId = 3L;
+                User user = User.builder().username("testuser").build();
+                ReflectionTestUtils.setField(user, "id", userId);
+                user.setPublic(true); // 공개 계정 설정
+
+                Pageable pageable = PageRequest.of(0, 10);
+                Page<Magazine> page = new PageImpl<>(List.of());
+
+                when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+                when(magazineRepository.findAllByUserId(userId, pageable)).thenReturn(page);
+
+                // When
+                org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
+                                .getPublicMagazines(userId, pageable);
+
+                // Then
+                assertNotNull(result);
+                verify(userRepository).findById(userId);
+                verify(magazineRepository).findAllByUserId(userId, pageable);
+        }
+
+        @Test
+        @DisplayName("특정 유저의 공개 매거진 목록 조회 - 비공개 계정일 경우 예외 발생")
+        void getPublicMagazines_WithUserId_PrivateAccount() {
+                // Given
+                Long userId = 3L;
+                User user = User.builder().username("privateuser").build();
+                user.setPublic(false); // 비공개 계정 설정
+
+                Pageable pageable = PageRequest.of(0, 10);
+
+                when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+                // When & Then
+                assertThrows(SecurityException.class, () -> magazineService.getPublicMagazines(userId, pageable));
+                verify(userRepository).findById(userId);
+                verify(magazineRepository, never()).findAllByUserId(any(), any());
+        }
 }
