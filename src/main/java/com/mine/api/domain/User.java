@@ -44,7 +44,7 @@ public class User {
     private LocalDateTime deletedAt;
 
     @Column(name = "is_public", nullable = false)
-    private boolean isPublic = true; // 기본: 공개 계정
+    private Boolean isPublic = true; // 기본: 공개 계정
 
     // ⭐ Optimization: N+1 문제 해결을 위한 가상 컬럼 (Subquery)
     @org.hibernate.annotations.Formula("(SELECT count(*) FROM follows f WHERE f.following_id = id)")
@@ -87,11 +87,11 @@ public class User {
     }
 
     // ⭐ 계정 공개/비공개 설정
-    public void setPublic(boolean isPublic) {
+    public void setPublic(Boolean isPublic) {
         this.isPublic = isPublic;
     }
 
-    public boolean getIsPublic() {
-        return this.isPublic;
+    public Boolean getIsPublic() {
+        return this.isPublic != null ? this.isPublic : true; // NULL 처리
     }
 }
