@@ -265,4 +265,68 @@ class MagazineServiceTest {
                 verify(userRepository).findById(userId);
                 verify(magazineRepository, never()).findAllByUserId(any(), any());
         }
+
+        @Test
+        @DisplayName("개인화 피드 - 관심사 및 좋아요 기반 추천 검증")
+        void getPersonalizedFeedCursor_IntegrationTest() {
+                // Given
+                String username = "feed_tester";
+                User user = User.builder().username(username).build();
+                ReflectionTestUtils.setField(user, "id", 100L); // ID 설정
+
+                // 1. 사용자 관심사 설정 (여행, 패션)
+                Interest travelInterest = Interest.builder().code("TRAVEL").name("여행").build();
+                Interest fashionInterest = Interest.builder().code("FASHION").name("패션").build();
+                UserInterest ui1 = UserInterest.builder().user(user).interest(travelInterest).build();
+                UserInterest ui2 = UserInterest.builder().user(user).interest(fashionInterest).build();
+
+                // 2. 매거진 데이터 준비 (Builder 수정)
+                // Other User 1
+                User otherUser1 = User.builder().username("other1").build();
+                otherUser1.setPublic(true);
+
+                Magazine magazineTravel = Magazine.builder()
+                                .title("즐거운 여행")
+                                .tags("여행,힐링")
+                                .user(otherUser1)
+                                .build();
+                ReflectionTestUtils.setField(magazineTravel, "id", 1L);
+                ReflectionTestUtils.setField(magazineTravel, "createdAt", java.time.LocalDateTime.now());
+
+                // Other User 2
+                User otherUser2 = User.builder().username("other2").build();
+                otherUser2.setPublic(true);
+
+                Magazine magazineFashion = Magazine.builder()
+                                .title("최신 패션")
+                                .tags("패션,스타일")
+                                .user(otherUser2)
+                                .build();
+                ReflectionTestUtils.setField(magazineFashion, "id", 2L);
+                ReflectionTestUtils.setField(magazineFashion, "createdAt", java.time.LocalDateTime.now());
+
+                // Other User 3
+                User otherUser3 = User.builder().username("other3").build();
+                otherUser3.setPublic(true);
+
+                Magazine magazineIT = Magazine.builder()
+                                .title("최신 기술")
+                                .tags("IT,테크")
+                                .user(otherUser3)
+                                .build();
+                ReflectionTestUtils.setField(magazineIT, "id", 3L);
+
+                // Mocking
+                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+                when(userInterestRepository.findByUser(user)).thenReturn(List.of(ui1, ui2)); // 관심사 리턴
+                when(magazineLikeRepository.findAllLikedMagazinesByUser(user)).thenReturn(List.of()); // 좋아요한 건 없음
+
+                // When
+                magazineService.getPersonalizedFeedCursor(username, null, 10);
+
+                // Then
+                verify(magazineRepository).findRecommendedFeedCursor(
+                                anyString(), anyString(), anyString(),
+                                eq(100L), isNull(), any(Pageable.class));
+        }
 }
