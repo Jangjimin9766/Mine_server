@@ -312,14 +312,9 @@ public class MagazineService {
         Magazine magazine = magazineRepository.findById(magazineId)
                 .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다"));
 
-        // 계정이 비공개면 접근 불가
+        // 계정이 비공개면 접근 불가 (매거진 개별 공개 여부는 없음)
         if (!magazine.getUser().getIsPublic()) {
             throw new SecurityException("비공개 계정의 매거진입니다");
-        }
-
-        // 매거진이 비공개면 접근 불가
-        if (!magazine.isPublic()) {
-            throw new SecurityException("비공개 매거진입니다");
         }
 
         // displayOrder 순으로 섹션 정렬
