@@ -18,19 +18,17 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
-        // ⭐ 공개된 매거진 전체 조회 (최신순) - 사용자 공개 여부만 체크
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
-                        "LEFT JOIN FETCH m.user " +
-                        "LEFT JOIN FETCH m.sections " +
+        // ⭐ 공개된 매거진 전체 조회 (최신순) - EntityGraph로 N+1 방지
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m " +
                         "WHERE m.user.isPublic = true " +
                         "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.isPublic = true")
         org.springframework.data.domain.Page<Magazine> findByPublicUser(
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ 특정 유저의 공개 매거진 목록 조회 - 사용자 공개 여부만 체크
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
-                        "LEFT JOIN FETCH m.user " +
-                        "LEFT JOIN FETCH m.sections " +
+        // ⭐ 특정 유저의 공개 매거진 목록 조회 - EntityGraph로 N+1 방지
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m " +
                         "WHERE m.user.id = :userId AND m.user.isPublic = true " +
                         "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.id = :userId AND m.user.isPublic = true")
         org.springframework.data.domain.Page<Magazine> findByPublicUserId(
