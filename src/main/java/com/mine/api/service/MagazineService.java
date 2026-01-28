@@ -299,9 +299,9 @@ public class MagazineService {
         org.springframework.data.domain.Page<Magazine> magazines;
 
         if (userId != null) {
-            magazines = magazineRepository.findByPublicUserId(userId, pageable);
+            magazines = magazineRepository.findByUserIdAndUserIsPublicTrue(userId, pageable);
         } else {
-            magazines = magazineRepository.findByPublicUser(pageable);
+            magazines = magazineRepository.findByUserIsPublicTrue(pageable);
         }
 
         return magazines.map(com.mine.api.dto.MagazineDto.ListItem::from);
