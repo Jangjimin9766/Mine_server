@@ -18,15 +18,12 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
-        // ⭐ 공개된 매거진 전체 조회 - JPA 메서드 이름 규칙 사용
-        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
-        org.springframework.data.domain.Page<Magazine> findByUserIsPublicTrue(
+        org.springframework.data.domain.Page<Magazine> findAllByUser(User user,
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ 특정 유저의 공개 매거진 목록 조회 - JPA 메서드 이름 규칙 사용
+        // ⭐ 공개된 매거진 전체 조회
         @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
-        org.springframework.data.domain.Page<Magazine> findByUserIdAndUserIsPublicTrue(
-                        Long userId,
+        org.springframework.data.domain.Page<Magazine> findByUserIsPublicTrue(
                         org.springframework.data.domain.Pageable pageable);
 
         // ⭐ 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)

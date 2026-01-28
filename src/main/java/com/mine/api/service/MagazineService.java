@@ -299,7 +299,15 @@ public class MagazineService {
         org.springframework.data.domain.Page<Magazine> magazines;
 
         if (userId != null) {
-            magazines = magazineRepository.findByUserIdAndUserIsPublicTrue(userId, pageable);
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+            // 유저가 비공개면 빈 페이지 반환 (또는 에러 처리)
+            if (!user.getIsPublic()) {
+                throw new SecurityException("비공개 계정의 매거진입니다");
+            }
+
+            magazines = magazineRepository.findAllByUser(user, pageable);
         } else {
             magazines = magazineRepository.findByUserIsPublicTrue(pageable);
         }
