@@ -18,19 +18,15 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         java.util.List<Magazine> findByUserUsernameWithSections(
                         @org.springframework.data.repository.query.Param("username") String username);
 
-        // ⭐ 공개된 매거진 전체 조회 (최신순) - EntityGraph로 N+1 방지
+        // ⭐ 공개된 매거진 전체 조회 - EntityGraph로 N+1 방지, 정렬은 Pageable에 위임
         @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
-        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m " +
-                        "WHERE m.user.isPublic = true " +
-                        "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.isPublic = true")
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m WHERE m.user.isPublic = true", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.isPublic = true")
         org.springframework.data.domain.Page<Magazine> findByPublicUser(
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ 특정 유저의 공개 매거진 목록 조회 - EntityGraph로 N+1 방지
+        // ⭐ 특정 유저의 공개 매거진 목록 조회 - EntityGraph로 N+1 방지, 정렬은 Pageable에 위임
         @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
-        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m " +
-                        "WHERE m.user.id = :userId AND m.user.isPublic = true " +
-                        "ORDER BY m.createdAt DESC", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.id = :userId AND m.user.isPublic = true")
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m FROM Magazine m WHERE m.user.id = :userId AND m.user.isPublic = true", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.id = :userId AND m.user.isPublic = true")
         org.springframework.data.domain.Page<Magazine> findByPublicUserId(
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
