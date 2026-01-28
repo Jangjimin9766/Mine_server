@@ -108,7 +108,7 @@ public class UserService {
         public UserDto.ProfileResponse getMyProfile(String username) {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-                return convertToProfileResponse(user, user);
+                return convertToProfileResponseWithPassword(user);
         }
 
         /**
@@ -132,16 +132,16 @@ public class UserService {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
-                // 이메일 변경 시 중복 체크
-                if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-                        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                                throw new IllegalArgumentException("이미 사용 중인 이메일입니다");
+                // username 변경 시 중복 체크
+                if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+                        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+                                throw new IllegalArgumentException("이미 사용 중인 아이디입니다");
                         }
                 }
 
                 user.updateProfile(request.getNickname(), request.getProfileImageUrl());
 
-                return convertToProfileResponse(user, user);
+                return convertToProfileResponseWithPassword(user);
         }
 
         /**
@@ -203,6 +203,32 @@ public class UserService {
                                 .isPublic(user.getIsPublic())
                                 .interests(interests)
                                 .isFollowing(isFollowing)
+                                .build();
+        }
+
+        /**
+         * 내 프로필 조회 시 비밀번호 포함 (본인만)
+         */
+        private UserDto.ProfileResponse convertToProfileResponseWithPassword(User user) {
+                // 관심사 목록 조회
+                java.util.List<String> interests = userInterestRepository.findByUser(user)
+                                .stream()
+                                .map(ui -> ui.getInterest().getName())
+                                .toList();
+
+                return UserDto.ProfileResponse.builder()
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .password(user.getPassword()) // 비밀번호 반환
+                                .nickname(user.getNickname())
+                                .email(user.getEmail())
+                                .profileImageUrl(user.getProfileImageUrl())
+                                .followerCount(user.getFollowerCount())
+                                .followingCount(user.getFollowingCount())
+                                .magazineCount(user.getMagazineCount())
+                                .isPublic(user.getIsPublic())
+                                .interests(interests)
+                                .isFollowing(false) // 본인이므로 false
                                 .build();
         }
 }

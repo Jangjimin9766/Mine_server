@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 public class UserDto {
@@ -18,6 +17,7 @@ public class UserDto {
     public static class ProfileResponse {
         private Long id;
         private String username;
+        private String password; // 비밀번호 반환 (내 프로필 조회 시)
         private String nickname;
         private String email;
         private String profileImageUrl;
@@ -40,9 +40,8 @@ public class UserDto {
         @io.swagger.v3.oas.annotations.media.Schema(description = "닉네임", example = "감성충전")
         private String nickname;
 
-        @Email(message = "이메일 형식이 올바르지 않습니다")
-        @io.swagger.v3.oas.annotations.media.Schema(description = "이메일", example = "user@example.com")
-        private String email;
+        @io.swagger.v3.oas.annotations.media.Schema(description = "아이디 (username)", example = "user123")
+        private String username;
 
         @io.swagger.v3.oas.annotations.media.Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
         private String profileImageUrl;
