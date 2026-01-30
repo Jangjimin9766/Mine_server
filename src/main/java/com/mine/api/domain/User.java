@@ -72,11 +72,13 @@ public class User {
     }
 
     // ⭐ Phase 5: 프로필 수정
-    public void updateProfile(String nickname, String profileImageUrl) {
+    public void updateProfile(String nickname, String profileImageUrl, String username) {
         if (nickname != null)
             this.nickname = nickname;
         if (profileImageUrl != null)
             this.profileImageUrl = profileImageUrl;
+        if (username != null)
+            this.username = username;
         this.updatedAt = LocalDateTime.now();
     }
 

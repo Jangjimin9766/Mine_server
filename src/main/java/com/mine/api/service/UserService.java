@@ -139,7 +139,7 @@ public class UserService {
                         }
                 }
 
-                user.updateProfile(request.getNickname(), request.getProfileImageUrl());
+                user.updateProfile(request.getNickname(), request.getProfileImageUrl(), request.getUsername());
 
                 return convertToProfileResponseWithPassword(user);
         }
