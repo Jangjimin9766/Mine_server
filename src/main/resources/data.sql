@@ -83,15 +83,15 @@ ON DUPLICATE KEY UPDATE username=username;
 -- 더미 매거진 데이터 (shared_user 소유)
 -- =====================================================
 
-INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, is_public, created_at)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
 SELECT u.id, '겨울 패션 트렌드 2025', '따뜻함과 스타일을 동시에', '올 겨울 꼭 알아야 할 패션 트렌드를 소개합니다.',
-       'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800', '패션,겨울,트렌드', true, NOW()
+       'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800', '패션,겨울,트렌드', NOW()
 FROM users u WHERE u.username = 'shared_user'
 ON DUPLICATE KEY UPDATE title=title;
 
-INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, is_public, created_at)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
 SELECT u.id, '서울 카페 투어', '숨겨진 명소를 찾아서', '서울의 감성 카페들을 모아봤습니다.',
-       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800', '카페,서울,여행', true, NOW()
+       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800', '카페,서울,여행', NOW()
 FROM users u WHERE u.username = 'shared_user'
 ON DUPLICATE KEY UPDATE title=title;
 
