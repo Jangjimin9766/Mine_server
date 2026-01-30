@@ -2,6 +2,7 @@ package com.mine.api.service;
 
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
+import com.mine.api.domain.User;
 import com.mine.api.dto.SectionDto;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.MagazineSectionRepository;
@@ -27,16 +28,24 @@ public class SectionService {
     private final MagazineSectionRepository sectionRepository;
     private final UserRepository userRepository;
     private final RunPodService runPodService;
+    private final SectionViewHistoryService sectionViewHistoryService;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
 
     /**
-     * 섹션 상세 조회
+     * 섹션 상세 조회 (열람 기록 저장 포함)
      */
+    @Transactional
     public SectionDto.Response getSection(Long magazineId, Long sectionId, String username) {
         Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
         MagazineSection section = getSectionFromMagazine(magazine, sectionId);
+
+        // 열람 기록 저장
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+        sectionViewHistoryService.recordView(user, section);
+
         return toResponse(section);
     }
 
