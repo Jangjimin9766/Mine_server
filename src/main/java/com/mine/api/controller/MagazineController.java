@@ -160,36 +160,12 @@ public class MagazineController {
 
     // ⭐ 공개 매거진 목록 조회 (인증 불필요)
     @Tag(name = "1. 매거진 (Magazine) 📘")
-    @Operation(summary = "🌍 공개 매거진 목록", description = "공개된 계정의 모든 매거진을 최신순으로 조회합니다. 로그인 없이 볼 수 있습니다.")
+    @Operation(summary = "🌍 공개 매거진 목록", description = "공개된 계정의 모든 매거진을 ID순으로 조회합니다. 로그인 없이 볼 수 있습니다.")
     @GetMapping("/public")
     public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getPublicMagazines(
             @io.swagger.v3.oas.annotations.Parameter(description = "특정 유저 ID (선택)", required = false) @org.springframework.web.bind.annotation.RequestParam(required = false) Long userId,
-            @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+            @org.springframework.data.web.SortDefault(sort = "id", direction = org.springframework.data.domain.Sort.Direction.ASC) org.springframework.data.domain.Pageable pageable) {
         return ResponseEntity.ok(magazineService.getPublicMagazines(userId, pageable));
-    }
-
-    // ⭐ 공개 계정의 매거진 조회 (인증 불필요)
-    @Tag(name = "1. 매거진 (Magazine) 📘")
-    @Operation(summary = "🔍 공개 매거진 보기", description = "공개 계정의 매거진을 조회합니다. 로그인 없이도 볼 수 있습니다.")
-    @GetMapping("/public/{id}")
-    public ResponseEntity<?> getPublicMagazine(@org.springframework.web.bind.annotation.PathVariable Long id) {
-        try {
-            Magazine magazine = magazineService.getPublicMagazine(id);
-            return ResponseEntity.ok(magazine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        } catch (SecurityException e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
-                    .body(java.util.Map.of("error", "비공개 계정의 매거진입니다"));
-        }
-    }
-
-    // ⭐ 공유된 매거진 조회 (공개 계정 매거진을 ID로 조회)
-    @Tag(name = "1. 매거진 (Magazine) 📘")
-    @Operation(summary = "🔗 공유된 매거진 보기", description = "링크를 통해 공유된 매거진을 봅니다. (실제로는 공개 매거진 보기와 동일합니다)")
-    @GetMapping("/share/{id}")
-    public ResponseEntity<?> getSharedMagazine(@org.springframework.web.bind.annotation.PathVariable Long id) {
-        return getPublicMagazine(id);
     }
 
     // ⭐ Phase 2: 검색 (키워드)
