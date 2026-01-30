@@ -376,3 +376,4 @@ Hibernate:
         magazines m1_0 
     where
         m1_0.id=?
+2026-01-30 22:12:47 [http-nio-8080-exec-1] INFO  o.s.api.AbstractOpenApiResource - Init duration for springdoc-openapi is: 1470 ms
