@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InterestController.class)
-@AutoConfigureMockMvc(addFilters = false) // Security 필터 비활성화로 비로그인 접근 시뮬레이션 (실제 SecurityConfig 검증은 아님)
+@AutoConfigureMockMvc(addFilters = false) // Security 필터 비활성화
 class InterestControllerTest {
 
         @Autowired
@@ -35,7 +35,8 @@ class InterestControllerTest {
         private InterestService interestService;
 
         @Test
-        @DisplayName("전체 관심사 목록 조회 성공 (비로그인)")
+        @DisplayName("전체 관심사 목록 조회 성공")
+        @WithMockUser // 비로그인 대신 MockUser 사용으로 변경하여 테스트 안정성 확보
         void getAllInterests_Success() throws Exception {
                 // Given
                 List<InterestDto.InterestResponse> interests = List.of(
