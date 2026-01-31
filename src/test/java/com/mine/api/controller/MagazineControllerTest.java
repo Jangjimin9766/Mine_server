@@ -5,6 +5,7 @@ import com.mine.api.domain.Magazine;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineDto;
 import com.mine.api.dto.MagazineGenerationRequest;
+import com.mine.api.exception.GlobalExceptionHandler;
 import com.mine.api.service.MagazineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MagazineController.class)
 @AutoConfigureMockMvc(addFilters = false) // Security Filter 비활성화 (단위 테스트 집중)
+@Import(GlobalExceptionHandler.class) // GlobalExceptionHandler 명시적 추가
 class MagazineControllerTest {
 
         @Autowired
@@ -132,8 +135,8 @@ class MagazineControllerTest {
         @Test
         @WithMockUser(username = "testuser")
         void updateMagazine() throws Exception {
-                MagazineDto.UpdateRequest request = new MagazineDto.UpdateRequest();
-                request.setTitle("Updated Title");
+                // UpdateRequest 생성자 사용 (title, introduction)
+                MagazineDto.UpdateRequest request = new MagazineDto.UpdateRequest("Updated Title", "Updated Intro");
 
                 doNothing().when(magazineService).updateMagazine(eq(1L), any(MagazineDto.UpdateRequest.class),
                                 eq("testuser"));

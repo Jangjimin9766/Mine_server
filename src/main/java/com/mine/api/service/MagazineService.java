@@ -356,4 +356,22 @@ public class MagazineService {
         return magazineRepository.findPersonalizedFeed(followings, keyword, pageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
+
+    // 피드 조회 (비로그인/전체)
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getMagazineFeed(
+            org.springframework.data.domain.Pageable pageable) {
+        return magazineRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
+    // 공개 매거진 상세 조회 (ID로)
+    public Magazine getPublicMagazine(Long id) {
+        Magazine magazine = magazineRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+        
+        if (!Boolean.TRUE.equals(magazine.getIsPublic())) {
+             throw new SecurityException("비공개 매거진입니다");
+        }
+        return magazine;
+    }
 }

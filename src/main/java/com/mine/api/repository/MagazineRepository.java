@@ -44,15 +44,6 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("username") String username,
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ Phase 2: 태그 검색 (Magazine에 tags 필드 추가 후 사용)
-        // @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM
-        // Magazine m JOIN m.tags t " +
-        // "WHERE t IN :tags AND m.isPublic = true")
-        // org.springframework.data.domain.Page<Magazine> findByTagsIn(
-        // @org.springframework.data.repository.query.Param("tags")
-        // java.util.List<String> tags,
-        // org.springframework.data.domain.Pageable pageable);
-
         // ⭐ Phase 2: 내 매거진 - FETCH JOIN으로 N+1 및 LazyInitializationException 방지
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN FETCH m.user " +
@@ -76,4 +67,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("followings") List<User> followings,
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         org.springframework.data.domain.Pageable pageable);
+
+        // 전체 공개 매거진 조회 (최신순)
+        org.springframework.data.domain.Page<Magazine> findByIsPublicTrueOrderByCreatedAtDesc(
+                org.springframework.data.domain.Pageable pageable);
 }

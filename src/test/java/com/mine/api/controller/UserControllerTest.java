@@ -2,6 +2,7 @@ package com.mine.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mine.api.dto.UserDto;
+import com.mine.api.exception.GlobalExceptionHandler;
 import com.mine.api.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandler.class) // GlobalExceptionHandler 명시적 추가
 class UserControllerTest {
 
         @Autowired
@@ -161,9 +164,7 @@ class UserControllerTest {
                                 .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest()); // GlobalExceptionHandler가 있다면 400 반환 예상
-                                // 만약 핸들러가 없다면 500이나 다른 에러가 날 수 있으므로 확인 필요.
-                                // 일단 4xx 에러를 기대.
+                                .andExpect(status().isBadRequest());
         }
 
         @Test

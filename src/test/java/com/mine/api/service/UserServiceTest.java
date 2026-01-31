@@ -27,7 +27,8 @@ public class UserServiceTest {
     void 프로필_업데이트_테스트() {
         // given
         String username = "testuser";
-        UserDto.UpdateRequest request = new UserDto.UpdateRequest("newNick", "newBio", "newImg");
+        // UpdateRequest 생성자 인자: nickname, bio, email, profileImageUrl
+        UserDto.UpdateRequest request = new UserDto.UpdateRequest("newNick", "newBio", "test@example.com", "newImg");
         
         User user = User.builder()
                 .username(username)
