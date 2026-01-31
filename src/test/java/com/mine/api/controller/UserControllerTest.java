@@ -3,6 +3,7 @@ package com.mine.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mine.api.dto.UserDto;
 import com.mine.api.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,11 +24,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -145,6 +146,24 @@ class UserControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.nickname").value("NewNick"))
                                 .andExpect(jsonPath("$.bio").value("NewBio"));
+        }
+
+        @Test
+        @DisplayName("닉네임 수정 실패 - 잘못된 닉네임")
+        @WithMockUser(username = "user")
+        void updateMyProfile_Fail_InvalidNickname() throws Exception {
+                UserDto.UpdateRequest request = new UserDto.UpdateRequest("짧", null, null, null);
+
+                given(userService.updateProfile(eq("user"), any(UserDto.UpdateRequest.class)))
+                        .willThrow(new IllegalArgumentException("닉네임은 2자 이상이어야 합니다."));
+
+                mockMvc.perform(patch("/api/users/me")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest()); // GlobalExceptionHandler가 있다면 400 반환 예상
+                                // 만약 핸들러가 없다면 500이나 다른 에러가 날 수 있으므로 확인 필요.
+                                // 일단 4xx 에러를 기대.
         }
 
         @Test

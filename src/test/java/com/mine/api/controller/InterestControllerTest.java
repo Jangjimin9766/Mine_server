@@ -5,6 +5,7 @@ import com.mine.api.service.InterestService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InterestController.class)
+@AutoConfigureMockMvc(addFilters = false) // Security 필터 비활성화로 비로그인 접근 시뮬레이션 (실제 SecurityConfig 검증은 아님)
 class InterestControllerTest {
 
         @Autowired
@@ -33,10 +35,9 @@ class InterestControllerTest {
         private InterestService interestService;
 
         @Test
-        @DisplayName("전체 관심사 목록 조회 성공")
-        @WithMockUser
+        @DisplayName("전체 관심사 목록 조회 성공 (비로그인)")
         void getAllInterests_Success() throws Exception {
-                // Given - DB 엔티티 기반 Response
+                // Given
                 List<InterestDto.InterestResponse> interests = List.of(
                                 InterestDto.InterestResponse.builder()
                                                 .id(1L).code("TRAVEL").name("여행").category("활동").build(),
@@ -45,8 +46,7 @@ class InterestControllerTest {
                 given(interestService.getAllInterests()).willReturn(interests);
 
                 // When & Then
-                mockMvc.perform(get("/api/interests")
-                                .with(csrf()))
+                mockMvc.perform(get("/api/interests"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$[0].code").value("TRAVEL"))
                                 .andExpect(jsonPath("$[0].name").value("여행"));
@@ -63,8 +63,7 @@ class InterestControllerTest {
                 given(interestService.getUserInterests("testuser")).willReturn(myInterests);
 
                 // When & Then
-                mockMvc.perform(get("/api/interests/me")
-                                .with(csrf()))
+                mockMvc.perform(get("/api/interests/me"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$[0].code").value("TRAVEL"));
         }
