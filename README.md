@@ -100,10 +100,10 @@
 - ✅ 팔로워/팔로잉 목록 조회
 - ✅ 다른 사용자 프로필 조회
 
-### 6. 상호작용 추적 (`/api/magazines/{id}/interactions`)
-- ✅ 매거진 조회 기록 (View)
-- ✅ 섹션 스크롤 깊이 추적
-- ✅ 개인화 피드 알고리즘을 위한 데이터 수집
+### 6. AI 상호작용 (`/api/magazines/{id}/interactions`)
+- ✅ **대화형 편집**: AI와 대화를 통해 매거진 내용 수정
+- ✅ **섹션 재생성**: 특정 섹션의 스타일이나 내용을 AI에게 요청하여 변경
+- ✅ **히스토리 관리**: AI와의 편집 대화 기록 저장
 
 ## 🛠 기술 스택
 
@@ -443,14 +443,14 @@ moodboards
 └── created_at
 ```
 
-#### Magazine Interactions (상호작용 추적)
+#### Magazine Interactions (AI 대화 기록)
 ```sql
 magazine_interactions
 ├── id (PK)
 ├── magazine_id (FK → magazines)
-├── user_id (FK → users)
-├── interaction_type (ENUM: VIEW)
-├── scroll_depth (0-100)
+├── user_message (TEXT)     -- 사용자 요청 메시지
+├── ai_response (TEXT)      -- AI 응답 메시지
+├── action_type             -- 'regenerate', 'add', 'edit' 등
 └── created_at
 ```
 
@@ -463,10 +463,10 @@ erDiagram
     USERS ||--o{ USER_INTERESTS : has
     USERS ||--o{ FOLLOWS : follows
     USERS ||--o{ MAGAZINE_LIKES : likes
-    USERS ||--o{ MAGAZINE_INTERACTIONS : interacts
     MAGAZINES ||--o{ MAGAZINE_SECTIONS : contains
     MAGAZINES ||--o{ MAGAZINE_LIKES : receives
-    MAGAZINES ||--o{ MAGAZINE_INTERACTIONS : tracked
+    MAGAZINES ||--o{ MAGAZINE_INTERACTIONS : records
+    INTERESTS ||--o{ USER_INTERESTS : defined_in
     
     USERS {
         bigint id PK
@@ -515,6 +515,43 @@ erDiagram
         string image_url
         text prompt
         timestamp created_at
+    }
+
+    MAGAZINE_INTERACTIONS {
+        bigint id PK
+        bigint magazine_id FK
+        text user_message
+        text ai_response
+        string action_type
+        timestamp created_at
+    }
+
+    MAGAZINE_LIKES {
+        bigint id PK
+        bigint user_id FK
+        bigint magazine_id FK
+        timestamp created_at
+    }
+
+    FOLLOWS {
+        bigint id PK
+        bigint follower_id FK
+        bigint following_id FK
+        timestamp created_at
+    }
+
+    USER_INTERESTS {
+        bigint id PK
+        bigint user_id FK
+        bigint interest_id FK
+        timestamp created_at
+    }
+
+    INTERESTS {
+        bigint id PK
+        string code UK
+        string name
+        string category
     }
 ```
 
