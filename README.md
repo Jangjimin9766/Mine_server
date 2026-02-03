@@ -119,7 +119,7 @@ Build Tool: Gradle
 
 ```mermaid
 graph TB
-    Client[React Client App<br/>(External Repository)]
+    Client["React Client App<br/>(External Repository)"]
     SpringServer[Spring Boot Server<br/>:8080]
     PythonServer[Python FastAPI Server<br/>:8000]
     MySQL[(MySQL Database)]
