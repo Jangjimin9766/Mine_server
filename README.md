@@ -40,6 +40,29 @@
 - 🔐 **강력한 보안**: JWT 기반 인증 및 Refresh Token을 통한 안전한 세션 관리
 - 🚀 **확장 가능한 아키텍처**: Spring Boot + Python FastAPI 마이크로서비스 구조
 
+## 🚀 Engineering Highlights (Technical Achievements)
+
+> **"안정성과 확장성을 고려한 고성능 백엔드 아키텍처 설계"**
+
+본 프로젝트는 대규모 데이터 처리와 외부 AI 서비스 연동 시 발생할 수 있는 기술적 난제들을 해결하기 위해 다음과 같은 엔지니어링 전략을 도입했습니다.
+
+### 1. Performance Optimization
+- **Full-Text Search Optimization**: 기존 `LIKE` 쿼리의 성능 한계(3.2s)를 극복하기 위해 **MySQL Full-Text Index (N-gram Parser)** 및 Native Query를 도입하여 검색 성능을 **0.017s (약 180배)**로 획기적으로 개선했습니다.
+- **Efficient Pagination**: 데이터 증가에 따른 성능 저하를 방지하기 위해 **No-Offset (Cursor-based)** 페이징을 적용하여 일관된 조회 성능을 보장했습니다.
+- **Query Optimization**: `Fetch Join`과 `@EntityGraph`를 적재적소에 활용하여 N+1 문제를 해결하고, JPA `@Formula`를 통해 통계 데이터를 효율적으로 조회했습니다.
+
+### 2. Resilience & Stability
+- **Circuit Breaker Pattern**: 외부 AI 서비스(RunPod)의 장애가 전체 시스템으로 전파되는 것을 차단하기 위해 **Resilience4j**를 도입했습니다. 50% 이상의 실패율 감지 시 즉시 Fallback 처리하여 시스템 생존성을 확보했습니다.
+- **Safe Timeout Strategy**: AI 모델의 긴 생성 시간(Long-running Task)을 고려하여 정교한 TimeLimiter 전략을 수립, 불필요한 타임아웃 오류를 방지했습니다.
+
+### 3. Asynchronous Architecture
+- **Event-Driven AI Processing**: **Serverless GPU (RunPod)**와 **Spring WebClient**를 활용한 비동기 폴링(Async Polling) 구조를 설계하여, 고비용 GPU 리소스를 효율적으로 사용하고 비용을 **90% 이상 절감**했습니다.
+
+### 4. Security & DevOps
+- **Enhanced Security**: Stateless한 JWT 인증 방식의 한계를 보완하기 위해 **Redis 기반 Blacklist** 전략을 구현하여 안전한 로그아웃 처리를 지원합니다.
+- **Reliable CI/CD**: **GitHub Actions**를 통해 빌드부터 테스트, 배포까지 전 과정을 자동화하고, **PowerShell E2E Script**로 주요 비즈니스 시나리오를 사전에 검증하여 배포 안정성을 높였습니다.
+- **Observability**: **Better Stack (Logtail)**을 연동하여 분산 환경에서의 실시간 로그 모니터링 체계를 구축했습니다.
+
 ## ✨ 주요 기능
 
 ### 1. 사용자 관리 (`/api/auth`, `/api/users`)

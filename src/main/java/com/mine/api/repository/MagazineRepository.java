@@ -37,22 +37,22 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         // ⭐ 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
         // 본인 매거진 또는 공개 계정의 매거진만 검색됨
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
-                        "LEFT JOIN m.sections s " +
-                        "WHERE (m.title LIKE %:keyword% " +
-                        "OR m.introduction LIKE %:keyword% " +
-                        "OR m.tags LIKE %:keyword% " +
-                        "OR s.heading LIKE %:keyword% " +
-                        "OR s.content LIKE %:keyword%) " +
-                        "AND (m.user.isPublic = true OR m.user.username = :username)", countQuery = "SELECT COUNT(DISTINCT m) FROM Magazine m "
+        // [PERFORMANCE] Full-Text Index 사용을 위해 Native Query로 변경
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+                        "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "WHERE (MATCH(m.title, m.introduction, m.tags) AGAINST(:keyword IN BOOLEAN MODE) " +
+                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " + // 섹션은 아직 Index 미적용 시 LIKE 유지 (또는 추가 적용)
+                        "OR s.content LIKE CONCAT('%', :keyword, '%')) " +
+                        "AND (m.is_public = true OR u.username = :username)", countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m "
                                         +
-                                        "LEFT JOIN m.sections s " +
-                                        "WHERE (m.title LIKE %:keyword% " +
-                                        "OR m.introduction LIKE %:keyword% " +
-                                        "OR m.tags LIKE %:keyword% " +
-                                        "OR s.heading LIKE %:keyword% " +
-                                        "OR s.content LIKE %:keyword%) " +
-                                        "AND (m.user.isPublic = true OR m.user.username = :username)")
+                                        "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+                                        "LEFT JOIN users u ON m.user_id = u.id " +
+                                        "WHERE (MATCH(m.title, m.introduction, m.tags) AGAINST(:keyword IN BOOLEAN MODE) "
+                                        +
+                                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+                                        "OR s.content LIKE CONCAT('%', :keyword, '%')) " +
+                                        "AND (m.is_public = true OR u.username = :username)", nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         @org.springframework.data.repository.query.Param("username") String username,

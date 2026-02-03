@@ -27,6 +27,7 @@ public class RunPodService {
     /**
      * RunPod Serverless Async Request (POST /run -> Poll /status/{id})
      */
+    @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendRequest(String url, Map<String, Object> inputData) {
         // 1. Convert /runsync URL to /run (if applicable)
         String runUrl = url.replace("/runsync", "/run");
@@ -114,6 +115,7 @@ public class RunPodService {
     /**
      * Local Python Server (FastAPI) Sync Request
      */
+    @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendSyncRequest(String url, Map<String, Object> requestBody) {
         log.info("Sending Sync request to: {}", url);
 
@@ -132,5 +134,18 @@ public class RunPodService {
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
                 })
                 .block(Duration.ofMinutes(5));
+    }
+
+    // Fallback Method
+    public Map<String, Object> fallback(String url, Map<String, Object> inputData, Throwable t) {
+        log.error("Circuit Breaker Open! AI Server is unreachable. URL: {}, Error: {}", url, t.getMessage());
+
+        // Return a default failure response that Service can understand
+        if (t instanceof io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
+            throw new RuntimeException("AI Server is currently unavailable (Circuit Open). Please try again later.");
+        }
+
+        // For other exceptions, rethrow or return default
+        throw new RuntimeException("AI Server connection failed: " + t.getMessage(), t);
     }
 }
