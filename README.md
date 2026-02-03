@@ -1,6 +1,9 @@
-# M:ine - AI 기반 개인화 매거진 플랫폼 🎨
-[![Linked Repo](https://img.shields.io/badge/🔗_Linked_Repository-Mine_AI_Server-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://github.com/Jangjimin9766/Mine-AI)
+# M:ine - AI 기반 개인화 매거진 플랫폼 (Backend Server) 🎨
 
+[![Linked Repo](https://img.shields.io/badge/🔗_Linked_Repository-Mine_AI_Server-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://github.com/Jangjimin9766/Mine-AI)
+[![Client Repo](https://img.shields.io/badge/🔗_Client_Repository-React_App-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://github.com/Jangjimin9766/Mine-Client)
+
+> **Backend API Server Repository**
 > AI가 생성하는 나만의 매거진, 취향을 담은 무드보드까지
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -24,13 +27,16 @@
 
 ## 🌟 프로젝트 소개
 
-**M:ine**은 사용자의 취향을 분석하여 AI가 자동으로 매거진 콘텐츠를 생성하고, Stable Diffusion을 활용한 무드보드(배경화면)를 제공하는 혁신적인 플랫폼입니다.
+**M:ine Server**는 AI 기반 매거진 플랫폼의 **백엔드 API 서버**입니다.
+사용자의 취향을 분석하여 AI가 자동으로 매거진 콘텐츠를 생성하고, 무드보드를 제공합니다.
+
+> 💡 **참고**: 클라이언트 애플리케이션은 별도의 React 팀이 담당하고 있으며, 이 저장소는 오직 **API 서버와 데이터 처리**를 담당합니다.
 
 ### 핵심 가치
 
 - 🤖 **AI 기반 콘텐츠 생성**: Python FastAPI 서버와 연동하여 사용자 취향에 맞는 매거진 자동 생성
 - 🎨 **무드보드 생성**: Stable Diffusion SDXL을 활용한 고품질 배경화면 생성
-- 📱 **개인화 피드**: 사용자의 관심사와 상호작용을 기반으로 한 맞춤형 콘텐츠 추천
+- 📱 **RESTful API**: React 클라이언트를 위한 완벽한 API 명세 제공
 - 🔐 **강력한 보안**: JWT 기반 인증 및 Refresh Token을 통한 안전한 세션 관리
 - 🚀 **확장 가능한 아키텍처**: Spring Boot + Python FastAPI 마이크로서비스 구조
 
@@ -113,7 +119,7 @@ Build Tool: Gradle
 
 ```mermaid
 graph TB
-    Client[클라이언트 앱]
+    Client[React Client App<br/>(External Repository)]
     SpringServer[Spring Boot Server<br/>:8080]
     PythonServer[Python FastAPI Server<br/>:8000]
     MySQL[(MySQL Database)]
@@ -128,6 +134,7 @@ graph TB
     SpringServer -->|Upload Image| S3
     PythonServer -->|Generate Image| SpringServer
     
+    style Client fill:#61DAFB,stroke:#333,stroke-width:2px
     style SpringServer fill:#6db33f
     style PythonServer fill:#009688
     style MySQL fill:#4479a1
@@ -224,6 +231,8 @@ docker run -d -p 6379:6379 redis
 
 ### 5. 애플리케이션 실행
 
+**서버 실행 전, 반드시 MySQL과 Redis가 실행 중이어야 합니다.**
+
 ```bash
 # Gradle 빌드 및 실행
 ./gradlew build
@@ -233,7 +242,11 @@ docker run -d -p 6379:6379 redis
 java -jar build/libs/api-0.0.1-SNAPSHOT.jar
 ```
 
-서버가 성공적으로 시작되면 `http://localhost:8080`에서 접근 가능합니다.
+서버가 성공적으로 시작되면 다음 주소에서 API에 접근 가능합니다.
+- Base URL: `http://localhost:8080`
+- API Docs: `http://localhost:8080/swagger-ui.html`
+
+> ❗ **주의**: 프론트엔드 화면은 제공되지 않습니다. 별도의 클라이언트 앱을 실행하거나 Swagger UI를 통해 테스트하세요.
 
 ### 6. Swagger UI 확인
 
@@ -281,6 +294,13 @@ http://localhost:8080/swagger-ui.html
 | DELETE | `/api/magazines/{id}/sections/{sectionId}` | 섹션 삭제 | ✅ |
 | PATCH | `/api/magazines/{id}/sections/reorder` | 섹션 순서 변경 | ✅ |
 | POST | `/api/magazines/{id}/sections/{sectionId}/interact` | AI 상호작용 (섹션 레벨) | ✅ |
+| GET | `/api/sections/recent` | 최근 열람한 섹션 히스토리 (Recent Views) | ✅ |
+
+### 이미지 API ⭐ NEW
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/images` | 이미지 업로드 (S3) | ✅ |
 
 ### 무드보드 API
 
@@ -679,46 +699,29 @@ brew services restart redis
 
 ## 📝 개발 로드맵
 
-### Phase 1 ✅ (완료)
-- [x] 사용자 인증 시스템
-- [x] 매거진 CRUD
-- [x] 매거진 삭제 및 수정
-
-### Phase 2 ✅ (완료)
-- [x] 공개/비공개 설정
-- [x] 공유 링크 생성
-- [x] 검색 기능
-
-### Phase 3 ✅ (완료)
-- [x] 좋아요 기능
-- [x] 무드보드 생성
-
-### Phase 4 ✅ (완료)
+### Phase 1: Core Features ✅
+- [x] 사용자 인증 시스템 (JWT, Security)
+- [x] 매거진 CRUD 및 검색
 - [x] 개인화 피드 알고리즘
-- [x] 상호작용 추적
+- [x] 무드보드 생성 (Stable Diffusion)
 
-### Phase 5-7 ✅ (완료)
-- [x] 프로필 수정
-- [x] 회원 탈퇴 (Soft Delete)
-- [x] 비밀번호 변경
-- [x] 팔로우/언팔로우 시스템
+### Phase 2: Advanced Interaction ✅
+- [x] 좋아요 및 팔로우 시스템
+- [x] 섹션 CRUD 및 순서 변경
+- [x] AI 상호작용 (채팅형 편집)
+- [x] 커버 이미지 변경 및 이미지 업로드
 
-### Phase 8 ✅ (완료)
-- [x] 섹션 CRUD API (개별 카드 수정/삭제)
-- [x] 섹션 순서 변경 (드래그 앤 드롭)
-- [x] 2단계 AI 상호작용 (매거진/섹션 레벨)
-- [x] 커버 이미지 변경 API
-- [x] CI/CD 파이프라인 구축 (GitHub Actions)
-- [x] RunPod Serverless 비동기 폴링 아키텍처
+### Phase 3: Stability & Operations ✅
+- [x] CI/CD 파이프라인 (GitHub Actions)
+- [x] RunPod Serverless 비동기 아키텍처
+- [x] Better Stack 로깅 및 모니터링
+- [x] 테스트 커버리지 확보 (Controller/Service)
 
-### 향후 계획 🚧
+### 🚀 Future Plans (v2.0) 🚧
 - [ ] 관리자 대시보드
-- [ ] 알림 시스템
-- [ ] 이메일 인증
-- [ ] OAuth 소셜 로그인 (Google, Kakao)
-- [ ] WebSocket 실시간 알림
-- [ ] 매거진 추천 시스템 고도화
-- [ ] Kubernetes 배포
+- [ ] 알림 시스템 & WebSocket
+- [ ] OAuth 소셜 로그인
+- [ ] 매거진 추천 모델 고도화
 
 ## 📄 라이선스
 
