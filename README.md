@@ -146,19 +146,19 @@ graph TB
     SpringServer[Spring Boot Server<br/>:8080]
     
     subgraph AI_Infrastructure ["☁️ AI & Serverless Infrastructure"]
-        RunPod[RunPod Serverless GPU<br/>(Async Polling)]
-        PythonServer[Python FastAPI Server<br/>(Local / Inference)]
+        RunPod["RunPod Serverless GPU<br/>(Async Polling)"]
+        PythonServer["Python FastAPI Server<br/>(Local / Inference)"]
     end
     
     subgraph Data_Storage ["💾 Data & Storage"]
-        MySQL[(MySQL 8.0<br/>Full-Text Index)]
-        Redis[(Redis<br/>Auth/Session)]
-        S3[AWS S3<br/>Image Storage]
+        MySQL[("MySQL 8.0<br/>Full-Text Index")]
+        Redis[("Redis<br/>Auth/Session")]
+        S3["AWS S3<br/>Image Storage"]
     end
     
     subgraph Operations ["🛠 DevOps & Monitoring"]
-        Actions[GitHub Actions<br/>CI/CD Pipeline]
-        BetterStack[Better Stack<br/>Log Monitoring]
+        Actions["GitHub Actions<br/>CI/CD Pipeline"]
+        BetterStack["Better Stack<br/>Log Monitoring"]
     end
     
     %% Flows
