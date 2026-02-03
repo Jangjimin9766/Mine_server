@@ -142,27 +142,50 @@ Build Tool: Gradle
 
 ```mermaid
 graph TB
-    Client["React Client App<br/>(External Repository)"]
+    Client["React Client App<br/>(External Repo)"]
     SpringServer[Spring Boot Server<br/>:8080]
-    PythonServer[Python FastAPI Server<br/>:8000]
-    MySQL[(MySQL Database)]
-    Redis[(Redis)]
-    S3[AWS S3<br/>Moodboard Images]
     
+    subgraph AI_Infrastructure ["☁️ AI & Serverless Infrastructure"]
+        RunPod[RunPod Serverless GPU<br/>(Async Polling)]
+        PythonServer[Python FastAPI Server<br/>(Local / Inference)]
+    end
+    
+    subgraph Data_Storage ["💾 Data & Storage"]
+        MySQL[(MySQL 8.0<br/>Full-Text Index)]
+        Redis[(Redis<br/>Auth/Session)]
+        S3[AWS S3<br/>Image Storage]
+    end
+    
+    subgraph Operations ["🛠 DevOps & Monitoring"]
+        Actions[GitHub Actions<br/>CI/CD Pipeline]
+        BetterStack[Better Stack<br/>Log Monitoring]
+    end
+    
+    %% Flows
     Client -->|REST API| SpringServer
-    SpringServer -->|JPA| MySQL
-    SpringServer -->|Session| Redis
-    SpringServer -->|WebClient| PythonServer
-    PythonServer -->|Save Magazine| SpringServer
-    SpringServer -->|Upload Image| S3
-    PythonServer -->|Generate Image| SpringServer
     
+    SpringServer -->|JPA/Native Query| MySQL
+    SpringServer -->|Session/Cache| Redis
+    SpringServer -->|Image Upload| S3
+    
+    %% AI Integration
+    SpringServer -->|WebClient (Async)| RunPod
+    RunPod -->|Inference Result| SpringServer
+    
+    %% DevOps
+    Actions -->|Deploy| SpringServer
+    SpringServer -.->|Log Stream| BetterStack
+    
+    %% System Styles
     style Client fill:#61DAFB,stroke:#333,stroke-width:2px
     style SpringServer fill:#6db33f
-    style PythonServer fill:#009688
+    style RunPod fill:#009688
+    style PythonServer fill:#009688,stroke-dasharray: 5 5
     style MySQL fill:#4479a1
     style Redis fill:#dc382d
     style S3 fill:#ff9900
+    style Actions fill:#2088FF
+    style BetterStack fill:#5744e6
 ```
 
 ### 데이터 흐름
