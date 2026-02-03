@@ -169,7 +169,7 @@ graph TB
     SpringServer -->|Image Upload| S3
     
     %% AI Integration
-    SpringServer -->|WebClient (Async)| RunPod
+    SpringServer -->|"WebClient (Async)"| RunPod
     RunPod -->|Inference Result| SpringServer
     
     %% DevOps
