@@ -1,7 +1,7 @@
 # M:ine - AI 기반 개인화 매거진 플랫폼 (Backend Server) 🎨
 
 [![Linked Repo](https://img.shields.io/badge/🔗_Linked_Repository-Mine_AI_Server-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://github.com/Jangjimin9766/Mine-AI)
-[![Client Repo](https://img.shields.io/badge/🔗_Client_Repository-React_App-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://github.com/Jangjimin9766/Mine-Client)
+[![Client Repo](https://img.shields.io/badge/🔗_Client_Repository-React_App-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://github.com/drddyn/Mine-FE)
 
 > **Backend API Server Repository**
 > AI가 생성하는 나만의 매거진, 취향을 담은 무드보드까지
