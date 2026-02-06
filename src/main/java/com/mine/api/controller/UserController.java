@@ -1,6 +1,7 @@
 package com.mine.api.controller;
 
 import com.mine.api.dto.UserDto;
+import com.mine.api.service.S3Service;
 import com.mine.api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,10 +10,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.SortDefault;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final S3Service s3Service;
 
     // ⭐ Phase 5: 내 프로필 조회
     @Tag(name = "5. 사용자 (User) 👤", description = "사용자 프로필 조회/수정 및 팔로우 관리 API")
@@ -30,13 +34,26 @@ public class UserController {
         return ResponseEntity.ok(userService.getMyProfile(userDetails.getUsername()));
     }
 
-    // ⭐ Phase 5: 프로필 수정
+    // ⭐ Phase 5: 프로필 수정 (multipart/form-data 지원)
     @Tag(name = "5. 사용자 (User) 👤")
-    @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 소개, 이미지)을 수정합니다.")
-    @PatchMapping("/me")
+    @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto.ProfileResponse> updateMyProfile(
-            @RequestBody @jakarta.validation.Valid UserDto.UpdateRequest request,
+            @RequestPart(value = "nickname", required = false) String nickname,
+            @RequestPart(value = "username", required = false) String username,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
             @AuthenticationPrincipal UserDetails userDetails) {
+
+        String profileImageUrl = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                profileImageUrl = s3Service.uploadImage(profileImage);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+
+        UserDto.UpdateRequest request = new UserDto.UpdateRequest(nickname, username, profileImageUrl);
         return ResponseEntity.ok(userService.updateProfile(userDetails.getUsername(), request));
     }
 
