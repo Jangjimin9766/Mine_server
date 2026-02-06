@@ -39,9 +39,9 @@ public class UserController {
     @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
     @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto.ProfileResponse> updateMyProfile(
-            @RequestPart(value = "nickname", required = false) String nickname,
-            @RequestPart(value = "username", required = false) String username,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
+            @io.swagger.v3.oas.annotations.Parameter(description = "닉네임", example = "감성충전") @RequestPart(value = "nickname", required = false) String nickname,
+            @io.swagger.v3.oas.annotations.Parameter(description = "아이디", example = "user123") @RequestPart(value = "username", required = false) String username,
+            @io.swagger.v3.oas.annotations.Parameter(description = "프로필 이미지 파일", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)) @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String profileImageUrl = null;
