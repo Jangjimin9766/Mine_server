@@ -1,5 +1,7 @@
 package com.mine.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mine.api.domain.Magazine;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -31,7 +33,7 @@ public class MagazineDto {
         @Size(min = 1, max = 500, message = "소개는 1-500자 사이여야 합니다")
         private String introduction;
 
-        @com.fasterxml.jackson.annotation.JsonIgnore
+        @JsonIgnore
         public boolean isValid() {
             return (title != null && !title.trim().isEmpty()) ||
                     (introduction != null && !introduction.trim().isEmpty());
@@ -66,6 +68,7 @@ public class MagazineDto {
     @AllArgsConstructor
     public static class Response {
         @Schema(description = "매거진 ID", example = "1")
+        @JsonProperty("magazineId")
         private Long id;
 
         @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드")
@@ -108,6 +111,7 @@ public class MagazineDto {
     @AllArgsConstructor
     public static class ListItem {
         @Schema(description = "매거진 ID", example = "1")
+        @JsonProperty("magazineId")
         private Long id;
 
         @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드")

@@ -22,6 +22,7 @@ public class SectionDto {
     @Schema(description = "섹션 상세 정보")
     public static class Response {
         @Schema(description = "섹션 ID", example = "101")
+        @JsonProperty("sectionId")
         private Long id;
 
         @Schema(description = "소제목", example = "서울의 숨겨진 카페")
