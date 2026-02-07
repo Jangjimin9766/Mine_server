@@ -3,6 +3,7 @@ package com.mine.api.service;
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.User;
+import com.mine.api.dto.ParagraphDto;
 import com.mine.api.dto.SectionDto;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.MagazineSectionRepository;
@@ -222,6 +223,21 @@ public class SectionService {
         Map<String, Object> map = new HashMap<>();
         map.put("id", section.getId());
         map.put("heading", section.getHeading());
+        map.put("thumbnail_url", section.getThumbnailUrl());
+
+        // paragraphs 변환
+        List<Map<String, Object>> paragraphsList = section.getParagraphs().stream()
+                .map(p -> {
+                    Map<String, Object> pMap = new HashMap<>();
+                    pMap.put("subtitle", p.getSubtitle());
+                    pMap.put("text", p.getText());
+                    pMap.put("image_url", p.getImageUrl());
+                    return pMap;
+                })
+                .collect(Collectors.toList());
+        map.put("paragraphs", paragraphsList);
+
+        // deprecated 필드도 하위 호환을 위해 포함
         map.put("content", section.getContent());
         map.put("image_url", section.getImageUrl());
         map.put("layout_hint", section.getLayoutHint());
@@ -231,9 +247,21 @@ public class SectionService {
     }
 
     private SectionDto.Response toResponse(MagazineSection section) {
+        // paragraphs 변환
+        List<ParagraphDto.Response> paragraphsList = section.getParagraphs().stream()
+                .map(p -> ParagraphDto.Response.builder()
+                        .subtitle(p.getSubtitle())
+                        .text(p.getText())
+                        .imageUrl(p.getImageUrl())
+                        .build())
+                .collect(Collectors.toList());
+
         return SectionDto.Response.builder()
                 .id(section.getId())
                 .heading(section.getHeading())
+                .thumbnailUrl(section.getThumbnailUrl())
+                .paragraphs(paragraphsList)
+                // deprecated 필드도 하위 호환을 위해 포함
                 .content(section.getContent())
                 .imageUrl(section.getImageUrl())
                 .layoutType(section.getLayoutType())

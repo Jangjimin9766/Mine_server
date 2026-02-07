@@ -3,6 +3,7 @@ package com.mine.api.service;
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineLike;
 import com.mine.api.domain.MagazineSection;
+import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.repository.MagazineRepository;
@@ -79,6 +80,8 @@ public class MagazineService {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
+                        .thumbnailUrl(sectionDto.getThumbnailUrl())
+                        // deprecated 필드도 하위 호환을 위해 저장
                         .content(sectionDto.getContent())
                         .imageUrl(sectionDto.getImageUrl())
                         .layoutHint(sectionDto.getLayoutHint())
@@ -86,6 +89,21 @@ public class MagazineService {
                         .caption(sectionDto.getCaption())
                         .displayOrder(i) // 생성 순서대로 0부터 할당
                         .build();
+
+                // paragraphs 처리 (새 구조 지원)
+                if (sectionDto.getParagraphs() != null) {
+                    for (int j = 0; j < sectionDto.getParagraphs().size(); j++) {
+                        MagazineCreateRequest.ParagraphDto paraDto = sectionDto.getParagraphs().get(j);
+                        Paragraph paragraph = Paragraph.builder()
+                                .subtitle(paraDto.getSubtitle())
+                                .text(paraDto.getText())
+                                .imageUrl(paraDto.getImageUrl())
+                                .displayOrder(j)
+                                .build();
+                        section.addParagraph(paragraph);
+                    }
+                }
+
                 magazine.addSection(section);
             }
         }

@@ -1,5 +1,6 @@
 package com.mine.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,22 +27,51 @@ public class SectionDto {
         @Schema(description = "소제목", example = "서울의 숨겨진 카페")
         private String heading;
 
-        @Schema(description = "본문 내용", example = "이곳은 조용히 커피를 즐기기 좋은 공간입니다.")
+        // ===== 새로 추가된 필드 =====
+
+        @Schema(description = "섹션 썸네일 URL", example = "https://example.com/thumbnail.jpg")
+        @JsonProperty("thumbnail_url")
+        private String thumbnailUrl;
+
+        @Schema(description = "문단 배열 (지그재그 레이아웃용)")
+        private List<ParagraphDto.Response> paragraphs;
+
+        // ===== Deprecated 필드 (하위 호환용) =====
+
+        /**
+         * @deprecated paragraphs[].text 사용 권장
+         */
+        @Deprecated
+        @Schema(description = "본문 내용 (deprecated)", example = "이곳은 조용히 커피를 즐기기 좋은 공간입니다.")
         private String content;
 
-        @Schema(description = "이미지 URL", example = "https://example.com/image.jpg")
+        /**
+         * @deprecated thumbnailUrl 또는 paragraphs[].imageUrl 사용 권장
+         */
+        @Deprecated
+        @Schema(description = "이미지 URL (deprecated)", example = "https://example.com/image.jpg")
+        @JsonProperty("image_url")
         private String imageUrl;
 
+        /**
+         * @deprecated 삭제 예정
+         */
+        @Deprecated
+        @Schema(description = "이미지 캡션 (deprecated)", example = "카페 내부 전경")
+        private String caption;
+
+        // ===== 기존 필드 =====
+
         @Schema(description = "레이아웃 타입", example = "card")
+        @JsonProperty("layout_type")
         private String layoutType;
 
         @Schema(description = "레이아웃 힌트", example = "full_width")
+        @JsonProperty("layout_hint")
         private String layoutHint;
 
-        @Schema(description = "이미지 캡션", example = "카페 내부 전경")
-        private String caption;
-
         @Schema(description = "표시 순서", example = "1")
+        @JsonProperty("display_order")
         private Integer displayOrder;
     }
 

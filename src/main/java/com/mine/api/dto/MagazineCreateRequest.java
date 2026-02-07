@@ -41,6 +41,25 @@ public class MagazineCreateRequest {
     @Schema(description = "매거진 섹션 목록")
     private List<SectionDto> sections;
 
+    /**
+     * 문단 DTO (AI 서버에서 전달)
+     */
+    @Schema(description = "문단 정보")
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class ParagraphDto {
+        @Schema(description = "문단 소제목", example = "국밥의 성지, 서면")
+        private String subtitle;
+
+        @Schema(description = "문단 본문 (150-300자)", example = "돼지국밥은 부산의 대표 음식으로...")
+        private String text;
+
+        @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
+        @JsonProperty("image_url")
+        private String imageUrl;
+    }
+
     @Schema(description = "매거진 섹션")
     @Getter
     @Setter
@@ -49,14 +68,30 @@ public class MagazineCreateRequest {
         @Schema(description = "섹션 제목", example = "코트 스타일링")
         private String heading;
 
-        @Schema(description = "섹션 본문 내용", example = "올 겨울 가장 핫한 코트 스타일링을 소개합니다...")
+        // ===== 새로 추가된 필드 =====
+
+        @Schema(description = "섹션 썸네일 URL", example = "https://example.com/thumbnail.jpg")
+        @JsonProperty("thumbnail_url")
+        private String thumbnailUrl;
+
+        @Schema(description = "문단 배열 (지그재그 레이아웃용)")
+        private List<ParagraphDto> paragraphs;
+
+        // ===== Deprecated 필드 (하위 호환용) =====
+
+        @Schema(description = "섹션 본문 내용 (deprecated)", example = "올 겨울 가장 핫한 코트 스타일링을 소개합니다...")
         private String content;
 
-        @Schema(description = "섹션 이미지 URL", example = "https://example.com/section1.jpg")
+        @Schema(description = "섹션 이미지 URL (deprecated)", example = "https://example.com/section1.jpg")
         @JsonProperty("image_url")
         private String imageUrl;
 
-        @Schema(description = "레이아웃 힌트 (기존)", example = "image_left")
+        @Schema(description = "이미지 캡션 (deprecated)", example = "2024 FW 트렌드 코트")
+        private String caption;
+
+        // ===== 기존 필드 =====
+
+        @Schema(description = "레이아웃 힌트", example = "image_left")
         @JsonProperty("layout_hint")
         private String layoutHint;
 
@@ -64,8 +99,5 @@ public class MagazineCreateRequest {
                 "split_right", "basic" })
         @JsonProperty("layout_type")
         private String layoutType;
-
-        @Schema(description = "이미지 캡션", example = "2024 FW 트렌드 코트")
-        private String caption;
     }
 }
