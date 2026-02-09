@@ -17,7 +17,6 @@ public class UserDto {
     public static class ProfileResponse {
         private Long id;
         private String username;
-        private String password; // 비밀번호 반환 (내 프로필 조회 시)
         private String nickname;
         private String email;
         private String profileImageUrl;

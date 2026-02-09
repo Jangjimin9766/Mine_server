@@ -83,7 +83,18 @@ class MagazineControllerTest {
         @Test
         @WithMockUser(username = "testuser")
         void getMagazineDetail() throws Exception {
-                given(magazineService.getMagazineDetail(1L, "testuser")).willReturn(magazine);
+                MagazineDto.DetailResponse detailResponse = MagazineDto.DetailResponse.builder()
+                                .id(1L)
+                                .title("Test Magazine")
+                                .introduction("Test Intro")
+                                .user(MagazineDto.DetailResponse.SimpleUser.builder()
+                                                .id(1L)
+                                                .username("testuser")
+                                                .build())
+                                .sections(java.util.Collections.emptyList())
+                                .build();
+
+                given(magazineService.getMagazineDetail(1L, "testuser")).willReturn(detailResponse);
 
                 mockMvc.perform(get("/api/magazines/1"))
                                 .andExpect(status().isOk())

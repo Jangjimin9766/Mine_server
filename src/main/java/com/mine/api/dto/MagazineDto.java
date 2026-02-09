@@ -152,4 +152,150 @@ public class MagazineDto {
                     .build();
         }
     }
+
+    /**
+     * 매거진 상세 조회 응답 DTO
+     * Entity 직접 반환 대신 사용하여 필요한 필드만 노출
+     */
+    @Schema(name = "MagazineDetailResponse", description = "매거진 상세 응답")
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class DetailResponse {
+        @Schema(description = "매거진 ID", example = "1")
+        @JsonProperty("magazineId")
+        private Long id;
+
+        @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드")
+        private String title;
+
+        @Schema(description = "매거진 부제", example = "따뜻함과 스타일을 동시에")
+        private String subtitle;
+
+        @Schema(description = "매거진 소개", example = "올 겨울 핫한 스타일링 가이드")
+        private String introduction;
+
+        @Schema(description = "커버 이미지 URL", example = "https://example.com/cover.jpg")
+        private String coverImageUrl;
+
+        @Schema(description = "태그 (콤마로 구분)", example = "패션,겨울,스타일")
+        private String tags;
+
+        @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
+        private String moodboardImageUrl;
+
+        @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기의 감성적인 스타일")
+        private String moodboardDescription;
+
+        @Schema(description = "생성일시", example = "2024-12-23T10:30:00")
+        private String createdAt;
+
+        @Schema(description = "작성자 정보")
+        private SimpleUser user;
+
+        @Schema(description = "섹션 목록")
+        private List<SectionItem> sections;
+
+        /**
+         * 작성자 정보
+         */
+        @Getter
+        @Builder
+        @AllArgsConstructor
+        public static class SimpleUser {
+            @Schema(description = "사용자 ID", example = "1")
+            private Long id;
+
+            @Schema(description = "사용자 아이디", example = "john_doe")
+            private String username;
+
+            @Schema(description = "사용자 닉네임", example = "존도")
+            private String nickname;
+
+            @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
+            private String profileImageUrl;
+
+            @Schema(description = "공개 계정 여부", example = "true")
+            private Boolean isPublic;
+
+            @Schema(description = "팔로워 수", example = "42")
+            private Integer followerCount;
+
+            @Schema(description = "매거진 수", example = "5")
+            private Integer magazineCount;
+        }
+
+        /**
+         * 섹션 정보 (필수 필드만 포함)
+         */
+        @Getter
+        @Builder
+        @AllArgsConstructor
+        public static class SectionItem {
+            @Schema(description = "섹션 ID", example = "101")
+            @JsonProperty("sectionId")
+            private Long id;
+
+            @Schema(description = "소제목", example = "서울의 숨겨진 카페")
+            private String heading;
+
+            @Schema(description = "섹션 썸네일 URL", example = "https://example.com/thumbnail.jpg")
+            private String thumbnailUrl;
+
+            @Schema(description = "문단 배열")
+            private List<ParagraphDto.Response> paragraphs;
+
+            @Schema(description = "레이아웃 타입", example = "card")
+            private String layoutType;
+
+            @Schema(description = "표시 순서", example = "1")
+            private Integer displayOrder;
+        }
+
+        /**
+         * Magazine Entity를 DetailResponse로 변환
+         */
+        public static DetailResponse from(Magazine magazine) {
+            SimpleUser simpleUser = SimpleUser.builder()
+                    .id(magazine.getUser().getId())
+                    .username(magazine.getUser().getUsername())
+                    .nickname(magazine.getUser().getNickname())
+                    .profileImageUrl(magazine.getUser().getProfileImageUrl())
+                    .isPublic(magazine.getUser().getIsPublic())
+                    .followerCount(magazine.getUser().getFollowerCount())
+                    .magazineCount(magazine.getUser().getMagazineCount())
+                    .build();
+
+            List<SectionItem> sectionItems = magazine.getSections().stream()
+                    .map(section -> SectionItem.builder()
+                            .id(section.getId())
+                            .heading(section.getHeading())
+                            .thumbnailUrl(section.getThumbnailUrl())
+                            .paragraphs(section.getParagraphs().stream()
+                                    .map(p -> ParagraphDto.Response.builder()
+                                            .subtitle(p.getSubtitle())
+                                            .text(p.getText())
+                                            .imageUrl(p.getImageUrl())
+                                            .build())
+                                    .toList())
+                            .layoutType(section.getLayoutType())
+                            .displayOrder(section.getDisplayOrder())
+                            .build())
+                    .toList();
+
+            return DetailResponse.builder()
+                    .id(magazine.getId())
+                    .title(magazine.getTitle())
+                    .subtitle(magazine.getSubtitle())
+                    .introduction(magazine.getIntroduction())
+                    .coverImageUrl(magazine.getCoverImageUrl())
+                    .tags(magazine.getTags())
+                    .moodboardImageUrl(magazine.getMoodboardImageUrl())
+                    .moodboardDescription(magazine.getMoodboardDescription())
+                    .createdAt(magazine.getCreatedAt() != null ? magazine.getCreatedAt().toString() : null)
+                    .user(simpleUser)
+                    .sections(sectionItems)
+                    .build();
+        }
+    }
 }

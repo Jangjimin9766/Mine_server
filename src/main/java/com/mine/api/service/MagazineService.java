@@ -132,7 +132,7 @@ public class MagazineService {
         return magazineRepository.findByUserUsernameWithSections(username);
     }
 
-    public Magazine getMagazineDetail(Long id, String username) {
+    public com.mine.api.dto.MagazineDto.DetailResponse getMagazineDetail(Long id, String username) {
         Magazine magazine = magazineRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
 
@@ -151,7 +151,7 @@ public class MagazineService {
             return o1.compareTo(o2);
         });
 
-        return magazine;
+        return com.mine.api.dto.MagazineDto.DetailResponse.from(magazine);
     }
 
     @Transactional

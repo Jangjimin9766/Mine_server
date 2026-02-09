@@ -108,7 +108,7 @@ public class UserService {
         public UserDto.ProfileResponse getMyProfile(String username) {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-                return convertToProfileResponseWithPassword(user);
+                return convertToMyProfileResponse(user);
         }
 
         /**
@@ -141,7 +141,7 @@ public class UserService {
 
                 user.updateProfile(request.getNickname(), request.getProfileImageUrl(), request.getUsername());
 
-                return convertToProfileResponseWithPassword(user);
+                return convertToMyProfileResponse(user);
         }
 
         /**
@@ -207,9 +207,9 @@ public class UserService {
         }
 
         /**
-         * 내 프로필 조회 시 비밀번호 포함 (본인만)
+         * 내 프로필 조회 시 사용 (본인용)
          */
-        private UserDto.ProfileResponse convertToProfileResponseWithPassword(User user) {
+        private UserDto.ProfileResponse convertToMyProfileResponse(User user) {
                 // 관심사 목록 조회
                 java.util.List<String> interests = userInterestRepository.findByUser(user)
                                 .stream()
@@ -219,7 +219,6 @@ public class UserService {
                 return UserDto.ProfileResponse.builder()
                                 .id(user.getId())
                                 .username(user.getUsername())
-                                .password(user.getPassword()) // 비밀번호 반환
                                 .nickname(user.getNickname())
                                 .email(user.getEmail())
                                 .profileImageUrl(user.getProfileImageUrl())

@@ -1,6 +1,5 @@
 package com.mine.api.controller;
 
-import com.mine.api.domain.Magazine;
 import com.mine.api.service.MagazineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,8 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/magazines")
@@ -36,10 +33,12 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "📖 매거진 상세 보기", description = "매거진의 모든 내용(섹션 포함)을 상세하게 봅니다. 모든 카드가 순서대로 보여집니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<Magazine> getMagazineDetail(@org.springframework.web.bind.annotation.PathVariable Long id,
+    public ResponseEntity<com.mine.api.dto.MagazineDto.DetailResponse> getMagazineDetail(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Magazine magazine = magazineService.getMagazineDetail(id, userDetails.getUsername());
-        return ResponseEntity.ok(magazine);
+        com.mine.api.dto.MagazineDto.DetailResponse response = magazineService.getMagazineDetail(id,
+                userDetails.getUsername());
+        return ResponseEntity.ok(response);
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")
