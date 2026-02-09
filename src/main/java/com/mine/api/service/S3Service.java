@@ -12,6 +12,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class S3Service {
 
     private final S3Template s3Template;
@@ -43,5 +44,49 @@ public class S3Service {
 
         // S3 URL 반환
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+    }
+
+    /**
+     * 외부 URL 이미지를 다운로드하여 S3에 업로드
+     */
+    public String uploadImageFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return imageUrl;
+        }
+
+        // 이미 내 S3에 있는 이미지라면 패스
+        if (imageUrl.contains(".amazonaws.com") && imageUrl.contains(bucketName)) {
+            return imageUrl;
+        }
+
+        try {
+            java.net.URL url = new java.net.URL(imageUrl);
+            String extension = ".jpg"; // 기본 확장자
+
+            // URL 경로에서 확장자 추출 시도
+            String path = url.getPath();
+            int dotIndex = path.lastIndexOf(".");
+            if (dotIndex >= 0) {
+                String ext = path.substring(dotIndex);
+                if (ext.matches("(?i)\\.(jpg|jpeg|png|gif|webp|bmp)$")) {
+                    extension = ext;
+                }
+            }
+
+            String key = "uploads/" + UUID.randomUUID().toString() + extension;
+
+            try (InputStream inputStream = url.openStream()) {
+                s3Template.upload(bucketName, key, inputStream);
+            }
+
+            // S3 URL 반환
+            String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+            log.info("Uploaded external image to S3: {} -> {}", imageUrl, s3Url);
+            return s3Url;
+
+        } catch (Exception e) {
+            log.error("Failed to upload image from URL: {}", imageUrl, e);
+            return imageUrl; // 실패 시 원본 URL 유지
+        }
     }
 }

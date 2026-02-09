@@ -27,6 +27,7 @@ public class MagazineService {
     private final RunPodService runPodService;
     private final MoodboardService moodboardService;
     private final com.mine.api.repository.MoodboardRepository moodboardRepository;
+    private final S3Service s3Service;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -78,9 +79,16 @@ public class MagazineService {
         if (request.getSections() != null) {
             for (int i = 0; i < request.getSections().size(); i++) {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
+
+                // [NEW] 외부 썸네일 이미지를 S3로 업로드
+                String thumbnailUrl = sectionDto.getThumbnailUrl();
+                if (thumbnailUrl != null) {
+                    thumbnailUrl = s3Service.uploadImageFromUrl(thumbnailUrl);
+                }
+
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
-                        .thumbnailUrl(sectionDto.getThumbnailUrl())
+                        .thumbnailUrl(thumbnailUrl)
                         // deprecated 필드도 하위 호환을 위해 저장
                         .content(sectionDto.getContent())
                         .imageUrl(sectionDto.getImageUrl())
@@ -94,10 +102,17 @@ public class MagazineService {
                 if (sectionDto.getParagraphs() != null) {
                     for (int j = 0; j < sectionDto.getParagraphs().size(); j++) {
                         MagazineCreateRequest.ParagraphDto paraDto = sectionDto.getParagraphs().get(j);
+
+                        // [NEW] 문단 이미지를 S3로 업로드
+                        String paraImageUrl = paraDto.getImageUrl();
+                        if (paraImageUrl != null) {
+                            paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
+                        }
+
                         Paragraph paragraph = Paragraph.builder()
                                 .subtitle(paraDto.getSubtitle())
                                 .text(paraDto.getText())
-                                .imageUrl(paraDto.getImageUrl())
+                                .imageUrl(paraImageUrl)
                                 .displayOrder(j)
                                 .build();
                         section.addParagraph(paragraph);

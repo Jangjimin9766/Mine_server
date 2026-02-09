@@ -25,6 +25,7 @@ public class MagazineInteractionService {
     private final MagazineRepository magazineRepository;
     private final MagazineInteractionRepository interactionRepository;
     private final RunPodService runPodService;
+    private final S3Service s3Service;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -165,6 +166,28 @@ public class MagazineInteractionService {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedMagazine = (Map<String, Object>) response.get("updated_magazine");
+
+        // [NEW] 단일 섹션 응답 이미지 S3 변환
+        if (updatedMagazine != null) {
+            String imageUrl = (String) updatedMagazine.get("image_url");
+            if (imageUrl != null) {
+                updatedMagazine.put("image_url", s3Service.uploadImageFromUrl(imageUrl));
+            }
+        }
+
+        // [NEW] 전체 섹션 변경(change_tone) 이미지 S3 변환
+        if ("change_tone".equals(action)) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> newSections = (List<Map<String, Object>>) response.get("new_sections");
+            if (newSections != null) {
+                for (Map<String, Object> sec : newSections) {
+                    String imgUrl = (String) sec.get("image_url");
+                    if (imgUrl != null) {
+                        sec.put("image_url", s3Service.uploadImageFromUrl(imgUrl));
+                    }
+                }
+            }
+        }
 
         // 1. 섹션 재생성
         if ("regenerate_section".equals(action)) {
