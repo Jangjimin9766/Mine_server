@@ -5,13 +5,16 @@ import com.mine.api.domain.Magazine;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineDto;
 import com.mine.api.dto.MagazineGenerationRequest;
+import com.mine.api.exception.GlobalExceptionHandler;
 import com.mine.api.service.MagazineService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +22,14 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MagazineController.class)
 @AutoConfigureMockMvc(addFilters = false) // Security Filter 비활성화 (단위 테스트 집중)
+@Import(GlobalExceptionHandler.class) // GlobalExceptionHandler 명시적 추가
 class MagazineControllerTest {
 
         @Autowired
@@ -102,6 +108,17 @@ class MagazineControllerTest {
         }
 
         @Test
+        @DisplayName("매거진 상세 조회 실패 - 권한 없음")
+        @WithMockUser(username = "otheruser")
+        void getMagazineDetail_Fail_Forbidden() throws Exception {
+                given(magazineService.getMagazineDetail(1L, "otheruser"))
+                        .willThrow(new IllegalArgumentException("접근 권한이 없습니다.")); // Service에서 예외 발생 가정
+
+                mockMvc.perform(get("/api/magazines/1"))
+                                .andExpect(status().is4xxClientError()); // 403 Forbidden or 400 Bad Request
+        }
+
+        @Test
         @WithMockUser(username = "testuser")
         void createMagazine() throws Exception {
                 MagazineGenerationRequest request = new MagazineGenerationRequest();
@@ -132,8 +149,8 @@ class MagazineControllerTest {
         @Test
         @WithMockUser(username = "testuser")
         void updateMagazine() throws Exception {
-                MagazineDto.UpdateRequest request = new MagazineDto.UpdateRequest();
-                request.setTitle("Updated Title");
+                // UpdateRequest 생성자 사용 (title, introduction)
+                MagazineDto.UpdateRequest request = new MagazineDto.UpdateRequest("Updated Title", "Updated Intro");
 
                 doNothing().when(magazineService).updateMagazine(eq(1L), any(MagazineDto.UpdateRequest.class),
                                 eq("testuser"));
@@ -144,5 +161,31 @@ class MagazineControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.message").value("수정되었습니다"));
+        }
+
+        @Test
+        @DisplayName("매거진 피드 조회 성공")
+        @WithMockUser(username = "testuser")
+        void getMagazineFeed_Success() throws Exception {
+                MagazineDto.ListItem listItem = MagazineDto.ListItem.builder()
+                        .title("Feed Magazine")
+                        .build();
+                Page<MagazineDto.ListItem> page = new PageImpl<>(Collections.singletonList(listItem));
+
+                given(magazineService.getMagazineFeed(any(Pageable.class))).willReturn(page);
+
+                mockMvc.perform(get("/api/magazines/feed"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.content[0].title").value("Feed Magazine"));
+        }
+
+        @Test
+        @DisplayName("공개 매거진 조회 성공")
+        void getPublicMagazine_Success() throws Exception {
+                given(magazineService.getPublicMagazine(1L)).willReturn(magazine);
+
+                mockMvc.perform(get("/api/magazines/public/1"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.title").value("Test Magazine"));
         }
 }

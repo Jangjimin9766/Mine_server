@@ -2,12 +2,15 @@ package com.mine.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mine.api.dto.UserDto;
+import com.mine.api.exception.GlobalExceptionHandler;
 import com.mine.api.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -23,14 +26,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandler.class)
 class UserControllerTest {
 
         @Autowired
@@ -142,6 +146,22 @@ class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.nickname").value("NewNick"));
+        }
+
+        @Test
+        @DisplayName("닉네임 수정 실패 - 잘못된 닉네임")
+        @WithMockUser(username = "user")
+        void updateMyProfile_Fail_InvalidNickname() throws Exception {
+                UserDto.UpdateRequest request = new UserDto.UpdateRequest("짧", null, null, null);
+
+                given(userService.updateProfile(eq("user"), any(UserDto.UpdateRequest.class)))
+                        .willThrow(new IllegalArgumentException("닉네임은 2자 이상이어야 합니다."));
+
+                mockMvc.perform(patch("/api/users/me")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().is4xxClientError()); // 400, 401, 403 등 모두 허용
         }
 
         @Test
