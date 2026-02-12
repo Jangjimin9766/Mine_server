@@ -24,21 +24,11 @@ public class SectionViewHistoryDto {
 
         @Schema(description = "소제목", example = "3주 유럽여행 코스 추천")
         private String heading;
-
-        @Schema(description = "본문 내용", example = "<p>첫 유럽여행을 계획하는 분들에게 추천하는 3주 일정입니다.</p>")
-        private String content;
-
-        @Schema(description = "이미지 URL", example = "https://example.com/europe.jpg")
-        private String imageUrl;
-
         @Schema(description = "레이아웃 타입", example = "hero")
         private String layoutType;
 
         @Schema(description = "레이아웃 힌트", example = "image_left")
         private String layoutHint;
-
-        @Schema(description = "이미지 캡션", example = "유럽의 아름다움, 여행의 시작")
-        private String caption;
 
         @Schema(description = "표시 순서", example = "0")
         private Integer displayOrder;
