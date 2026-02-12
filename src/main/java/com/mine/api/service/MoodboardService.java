@@ -1,18 +1,14 @@
 package com.mine.api.service;
 
+import com.mine.api.common.ErrorMessages;
 import com.mine.api.domain.Moodboard;
 import com.mine.api.dto.MoodboardRequestDto;
 import com.mine.api.repository.MoodboardRepository;
-import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.ByteArrayInputStream;
-import java.util.Base64;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -22,24 +18,17 @@ public class MoodboardService {
     private final MoodboardRepository moodboardRepository;
     private final com.mine.api.repository.UserRepository userRepository;
     private final com.mine.api.repository.MagazineRepository magazineRepository;
-    private final com.mine.api.repository.UserInterestRepository userInterestRepository;
-    private final S3Template s3Template;
+    private final S3Service s3Service;
     private final RunPodService runPodService;
 
     @Value("${python.api.moodboard-url}")
     private String moodboardApiUrl;
 
-    @Value("${python.api.key}")
-    private String pythonApiKey;
-
-    @Value("${spring.cloud.aws.s3.bucket}")
-    private String bucketName;
-
     @Transactional
     public String createMoodboard(String username, MoodboardRequestDto requestDto) {
         // 0. Find User
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(ErrorMessages.USER_NOT_FOUND));
 
         // 1. 요청 데이터 준비 (로컬용: action 포함, RunPod용: data에는 제외)
         java.util.Map<String, Object> data = new java.util.HashMap<>();
@@ -66,7 +55,7 @@ public class MoodboardService {
             responseBody = runPodService.sendRequest(moodboardApiUrl, runPodInput);
 
             if (responseBody == null || !responseBody.containsKey("output")) {
-                throw new RuntimeException("Failed to generate moodboard image");
+                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
             }
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> outputTemp = (java.util.Map<String, Object>) responseBody.get("output");
@@ -88,11 +77,11 @@ public class MoodboardService {
         String description = (String) output.get("description");
 
         if (base64Image == null) {
-            throw new RuntimeException("Failed to generate moodboard image");
+            throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
         }
 
         // 2, 3. Decode & Upload to S3
-        String s3Url = uploadBase64ToS3(base64Image);
+        String s3Url = s3Service.uploadBase64ToS3(base64Image);
 
         // 4. Save to DB
         moodboardRepository.save(Moodboard.builder()
@@ -113,15 +102,15 @@ public class MoodboardService {
     public String createMoodboardForMagazine(Long magazineId, String username) {
         // 1. User 조회
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(ErrorMessages.USER_NOT_FOUND));
 
         // 2. Magazine 조회
         com.mine.api.domain.Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 3. 소유자 검증
         if (!magazine.getUser().getId().equals(user.getId())) {
-            throw new SecurityException("무드보드 생성 권한이 없습니다");
+            throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
 
         // 4. Magazine에서 데이터 추출
@@ -155,7 +144,7 @@ public class MoodboardService {
             responseBody = runPodService.sendRequest(moodboardApiUrl, runPodInput);
 
             if (responseBody == null || !responseBody.containsKey("output")) {
-                throw new RuntimeException("Failed to generate moodboard image");
+                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
             }
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> outputTemp = (java.util.Map<String, Object>) responseBody.get("output");
@@ -178,11 +167,11 @@ public class MoodboardService {
         String description = (String) output.get("description");
 
         if (base64Image == null) {
-            throw new RuntimeException("Failed to generate moodboard image");
+            throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
         }
 
         // 8. S3 업로드
-        String s3Url = uploadBase64ToS3(base64Image);
+        String s3Url = s3Service.uploadBase64ToS3(base64Image);
 
         // 9. DB 저장 (with magazineId)
         moodboardRepository.save(Moodboard.builder()
@@ -201,38 +190,15 @@ public class MoodboardService {
     }
 
     /**
-     * Base64 이미지 S3 업로드 (공용)
-     */
-    public String uploadBase64ToS3(String base64Image) {
-        if (base64Image == null)
-            return null;
-
-        // 이미 URL인 경우 그대로 반환
-        if (base64Image.startsWith("http")) {
-            return base64Image;
-        }
-
-        if (base64Image.contains(",")) {
-            base64Image = base64Image.split(",")[1];
-        }
-        byte[] imageBytes = Base64.getDecoder().decode(base64Image);
-
-        String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
-        s3Template.upload(bucketName, s3FileName, new ByteArrayInputStream(imageBytes));
-
-        return "https://" + bucketName + ".s3.ap-southeast-2.amazonaws.com/" + s3FileName;
-    }
-
-    /**
      * 매거진의 무드보드 히스토리 조회
      */
     public java.util.List<Moodboard> getMoodboardHistory(Long magazineId, String username) {
         // 매거진 조회 및 소유자 확인
         com.mine.api.domain.Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(ErrorMessages.USER_NOT_FOUND));
 
         if (!magazine.getUser().getId().equals(user.getId())) {
             throw new SecurityException("무드보드 히스토리 조회 권한이 없습니다");

@@ -1,5 +1,7 @@
 package com.mine.api.service;
 
+import com.mine.api.common.ErrorMessages;
+
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.User;
@@ -45,7 +47,7 @@ public class SectionService {
 
         // 열람 기록 저장
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
         sectionViewHistoryService.recordView(user, section);
 
         return toResponse(section);
@@ -81,15 +83,6 @@ public class SectionService {
         // 요청에 포함된 필드만 업데이트
         if (request.getHeading() != null) {
             section.setHeading(request.getHeading());
-        }
-        if (request.getContent() != null) {
-            section.setContent(request.getContent());
-        }
-        if (request.getImageUrl() != null) {
-            section.setImageUrl(request.getImageUrl());
-        }
-        if (request.getCaption() != null) {
-            section.setCaption(request.getCaption());
         }
 
         sectionRepository.save(section);
@@ -179,11 +172,8 @@ public class SectionService {
 
             section.update(
                     (String) updatedSection.get("heading"),
-                    (String) updatedSection.get("content"),
-                    (String) updatedSection.get("image_url"),
                     (String) updatedSection.get("layout_hint"),
-                    (String) updatedSection.get("layout_type"),
-                    (String) updatedSection.get("caption"));
+                    (String) updatedSection.get("layout_type"));
             sectionRepository.save(section);
         }
 
@@ -204,10 +194,10 @@ public class SectionService {
 
     private Magazine getMagazineWithOwnerCheck(Long magazineId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         if (!magazine.getUser().getUsername().equals(username)) {
-            throw new SecurityException("You don't have permission to access this magazine");
+            throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
         return magazine;
     }
@@ -244,12 +234,8 @@ public class SectionService {
                 .collect(Collectors.toList());
         map.put("paragraphs", paragraphsList);
 
-        // deprecated 필드도 하위 호환을 위해 포함
-        map.put("content", section.getContent());
-        map.put("image_url", section.getImageUrl());
         map.put("layout_hint", section.getLayoutHint());
         map.put("layout_type", section.getLayoutType());
-        map.put("caption", section.getCaption());
         return map;
     }
 
@@ -268,12 +254,8 @@ public class SectionService {
                 .heading(section.getHeading())
                 .thumbnailUrl(section.getThumbnailUrl())
                 .paragraphs(paragraphsList)
-                // deprecated 필드도 하위 호환을 위해 포함
-                .content(section.getContent())
-                .imageUrl(section.getImageUrl())
                 .layoutType(section.getLayoutType())
                 .layoutHint(section.getLayoutHint())
-                .caption(section.getCaption())
                 .displayOrder(section.getDisplayOrder())
                 .build();
     }

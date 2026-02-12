@@ -37,30 +37,6 @@ public class SectionDto {
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
         private List<ParagraphDto.Response> paragraphs;
 
-        // ===== Deprecated 필드 (하위 호환용) =====
-
-        /**
-         * @deprecated paragraphs[].text 사용 권장
-         */
-        @Deprecated
-        @Schema(description = "본문 내용 (deprecated)", example = "이곳은 조용히 커피를 즐기기 좋은 공간입니다.")
-        private String content;
-
-        /**
-         * @deprecated thumbnailUrl 또는 paragraphs[].imageUrl 사용 권장
-         */
-        @Deprecated
-        @Schema(description = "이미지 URL (deprecated)", example = "https://example.com/image.jpg")
-        @JsonProperty("image_url")
-        private String imageUrl;
-
-        /**
-         * @deprecated 삭제 예정
-         */
-        @Deprecated
-        @Schema(description = "이미지 캡션 (deprecated)", example = "카페 내부 전경")
-        private String caption;
-
         // ===== 기존 필드 =====
 
         @Schema(description = "레이아웃 타입", example = "card")
@@ -114,14 +90,5 @@ public class SectionDto {
     public static class UpdateRequest {
         @Schema(description = "수정할 소제목", example = "체크 패턴의 매력")
         private String heading;
-
-        @Schema(description = "수정할 본문 (HTML)", example = "<p>요즘 체크무늬를...</p>")
-        private String content;
-
-        @Schema(description = "수정할 이미지 URL", example = "https://example.com/image.jpg")
-        private String imageUrl;
-
-        @Schema(description = "수정할 캡션", example = "체크 패턴 스타일링")
-        private String caption;
     }
 }

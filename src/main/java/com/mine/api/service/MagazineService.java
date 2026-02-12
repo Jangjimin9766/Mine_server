@@ -1,5 +1,7 @@
 package com.mine.api.service;
 
+import com.mine.api.common.ErrorMessages;
+
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineLike;
 import com.mine.api.domain.MagazineSection;
@@ -38,7 +40,7 @@ public class MagazineService {
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String username) {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         // 1. 태그 리스트를 JSON 문자열로 변환
         String tagsJson = null;
@@ -56,7 +58,7 @@ public class MagazineService {
             // Base64 이미지인 경우 S3 업로드 처리
             if (moodboardImageUrl != null
                     && (moodboardImageUrl.startsWith("data:image") || moodboardImageUrl.length() > 255)) {
-                moodboardImageUrl = moodboardService.uploadBase64ToS3(moodboardImageUrl);
+                moodboardImageUrl = s3Service.uploadBase64ToS3(moodboardImageUrl);
             }
         }
 
@@ -89,12 +91,8 @@ public class MagazineService {
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
                         .thumbnailUrl(thumbnailUrl)
-                        // deprecated 필드도 하위 호환을 위해 저장
-                        .content(sectionDto.getContent())
-                        .imageUrl(sectionDto.getImageUrl())
                         .layoutHint(sectionDto.getLayoutHint())
                         .layoutType(sectionDto.getLayoutType())
-                        .caption(sectionDto.getCaption())
                         .displayOrder(i) // 생성 순서대로 0부터 할당
                         .build();
 
@@ -149,14 +147,14 @@ public class MagazineService {
 
     public com.mine.api.dto.MagazineDto.DetailResponse getMagazineDetail(Long id, String username) {
         Magazine magazine = magazineRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 본인 매거진이 아니고 비공개 계정이면 접근 불가
         boolean isOwner = magazine.getUser().getUsername().equals(username);
         boolean isPublicAccount = magazine.getUser().getIsPublic();
 
         if (!isOwner && !isPublicAccount) {
-            throw new SecurityException("비공개 계정의 매거진입니다");
+            throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
         }
 
         // displayOrder 순으로 섹션 정렬
@@ -217,7 +215,7 @@ public class MagazineService {
             MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
 
             if (generatedData == null) {
-                throw new RuntimeException("Failed to generate magazine from AI server");
+                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MAGAZINE);
             }
 
             // 3. 받은 데이터로 저장 로직 수행
@@ -244,13 +242,13 @@ public class MagazineService {
     @Transactional
     public void deleteMagazine(Long magazineId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         if (!magazine.isOwnedBy(user)) {
-            throw new SecurityException("삭제 권한이 없습니다");
+            throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
         // 4. 삭제 (CASCADE로 섹션, 상호작용도 자동 삭제)
         magazineRepository.delete(magazine);
@@ -266,13 +264,13 @@ public class MagazineService {
         }
 
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         if (!magazine.isOwnedBy(user)) {
-            throw new SecurityException("수정 권한이 없습니다");
+            throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
 
         magazine.updateInfo(request.getTitle(), request.getIntroduction()); // 6. 저장 (변경 감지로 자동 저장)
@@ -287,10 +285,10 @@ public class MagazineService {
     @Transactional
     public boolean toggleLike(Long magazineId, String username) {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         java.util.Optional<com.mine.api.domain.MagazineLike> like = magazineLikeRepository.findByUserAndMagazine(user,
                 magazine);
@@ -318,7 +316,7 @@ public class MagazineService {
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getLikedMagazines(
             String username, org.springframework.data.domain.Pageable pageable) {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         return magazineLikeRepository.findLikedMagazinesByUser(user, pageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
@@ -333,11 +331,11 @@ public class MagazineService {
 
         if (userId != null) {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                    .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
             // 유저가 비공개면 빈 페이지 반환 (또는 에러 처리)
             if (!user.getIsPublic()) {
-                throw new SecurityException("비공개 계정의 매거진입니다");
+                throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
             }
 
             magazines = magazineRepository.findAllByUserId(user.getId(), pageable);
@@ -364,11 +362,11 @@ public class MagazineService {
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
     public Magazine getPublicMagazine(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 계정이 비공개면 접근 불가 (매거진 개별 공개 여부는 없음)
         if (!magazine.getUser().getIsPublic()) {
-            throw new SecurityException("비공개 계정의 매거진입니다");
+            throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
         }
 
         // displayOrder 순으로 섹션 정렬
@@ -385,10 +383,10 @@ public class MagazineService {
     @org.springframework.transaction.annotation.Transactional
     public void updateCover(Long magazineId, String newCoverUrl, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("매거진을 찾을 수 없습니다: " + magazineId));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         if (!magazine.getUser().getUsername().equals(username)) {
-            throw new SecurityException("권한이 없습니다");
+            throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
 
         magazine.setCoverImageUrl(newCoverUrl);
@@ -413,7 +411,7 @@ public class MagazineService {
     public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeedCursor(
             String username, Long cursorId, int limit) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         // 1. 사용자 관심사 가져오기
         java.util.List<String> interestKeywords = userInterestRepository.findByUser(user).stream()

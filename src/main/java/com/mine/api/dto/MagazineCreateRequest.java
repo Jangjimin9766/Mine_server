@@ -69,25 +69,11 @@ public class MagazineCreateRequest {
         private String heading;
 
         // ===== 새로 추가된 필드 =====
-
-        @Schema(description = "섹션 썸네일 URL", example = "https://example.com/thumbnail.jpg")
-        @JsonProperty("thumbnail_url")
+        @Schema(description = "섹션 썸네일 이미지 URL (cover type인 경우 배경)", example = "https://example.com/thumbnail.jpg")
         private String thumbnailUrl;
 
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
         private List<ParagraphDto> paragraphs;
-
-        // ===== Deprecated 필드 (하위 호환용) =====
-
-        @Schema(description = "섹션 본문 내용 (deprecated)", example = "올 겨울 가장 핫한 코트 스타일링을 소개합니다...")
-        private String content;
-
-        @Schema(description = "섹션 이미지 URL (deprecated)", example = "https://example.com/section1.jpg")
-        @JsonProperty("image_url")
-        private String imageUrl;
-
-        @Schema(description = "이미지 캡션 (deprecated)", example = "2024 FW 트렌드 코트")
-        private String caption;
 
         // ===== 기존 필드 =====
 

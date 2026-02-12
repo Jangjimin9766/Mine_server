@@ -3,6 +3,7 @@ package com.mine.api.service;
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineInteraction;
 import com.mine.api.domain.MagazineSection;
+import com.mine.api.domain.Paragraph;
 import com.mine.api.dto.InteractionDto;
 import com.mine.api.repository.MagazineInteractionRepository;
 import com.mine.api.repository.MagazineRepository;
@@ -148,11 +149,22 @@ public class MagazineInteractionService {
                 .map(section -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("heading", section.getHeading());
-                    map.put("content", section.getContent());
-                    map.put("image_url", section.getImageUrl());
                     map.put("layout_hint", section.getLayoutHint());
                     map.put("layout_type", section.getLayoutType());
-                    map.put("caption", section.getCaption());
+                    map.put("thumbnail_url", section.getThumbnailUrl());
+
+                    // paragraphs 변환
+                    List<Map<String, Object>> paragraphsList = section.getParagraphs().stream()
+                            .map(p -> {
+                                Map<String, Object> pMap = new HashMap<>();
+                                pMap.put("subtitle", p.getSubtitle());
+                                pMap.put("text", p.getText());
+                                pMap.put("image_url", p.getImageUrl());
+                                return pMap;
+                            })
+                            .collect(Collectors.toList());
+                    map.put("paragraphs", paragraphsList);
+
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -160,31 +172,23 @@ public class MagazineInteractionService {
 
     @Transactional
     protected void handlePythonResponse(Magazine magazine, Map<String, Object> response) {
-        // Python 응답: {intent, success, updated_magazine: {heading, content, image_url,
-        // layout_hint}}
-        String action = (String) response.get("intent"); // "intent" 필드 사용
-
+        String action = (String) response.get("intent");
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedMagazine = (Map<String, Object>) response.get("updated_magazine");
 
-        // [NEW] 단일 섹션 응답 이미지 S3 변환
+        // [NEW] S3 이미지 변환 로직 (thumbnailUrl 및 paragraphs 내 이미지)
+        // 1. 단일 섹션 응답의 S3 변환
         if (updatedMagazine != null) {
-            String imageUrl = (String) updatedMagazine.get("image_url");
-            if (imageUrl != null) {
-                updatedMagazine.put("image_url", s3Service.uploadImageFromUrl(imageUrl));
-            }
+            uploadImagesInMap(updatedMagazine);
         }
 
-        // [NEW] 전체 섹션 변경(change_tone) 이미지 S3 변환
+        // 2. 전체 섹션 변경(change_tone)의 S3 변환
         if ("change_tone".equals(action)) {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> newSections = (List<Map<String, Object>>) response.get("new_sections");
             if (newSections != null) {
                 for (Map<String, Object> sec : newSections) {
-                    String imgUrl = (String) sec.get("image_url");
-                    if (imgUrl != null) {
-                        sec.put("image_url", s3Service.uploadImageFromUrl(imgUrl));
-                    }
+                    uploadImagesInMap(sec);
                 }
             }
         }
@@ -196,28 +200,14 @@ public class MagazineInteractionService {
             if (sectionIndex != null && updatedMagazine != null && sectionIndex >= 0
                     && sectionIndex < magazine.getSections().size()) {
                 MagazineSection section = magazine.getSections().get(sectionIndex);
-                section.update(
-                        (String) updatedMagazine.get("heading"),
-                        (String) updatedMagazine.get("content"),
-                        (String) updatedMagazine.get("image_url"),
-                        (String) updatedMagazine.get("layout_hint"),
-                        (String) updatedMagazine.get("layout_type"),
-                        (String) updatedMagazine.get("caption"));
+                updateSectionFromMap(section, updatedMagazine);
             }
         }
 
         // 2. 섹션 추가
         else if ("add_section".equals(action)) {
             if (updatedMagazine != null) {
-                MagazineSection section = MagazineSection.builder()
-                        .heading((String) updatedMagazine.get("heading"))
-                        .content((String) updatedMagazine.get("content"))
-                        .imageUrl((String) updatedMagazine.get("image_url"))
-                        .layoutHint((String) updatedMagazine.get("layout_hint"))
-                        .layoutType((String) updatedMagazine.get("layout_type"))
-                        .caption((String) updatedMagazine.get("caption"))
-                        .displayOrder(magazine.getSections().size()) // 맨 마지막에 추가
-                        .build();
+                MagazineSection section = createSectionFromMap(updatedMagazine, magazine.getSections().size());
                 section.setMagazine(magazine);
                 magazine.getSections().add(section);
             }
@@ -246,15 +236,7 @@ public class MagazineInteractionService {
                 magazine.getSections().clear();
 
                 for (Map<String, Object> sec : newSections) {
-                    MagazineSection section = MagazineSection.builder()
-                            .heading((String) sec.get("heading"))
-                            .content((String) sec.get("content"))
-                            .imageUrl((String) sec.get("image_url"))
-                            .layoutHint((String) sec.get("layout_hint"))
-                            .layoutType((String) sec.get("layout_type"))
-                            .caption((String) sec.get("caption"))
-                            .displayOrder(magazine.getSections().size()) // 순서대로 추가
-                            .build();
+                    MagazineSection section = createSectionFromMap(sec, magazine.getSections().size());
                     section.setMagazine(magazine);
                     magazine.getSections().add(section);
                 }
@@ -263,6 +245,92 @@ public class MagazineInteractionService {
 
         // ⭐ 변경사항 DB에 저장
         magazineRepository.save(magazine);
+    }
+
+    private void uploadImagesInMap(Map<String, Object> sectionMap) {
+        // thumbnail_url (or image_url fallback)
+        String thumbUrl = (String) sectionMap.get("thumbnail_url");
+        if (thumbUrl == null) {
+            thumbUrl = (String) sectionMap.get("image_url"); // Legacy fallback
+        }
+        if (thumbUrl != null) {
+            sectionMap.put("thumbnail_url", s3Service.uploadImageFromUrl(thumbUrl));
+        }
+
+        // paragraphs images
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) sectionMap.get("paragraphs");
+        if (paragraphs != null) {
+            for (Map<String, Object> p : paragraphs) {
+                String imgUrl = (String) p.get("image_url");
+                if (imgUrl != null) {
+                    p.put("image_url", s3Service.uploadImageFromUrl(imgUrl));
+                }
+            }
+        }
+    }
+
+    private void updateSectionFromMap(MagazineSection section, Map<String, Object> map) {
+        section.update(
+                (String) map.get("heading"),
+                (String) map.get("layout_hint"),
+                (String) map.get("layout_type"));
+
+        // Update thumbnail
+        if (map.get("thumbnail_url") != null) {
+            section.setThumbnailUrl((String) map.get("thumbnail_url"));
+        }
+
+        // Update paragraphs
+        section.getParagraphs().clear();
+        addParagraphsFromMap(section, map);
+    }
+
+    private MagazineSection createSectionFromMap(Map<String, Object> map, int displayOrder) {
+        String thumbUrl = (String) map.get("thumbnail_url");
+        if (thumbUrl == null)
+            thumbUrl = (String) map.get("image_url");
+
+        MagazineSection section = MagazineSection.builder()
+                .heading((String) map.get("heading"))
+                .layoutHint((String) map.get("layout_hint"))
+                .layoutType((String) map.get("layout_type"))
+                .thumbnailUrl(thumbUrl)
+                .displayOrder(displayOrder)
+                .build();
+
+        addParagraphsFromMap(section, map);
+        return section;
+    }
+
+    private void addParagraphsFromMap(MagazineSection section, Map<String, Object> map) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) map.get("paragraphs");
+
+        if (paragraphs != null) {
+            for (int i = 0; i < paragraphs.size(); i++) {
+                Map<String, Object> pMap = paragraphs.get(i);
+                Paragraph p = Paragraph.builder()
+                        .subtitle((String) pMap.get("subtitle"))
+                        .text((String) pMap.get("text"))
+                        .imageUrl((String) pMap.get("image_url"))
+                        .displayOrder(i)
+                        .build();
+                section.addParagraph(p);
+            }
+        } else {
+            // Fallback for legacy AI response (flat content)
+            String content = (String) map.get("content");
+            if (content != null) {
+                Paragraph p = Paragraph.builder()
+                        .text(content)
+                        .imageUrl((String) map.get("image_url"))
+                        .subtitle((String) map.get("caption"))
+                        .displayOrder(0)
+                        .build();
+                section.addParagraph(p);
+            }
+        }
     }
 
     private InteractionDto.InteractionHistory convertToHistoryDto(MagazineInteraction interaction) {

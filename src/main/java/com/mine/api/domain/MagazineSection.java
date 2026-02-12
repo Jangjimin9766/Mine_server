@@ -40,28 +40,6 @@ public class MagazineSection {
     @OrderBy("displayOrder ASC")
     private List<Paragraph> paragraphs = new ArrayList<>();
 
-    // ===== Deprecated 필드 (하위 호환용) =====
-
-    /**
-     * @deprecated paragraphs[].text 사용 권장
-     */
-    @Deprecated
-    @Column(columnDefinition = "TEXT")
-    private String content;
-
-    /**
-     * @deprecated thumbnailUrl 또는 paragraphs[].imageUrl 사용 권장
-     */
-    @Deprecated
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    /**
-     * @deprecated 삭제 예정
-     */
-    @Deprecated
-    private String caption;
-
     // ===== 기존 필드 =====
 
     @Column(name = "layout_hint")
@@ -81,14 +59,11 @@ public class MagazineSection {
     private Magazine magazine;
 
     @Builder
-    public MagazineSection(String heading, String content, String imageUrl, String layoutHint,
-            String layoutType, String caption, Integer displayOrder, String thumbnailUrl) {
+    public MagazineSection(String heading, String layoutHint,
+            String layoutType, Integer displayOrder, String thumbnailUrl) {
         this.heading = heading;
-        this.content = content;
-        this.imageUrl = imageUrl;
         this.layoutHint = layoutHint;
         this.layoutType = layoutType;
-        this.caption = caption;
         this.displayOrder = displayOrder;
         this.thumbnailUrl = thumbnailUrl;
     }
@@ -105,20 +80,11 @@ public class MagazineSection {
         paragraph.setSection(this);
     }
 
-    public void updateContent(String heading, String content, String imageUrl) {
+    public void update(String heading, String layoutHint,
+            String layoutType) {
         this.heading = heading;
-        this.content = content;
-        this.imageUrl = imageUrl;
-    }
-
-    public void update(String heading, String content, String imageUrl, String layoutHint,
-            String layoutType, String caption) {
-        this.heading = heading;
-        this.content = content;
-        this.imageUrl = imageUrl;
         this.layoutHint = layoutHint;
         this.layoutType = layoutType;
-        this.caption = caption;
     }
 
     public void setDisplayOrder(Integer displayOrder) {
@@ -127,18 +93,6 @@ public class MagazineSection {
 
     public void setHeading(String heading) {
         this.heading = heading;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public void setCaption(String caption) {
-        this.caption = caption;
     }
 
     public void setThumbnailUrl(String thumbnailUrl) {

@@ -89,4 +89,27 @@ public class S3Service {
             return imageUrl; // 실패 시 원본 URL 유지
         }
     }
+
+    /**
+     * Base64 이미지 S3 업로드
+     */
+    public String uploadBase64ToS3(String base64Image) {
+        if (base64Image == null)
+            return null;
+
+        // 이미 URL인 경우 그대로 반환
+        if (base64Image.startsWith("http")) {
+            return base64Image;
+        }
+
+        if (base64Image.contains(",")) {
+            base64Image = base64Image.split(",")[1];
+        }
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
+
+        String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
+        s3Template.upload(bucketName, s3FileName, new java.io.ByteArrayInputStream(imageBytes));
+
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3FileName);
+    }
 }
