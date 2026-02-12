@@ -30,6 +30,7 @@ public class SectionService {
     private final UserRepository userRepository;
     private final RunPodService runPodService;
     private final SectionViewHistoryService sectionViewHistoryService;
+    private final S3Service s3Service;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -170,6 +171,12 @@ public class SectionService {
 
         // 섹션 업데이트
         if (updatedSection != null) {
+            // [NEW] 이미지 S3 변환
+            String imageUrl = (String) updatedSection.get("image_url");
+            if (imageUrl != null) {
+                updatedSection.put("image_url", s3Service.uploadImageFromUrl(imageUrl));
+            }
+
             section.update(
                     (String) updatedSection.get("heading"),
                     (String) updatedSection.get("content"),
