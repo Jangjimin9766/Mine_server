@@ -17,7 +17,7 @@ public class AuthDto {
         @Schema(description = "🔒 비밀번호 (8자 이상)", example = "Mypassword1!", minLength = 8, requiredMode = Schema.RequiredMode.REQUIRED)
         private String password;
 
-        @Schema(description = "😀 닉네임 (화면에 표시)", example = "감성충전", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "😀 닉네임 (화면에 표시, 선택사항 - 없으면 아이디 사용)", example = "감성충전")
         private String nickname;
 
         @Schema(description = "❤️ 관심사 목록 (최대 3개)", example = "[\"MINIMALISM\", \"MOVIE\", \"IT\"]")

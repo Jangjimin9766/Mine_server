@@ -29,11 +29,15 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
+        String nickname = (request.getNickname() != null && !request.getNickname().isBlank())
+                ? request.getNickname()
+                : request.getUsername();
+
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .nickname(request.getNickname())
+                .nickname(nickname)
                 .role(Role.USER)
                 .build();
 
