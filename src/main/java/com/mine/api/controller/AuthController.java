@@ -4,6 +4,7 @@ import com.mine.api.dto.AuthDto;
 import com.mine.api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class AuthController {
 
     @Operation(summary = "✨ 회원가입 (Sign Up)", description = "서비스 이용을 위해 새로운 계정을 만듭니다.")
     @PostMapping("/signup")
-    public ResponseEntity<Long> signup(@RequestBody AuthDto.SignupRequest request) {
+    public ResponseEntity<Long> signup(@RequestBody @Valid AuthDto.SignupRequest request) {
         return ResponseEntity.ok(authService.signup(request));
     }
 

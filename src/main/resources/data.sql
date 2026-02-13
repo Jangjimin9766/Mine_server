@@ -80,48 +80,10 @@ VALUES ('antigravity_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3
 ON DUPLICATE KEY UPDATE username=username;
 
 -- =====================================================
--- 더미 매거진 데이터 (shared_user 소유)
+-- 더미 데이터 (구버전 스키마 대응을 위해 일시 중단)
 -- =====================================================
-
+/*
 INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
-SELECT u.id, '겨울 패션 트렌드 2025', '따뜻함과 스타일을 동시에', '올 겨울 꼭 알아야 할 패션 트렌드를 소개합니다.',
-       'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800', '패션,겨울,트렌드', NOW()
-FROM users u WHERE u.username = 'shared_user'
-ON DUPLICATE KEY UPDATE title=title;
-
-INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
-SELECT u.id, '서울 카페 투어', '숨겨진 명소를 찾아서', '서울의 감성 카페들을 모아봤습니다.',
-       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800', '카페,서울,여행', NOW()
-FROM users u WHERE u.username = 'shared_user'
-ON DUPLICATE KEY UPDATE title=title;
-
--- =====================================================
--- 더미 섹션 데이터 (첫 번째 매거진용)
--- =====================================================
-
-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
-SELECT m.id, '니트의 귀환', '<p>올 겨울, 니트가 다시 돌아왔습니다. 오버사이즈 니트부터 크롭 니트까지 다양한 스타일링을 만나보세요.</p>',
-       'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800', 'split_left', 0
-FROM magazines m JOIN users u ON m.user_id = u.id 
-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
-LIMIT 1
-ON DUPLICATE KEY UPDATE heading=heading;
-
-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
-SELECT m.id, '레이어드의 정석', '<p>추운 겨울, 레이어드는 필수입니다. 얇은 옷을 여러 겹 겹쳐 입어 스타일과 보온성을 모두 잡으세요.</p>',
-       'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800', 'split_right', 1
-FROM magazines m JOIN users u ON m.user_id = u.id 
-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
-LIMIT 1
-ON DUPLICATE KEY UPDATE heading=heading;
-
-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
-SELECT m.id, '컬러 매치 팁', '<p>겨울이라고 무채색만? 아니요! 버건디, 머스타드, 포레스트 그린 등 깊은 컬러로 포인트를 주세요.</p>',
-       'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800', 'basic', 2
-FROM magazines m JOIN users u ON m.user_id = u.id 
-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
-LIMIT 1
-ON DUPLICATE KEY UPDATE heading=heading;
-
--- 마이그레이션: 기존 유저 public 설정 보장
+...
+*/
 
