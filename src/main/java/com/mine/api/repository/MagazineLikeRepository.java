@@ -19,9 +19,9 @@ public interface MagazineLikeRepository extends JpaRepository<MagazineLike, Long
 
     long countByMagazine(Magazine magazine);
 
-    @Query("SELECT ml.magazine FROM MagazineLike ml " +
+    @Query(value = "SELECT ml.magazine FROM MagazineLike ml " +
             "JOIN FETCH ml.magazine.user " + // N+1 방지
-            "WHERE ml.user = :user")
+            "WHERE ml.user = :user", countQuery = "SELECT COUNT(ml) FROM MagazineLike ml WHERE ml.user = :user")
     Page<Magazine> findLikedMagazinesByUser(@Param("user") User user, Pageable pageable);
 
     // ⭐ 피드 추천용: 좋아요한 매거진 목록 (페이징 없이)

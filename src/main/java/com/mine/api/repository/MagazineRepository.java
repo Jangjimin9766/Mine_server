@@ -63,9 +63,9 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         org.springframework.data.domain.Pageable pageable);
 
         // ⭐ Phase 2: 내 매거진 - FETCH JOIN으로 N+1 및 LazyInitializationException 방지
+        // 목록 조회에서는 sections가 필요 없으므로 제거 (Pageable과 Collection Fetch Join 충돌 방지)
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN FETCH m.user " +
-                        "LEFT JOIN FETCH m.sections " +
                         "WHERE m.user.username = :username", countQuery = "SELECT COUNT(m) FROM Magazine m WHERE m.user.username = :username")
         org.springframework.data.domain.Page<Magazine> findByUserUsername(
                         @org.springframework.data.repository.query.Param("username") String username,

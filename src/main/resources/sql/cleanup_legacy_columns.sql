@@ -1,4 +1,4 @@
--- Remove deprecated columns from magazine_section table
-ALTER TABLE magazine_section DROP COLUMN content;
-ALTER TABLE magazine_section DROP COLUMN image_url;
-ALTER TABLE magazine_section DROP COLUMN caption;
+-- Remove deprecated columns from magazine_sections table
+ALTER TABLE magazine_sections DROP COLUMN content;
+ALTER TABLE magazine_sections DROP COLUMN image_url;
+ALTER TABLE magazine_sections DROP COLUMN caption;

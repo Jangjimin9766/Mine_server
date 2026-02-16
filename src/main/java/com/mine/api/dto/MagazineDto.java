@@ -10,7 +10,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
@@ -89,17 +88,11 @@ public class MagazineDto {
         @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
         private String moodboardImageUrl;
 
-        @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기")
+        @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기의 감성적인 스타일")
         private String moodboardDescription;
 
-        @Schema(description = "작성자 아이디", example = "john_doe")
-        private String username;
-
-        @Schema(description = "공개 여부", example = "true")
-        private Boolean isPublic;
-
-        @Schema(description = "공유 토큰", example = "abc123xyz")
-        private String shareToken;
+        @Schema(description = "좋아요 수", example = "42")
+        private int likeCount;
 
         @Schema(description = "생성일시", example = "2024-12-23T10:30:00")
         private String createdAt;
@@ -146,7 +139,7 @@ public class MagazineDto {
                     .introduction(magazine.getIntroduction())
                     .coverImageUrl(magazine.getCoverImageUrl())
                     .username(magazine.getUser().getUsername())
-                    .likeCount(0)
+                    .likeCount(magazine.getLikes().size())
                     .commentCount(0)
                     .createdAt(magazine.getCreatedAt().toString())
                     .build();
@@ -186,6 +179,10 @@ public class MagazineDto {
 
         @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기의 감성적인 스타일")
         private String moodboardDescription;
+
+        @Schema(description = "좋아요 수", example = "42")
+        @JsonProperty("likeCount")
+        private int likeCount;
 
         @Schema(description = "생성일시", example = "2024-12-23T10:30:00")
         private String createdAt;
@@ -292,6 +289,7 @@ public class MagazineDto {
                     .tags(magazine.getTags())
                     .moodboardImageUrl(magazine.getMoodboardImageUrl())
                     .moodboardDescription(magazine.getMoodboardDescription())
+                    .likeCount(magazine.getLikes().size()) // 좋아요 수 계산
                     .createdAt(magazine.getCreatedAt() != null ? magazine.getCreatedAt().toString() : null)
                     .user(simpleUser)
                     .sections(sectionItems)

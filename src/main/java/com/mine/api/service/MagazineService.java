@@ -295,6 +295,7 @@ public class MagazineService {
 
         if (like.isPresent()) {
             magazineLikeRepository.delete(like.get());
+            log.info("Like removed for magazine {} by user {}", magazineId, username);
             return false; // 좋아요 취소됨
         } else {
             try {
@@ -302,9 +303,11 @@ public class MagazineService {
                         .user(user)
                         .magazine(magazine)
                         .build());
+                log.info("Like added for magazine {} by user {}", magazineId, username);
                 return true; // 좋아요 추가됨
             } catch (org.springframework.dao.DataIntegrityViolationException e) {
                 // 동시성 문제로 이미 저장된 경우, 좋아요가 있는 것으로 간주
+                log.warn("Like already exists for magazine {} by user {} (concurrency issue)", magazineId, username);
                 return true;
             }
         }
