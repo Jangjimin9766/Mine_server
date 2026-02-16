@@ -80,6 +80,11 @@ public class MagazineSection {
         paragraph.setSection(this);
     }
 
+    public void removeParagraph(Paragraph paragraph) {
+        this.paragraphs.remove(paragraph);
+        paragraph.setSection(null);
+    }
+
     public void update(String heading, String layoutHint,
             String layoutType) {
         this.heading = heading;

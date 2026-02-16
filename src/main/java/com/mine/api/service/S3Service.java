@@ -51,7 +51,7 @@ public class S3Service {
      */
     public String uploadImageFromUrl(String imageUrl) {
         if (imageUrl == null || imageUrl.isBlank()) {
-            return imageUrl;
+            return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
         }
 
         // 이미 내 S3에 있는 이미지라면 패스
@@ -86,7 +86,9 @@ public class S3Service {
 
         } catch (Exception e) {
             log.error("Failed to upload image from URL: {}", imageUrl, e);
-            return imageUrl; // 실패 시 원본 URL 유지
+            // 실패 시 기본 이미지 반환 (또는 원본 URL 유지)
+            // 여기서는 "기본 이미지"를 반환하도록 수정하여 엑스박스를 방지합니다.
+            return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
         }
     }
 

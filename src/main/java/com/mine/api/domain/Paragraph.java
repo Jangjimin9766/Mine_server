@@ -65,4 +65,15 @@ public class Paragraph {
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
     }
+
+    public void update(String subtitle, String text, String imageUrl) {
+        this.subtitle = subtitle;
+        this.text = text;
+        this.imageUrl = imageUrl;
+    }
+
+    // ParagraphService에서 사용
+    public MagazineSection getMagazineSection() {
+        return this.section;
+    }
 }
