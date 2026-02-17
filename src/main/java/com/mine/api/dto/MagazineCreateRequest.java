@@ -70,6 +70,7 @@ public class MagazineCreateRequest {
 
         // ===== 새로 추가된 필드 =====
         @Schema(description = "섹션 썸네일 이미지 URL (cover type인 경우 배경)", example = "https://example.com/thumbnail.jpg")
+        @JsonProperty("thumbnail_url")
         private String thumbnailUrl;
 
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")

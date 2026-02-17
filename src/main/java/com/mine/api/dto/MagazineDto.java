@@ -270,6 +270,7 @@ public class MagazineDto {
                             .thumbnailUrl(section.getThumbnailUrl())
                             .paragraphs(section.getParagraphs().stream()
                                     .map(p -> ParagraphDto.Response.builder()
+                                            .id(p.getId())
                                             .subtitle(p.getSubtitle())
                                             .text(p.getText())
                                             .imageUrl(p.getImageUrl())

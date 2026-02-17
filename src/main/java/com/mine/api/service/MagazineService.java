@@ -97,6 +97,7 @@ public class MagazineService {
                         .build();
 
                 // paragraphs 처리 (새 구조 지원)
+                String firstParagraphImageUrl = null;
                 if (sectionDto.getParagraphs() != null) {
                     for (int j = 0; j < sectionDto.getParagraphs().size(); j++) {
                         MagazineCreateRequest.ParagraphDto paraDto = sectionDto.getParagraphs().get(j);
@@ -107,6 +108,11 @@ public class MagazineService {
                             paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
                         }
 
+                        // 첫 번째 문단의 이미지를 썸네일 후보로 저장
+                        if (j == 0 && paraImageUrl != null) {
+                            firstParagraphImageUrl = paraImageUrl;
+                        }
+
                         Paragraph paragraph = Paragraph.builder()
                                 .subtitle(paraDto.getSubtitle())
                                 .text(paraDto.getText())
@@ -115,6 +121,11 @@ public class MagazineService {
                                 .build();
                         section.addParagraph(paragraph);
                     }
+                }
+
+                // 썸네일이 없으면 첫 번째 문단의 이미지로 대체
+                if (section.getThumbnailUrl() == null && firstParagraphImageUrl != null) {
+                    section.setThumbnailUrl(firstParagraphImageUrl);
                 }
 
                 magazine.addSection(section);
