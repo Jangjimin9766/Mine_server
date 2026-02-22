@@ -106,4 +106,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         @org.springframework.data.repository.query.Param("lastId") Long lastId,
                         org.springframework.data.domain.Pageable pageable);
+
+        // 전체 공개 매거진 조회 (최신순)
+        org.springframework.data.domain.Page<Magazine> findByIsPublicTrueOrderByCreatedAtDesc(
+                org.springframework.data.domain.Pageable pageable);
 }
