@@ -91,9 +91,8 @@ public class S3Service {
 
         } catch (Exception e) {
             log.error("Failed to upload image from URL: {}", imageUrl, e);
-            // 실패 시 기본 이미지 반환 (또는 원본 URL 유지)
-            // 여기서는 "기본 이미지"를 반환하도록 수정하여 엑스박스를 방지합니다.
-            return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
+            // 실패 시 원본 이미지 URL이라도 그대로 반환하여 클라이언트에서 보이게 함
+            return imageUrl;
         }
     }
 
