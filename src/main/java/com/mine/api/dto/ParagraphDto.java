@@ -20,6 +20,7 @@ public class ParagraphDto {
     @Schema(description = "문단 상세 정보")
     public static class Response {
         @Schema(description = "문단 ID", example = "10")
+        @JsonProperty("paragraphId")
         private Long id;
 
         @Schema(description = "문단 소제목", example = "국밥의 성지, 서면")

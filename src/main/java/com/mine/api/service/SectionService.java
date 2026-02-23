@@ -243,6 +243,7 @@ public class SectionService {
         // paragraphs 변환
         List<ParagraphDto.Response> paragraphsList = section.getParagraphs().stream()
                 .map(p -> ParagraphDto.Response.builder()
+                        .id(p.getId())
                         .subtitle(p.getSubtitle())
                         .text(p.getText())
                         .imageUrl(p.getImageUrl())
