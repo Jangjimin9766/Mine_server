@@ -75,7 +75,12 @@ public class S3Service {
 
             String key = "uploads/" + UUID.randomUUID().toString() + extension;
 
-            try (InputStream inputStream = url.openStream()) {
+            java.net.URLConnection connection = url.openConnection();
+            // 자바 봇이 아닌 일반 다운로더처럼 위장
+            connection.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+            try (InputStream inputStream = connection.getInputStream()) {
                 s3Template.upload(bucketName, key, inputStream);
             }
 
