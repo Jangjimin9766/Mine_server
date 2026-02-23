@@ -1,6 +1,9 @@
 package com.mine.api.service;
 
-import io.awspring.cloud.s3.S3Template;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,7 +18,7 @@ import java.util.UUID;
 @lombok.extern.slf4j.Slf4j
 public class S3Service {
 
-    private final S3Template s3Template;
+    private final S3Client s3Client;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucketName;
@@ -39,7 +42,12 @@ public class S3Service {
         String key = "uploads/" + UUID.randomUUID().toString() + extension;
 
         try (InputStream inputStream = file.getInputStream()) {
-            s3Template.upload(bucketName, key, inputStream);
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .acl(ObjectCannedACL.PUBLIC_READ)
+                    .build();
+            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
         }
 
         // S3 URL 반환
@@ -81,7 +89,18 @@ public class S3Service {
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             try (InputStream inputStream = connection.getInputStream()) {
-                s3Template.upload(bucketName, key, inputStream);
+                PutObjectRequest request = PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(key)
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build();
+                long contentLength = connection.getContentLengthLong();
+                if (contentLength > 0) {
+                    s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
+                } else {
+                    byte[] imageBytes = inputStream.readAllBytes();
+                    s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+                }
             }
 
             // S3 URL 반환
@@ -114,7 +133,12 @@ public class S3Service {
         byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
 
         String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
-        s3Template.upload(bucketName, s3FileName, new java.io.ByteArrayInputStream(imageBytes));
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3FileName)
+                .acl(ObjectCannedACL.PUBLIC_READ)
+                .build();
+        s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
 
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3FileName);
     }
