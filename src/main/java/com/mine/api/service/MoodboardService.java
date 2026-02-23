@@ -181,9 +181,10 @@ public class MoodboardService {
                 .magazineId(magazineId)
                 .build());
 
-        // 10. Magazine의 moodboardImageUrl 업데이트 (배경 자동 변경)
+        // 10. Magazine의 moodboardImageUrl + coverImageUrl 업데이트
         magazine.setMoodboardImageUrl(s3Url);
         magazine.setMoodboardDescription(description);
+        magazine.setCoverImageUrl(s3Url); // 무드보드 = 커버이미지
         magazineRepository.save(magazine);
 
         return s3Url;
