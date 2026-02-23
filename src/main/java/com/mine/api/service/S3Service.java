@@ -41,10 +41,15 @@ public class S3Service {
         // 파일을 'uploads/' 경로에 저장
         String key = "uploads/" + UUID.randomUUID().toString() + extension;
 
+        String contentType = file.getContentType();
+        if (contentType == null)
+            contentType = "image/jpeg";
+
         try (InputStream inputStream = file.getInputStream()) {
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
+                    .contentType(contentType)
                     .acl(ObjectCannedACL.PUBLIC_READ)
                     .build();
             s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
@@ -88,10 +93,22 @@ public class S3Service {
             connection.setRequestProperty("User-Agent",
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
+            String contentType = connection.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                contentType = "image/jpeg";
+                if (extension.equalsIgnoreCase(".png"))
+                    contentType = "image/png";
+                else if (extension.equalsIgnoreCase(".gif"))
+                    contentType = "image/gif";
+                else if (extension.equalsIgnoreCase(".webp"))
+                    contentType = "image/webp";
+            }
+
             try (InputStream inputStream = connection.getInputStream()) {
                 PutObjectRequest request = PutObjectRequest.builder()
                         .bucket(bucketName)
                         .key(key)
+                        .contentType(contentType)
                         .acl(ObjectCannedACL.PUBLIC_READ)
                         .build();
                 long contentLength = connection.getContentLengthLong();
@@ -136,6 +153,7 @@ public class S3Service {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(s3FileName)
+                .contentType("image/png")
                 .acl(ObjectCannedACL.PUBLIC_READ)
                 .build();
         s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
