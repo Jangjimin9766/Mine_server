@@ -20,6 +20,7 @@ public class ParagraphDto {
     @Schema(description = "문단 상세 정보")
     public static class Response {
         @Schema(description = "문단 ID", example = "10")
+        @JsonProperty("paragraphId")
         private Long id;
 
         @Schema(description = "문단 소제목", example = "국밥의 성지, 서면")
@@ -29,7 +30,7 @@ public class ParagraphDto {
         private String text;
 
         @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
-        @JsonProperty("imageUrl")
+        @JsonProperty("image_url")
         private String imageUrl;
     }
 
@@ -45,7 +46,7 @@ public class ParagraphDto {
         private String text;
 
         @Schema(description = "문단 이미지 URL", example = "https://example.com/new_image.jpg")
-        @JsonProperty("imageUrl")
+        @JsonProperty("image_url")
         private String imageUrl;
     }
 }
