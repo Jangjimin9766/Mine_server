@@ -30,7 +30,7 @@ public class ParagraphDto {
         private String text;
 
         @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
-        @JsonProperty("image_url")
+        @JsonProperty("imageUrl")
         private String imageUrl;
     }
 
@@ -46,7 +46,7 @@ public class ParagraphDto {
         private String text;
 
         @Schema(description = "문단 이미지 URL", example = "https://example.com/new_image.jpg")
-        @JsonProperty("image_url")
+        @JsonProperty("imageUrl")
         private String imageUrl;
     }
 }
