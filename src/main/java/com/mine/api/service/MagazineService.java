@@ -362,7 +362,7 @@ public class MagazineService {
                     .introduction(m.getIntroduction())
                     .coverImageUrl(m.getCoverImageUrl())
                     .username(user.getUsername()) // 조회한 유저 이름 사용
-                    .likeCount(0)
+                    .likeCount((int) magazineLikeRepository.countByMagazine(m))
                     .commentCount(0)
                     .createdAt(m.getCreatedAt().toString())
                     .build());

@@ -37,6 +37,16 @@ public class UserController {
     // ⭐ Phase 5: 프로필 수정 (multipart/form-data 지원)
     @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
+    @PatchMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserDto.ProfileResponse> updateMyProfileJson(
+            @RequestBody UserDto.UpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(userService.updateProfile(userDetails.getUsername(), request));
+    }
+
+    // ⭐ Phase 5: 프로필 수정 (multipart/form-data 지원)
+    @Tag(name = "5. 사용자 (User) 👤")
+    @Operation(summary = "프로필 수정 (파일 업로드)", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
     @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto.ProfileResponse> updateMyProfile(
             @io.swagger.v3.oas.annotations.Parameter(description = "닉네임", example = "감성충전") @RequestPart(value = "nickname", required = false) String nickname,
