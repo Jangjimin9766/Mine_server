@@ -79,6 +79,14 @@ public class SectionViewHistoryService {
         viewHistoryRepository.deleteByViewedAtBefore(cutoff);
     }
 
+    /**
+     * 특정 섹션의 열람 기록 전체 삭제 (섹션 삭제 전 FK 해소용)
+     */
+    @Transactional
+    public void deleteBySection(MagazineSection section) {
+        viewHistoryRepository.deleteBySection(section);
+    }
+
     private SectionViewHistoryDto.Response toResponse(SectionViewHistory history) {
         MagazineSection section = history.getSection();
         return SectionViewHistoryDto.Response.builder()

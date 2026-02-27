@@ -117,7 +117,7 @@ public class MagazineInteractionService {
             return o1.compareTo(o2);
         });
 
-        response.setMagazine(magazine); // [NEW] 업데이트된 매거진 설정
+        response.setMagazine(com.mine.api.dto.MagazineDto.DetailResponse.from(magazine, false));
         return response;
     }
 

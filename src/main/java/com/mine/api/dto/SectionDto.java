@@ -90,5 +90,32 @@ public class SectionDto {
     public static class UpdateRequest {
         @Schema(description = "수정할 소제목", example = "체크 패턴의 매력")
         private String heading;
+
+        @Schema(description = "수정할 썸네일 URL", example = "https://example.com/new-thumb.jpg")
+        private String thumbnailUrl;
+
+        @Schema(description = "수정할 레이아웃 타입", example = "card")
+        private String layoutType;
+
+        @Schema(description = "수정할 레이아웃 힌트", example = "full_width")
+        private String layoutHint;
+
+        @Schema(description = "수정할 문단 목록")
+        private List<ParagraphUpdateRequest> paragraphs;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(name = "ParagraphUpdateRequest", description = "문단 수정 요청")
+    public static class ParagraphUpdateRequest {
+        @Schema(description = "소제목", example = "봄의 시작")
+        private String subtitle;
+
+        @Schema(description = "본문", example = "봄이 오면 꽃이 핀다.")
+        private String text;
+
+        @Schema(description = "이미지 URL", example = "https://example.com/image.jpg")
+        private String imageUrl;
     }
 }

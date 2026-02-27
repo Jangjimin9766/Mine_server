@@ -3,7 +3,6 @@ package com.mine.api.service;
 import com.mine.api.common.ErrorMessages;
 
 import com.mine.api.domain.Magazine;
-import com.mine.api.domain.MagazineLike;
 import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
@@ -168,6 +167,11 @@ public class MagazineService {
             throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
         }
 
+        // 좋아요 여부 조회
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
+        boolean isLiked = magazineLikeRepository.existsByUserAndMagazine(user, magazine);
+
         // displayOrder 순으로 섹션 정렬
         magazine.getSections().sort((s1, s2) -> {
             Integer o1 = s1.getDisplayOrder() != null ? s1.getDisplayOrder() : Integer.MAX_VALUE;
@@ -175,7 +179,7 @@ public class MagazineService {
             return o1.compareTo(o2);
         });
 
-        return com.mine.api.dto.MagazineDto.DetailResponse.from(magazine);
+        return com.mine.api.dto.MagazineDto.DetailResponse.from(magazine, isLiked);
     }
 
     @Transactional

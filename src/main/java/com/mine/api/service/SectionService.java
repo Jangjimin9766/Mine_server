@@ -55,14 +55,18 @@ public class SectionService {
 
     /**
      * 섹션 삭제 (프롬프트 없이 직접 삭제)
+     * orphanRemoval=true 이므로 컬렉션에서 제거하면 자동 삭제됨
      */
     @Transactional
     public void deleteSection(Long magazineId, Long sectionId, String username) {
         Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
         MagazineSection section = getSectionFromMagazine(magazine, sectionId);
 
+        // FK 제약조건 해소: 섹션 열람 기록 먼저 삭제
+        sectionViewHistoryService.deleteBySection(section);
+
+        // orphanRemoval=true 이므로 컬렉션에서 제거만 하면 자동 삭제
         magazine.getSections().remove(section);
-        sectionRepository.delete(section);
 
         // 순서 재정렬
         reorderAfterDelete(magazine);
@@ -83,6 +87,35 @@ public class SectionService {
         // 요청에 포함된 필드만 업데이트
         if (request.getHeading() != null) {
             section.setHeading(request.getHeading());
+        }
+        if (request.getThumbnailUrl() != null) {
+            section.setThumbnailUrl(request.getThumbnailUrl());
+        }
+        if (request.getLayoutType() != null) {
+            section.update(
+                    section.getHeading(),
+                    request.getLayoutHint() != null ? request.getLayoutHint() : section.getLayoutHint(),
+                    request.getLayoutType());
+        } else if (request.getLayoutHint() != null) {
+            section.update(
+                    section.getHeading(),
+                    request.getLayoutHint(),
+                    section.getLayoutType());
+        }
+
+        // paragraphs 업데이트
+        if (request.getParagraphs() != null) {
+            section.getParagraphs().clear();
+            for (int i = 0; i < request.getParagraphs().size(); i++) {
+                SectionDto.ParagraphUpdateRequest paraReq = request.getParagraphs().get(i);
+                com.mine.api.domain.Paragraph paragraph = com.mine.api.domain.Paragraph.builder()
+                        .subtitle(paraReq.getSubtitle())
+                        .text(paraReq.getText())
+                        .imageUrl(paraReq.getImageUrl())
+                        .displayOrder(i)
+                        .build();
+                section.addParagraph(paragraph);
+            }
         }
 
         sectionRepository.save(section);
@@ -164,16 +197,42 @@ public class SectionService {
 
         // 섹션 업데이트
         if (updatedSection != null) {
-            // [NEW] 이미지 S3 변환
-            String imageUrl = (String) updatedSection.get("image_url");
-            if (imageUrl != null) {
-                updatedSection.put("image_url", s3Service.uploadImageFromUrl(imageUrl));
+            // [NEW] 이미지 S3 변환 (thumbnail)
+            String thumbUrl = (String) updatedSection.get("thumbnail_url");
+            if (thumbUrl == null) {
+                thumbUrl = (String) updatedSection.get("image_url");
+            }
+            if (thumbUrl != null) {
+                thumbUrl = s3Service.uploadImageFromUrl(thumbUrl);
+                section.setThumbnailUrl(thumbUrl);
             }
 
             section.update(
                     (String) updatedSection.get("heading"),
                     (String) updatedSection.get("layout_hint"),
                     (String) updatedSection.get("layout_type"));
+
+            // paragraphs 업데이트
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) updatedSection.get("paragraphs");
+            if (paragraphs != null) {
+                section.getParagraphs().clear();
+                for (int i = 0; i < paragraphs.size(); i++) {
+                    Map<String, Object> pMap = paragraphs.get(i);
+                    String paraImageUrl = (String) pMap.get("image_url");
+                    if (paraImageUrl != null) {
+                        paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
+                    }
+                    com.mine.api.domain.Paragraph p = com.mine.api.domain.Paragraph.builder()
+                            .subtitle((String) pMap.get("subtitle"))
+                            .text((String) pMap.get("text"))
+                            .imageUrl(paraImageUrl)
+                            .displayOrder(i)
+                            .build();
+                    section.addParagraph(p);
+                }
+            }
+
             sectionRepository.save(section);
         }
 

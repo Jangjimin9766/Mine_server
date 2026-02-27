@@ -184,6 +184,10 @@ public class MagazineDto {
         @JsonProperty("likeCount")
         private int likeCount;
 
+        @Schema(description = "내가 좋아요를 눌렀는지 여부", example = "true")
+        @JsonProperty("isLiked")
+        private boolean isLiked;
+
         @Schema(description = "생성일시", example = "2024-12-23T10:30:00")
         private String createdAt;
 
@@ -252,7 +256,7 @@ public class MagazineDto {
         /**
          * Magazine Entity를 DetailResponse로 변환
          */
-        public static DetailResponse from(Magazine magazine) {
+        public static DetailResponse from(Magazine magazine, boolean isLiked) {
             SimpleUser simpleUser = SimpleUser.builder()
                     .id(magazine.getUser().getId())
                     .username(magazine.getUser().getUsername())
@@ -291,6 +295,7 @@ public class MagazineDto {
                     .moodboardImageUrl(magazine.getMoodboardImageUrl())
                     .moodboardDescription(magazine.getMoodboardDescription())
                     .likeCount(magazine.getLikes().size()) // 좋아요 수 계산
+                    .isLiked(isLiked)
                     .createdAt(magazine.getCreatedAt() != null ? magazine.getCreatedAt().toString() : null)
                     .user(simpleUser)
                     .sections(sectionItems)
