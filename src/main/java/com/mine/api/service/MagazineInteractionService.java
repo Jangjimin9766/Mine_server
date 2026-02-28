@@ -331,9 +331,20 @@ public class MagazineInteractionService {
         if (paragraphs != null) {
             for (int i = 0; i < paragraphs.size(); i++) {
                 Map<String, Object> pMap = paragraphs.get(i);
+
+                String subtitle = (String) pMap.get("subtitle");
+                if (subtitle == null || subtitle.trim().isEmpty()) {
+                    subtitle = "소제목 내용"; // Database constraint fallback
+                }
+
+                String text = (String) pMap.get("text");
+                if (text == null || text.trim().isEmpty()) {
+                    text = "내용을 입력해주세요."; // Database constraint fallback
+                }
+
                 Paragraph p = Paragraph.builder()
-                        .subtitle((String) pMap.get("subtitle"))
-                        .text((String) pMap.get("text"))
+                        .subtitle(subtitle)
+                        .text(text)
                         .imageUrl((String) pMap.get("image_url"))
                         .displayOrder(i)
                         .build();
@@ -342,11 +353,20 @@ public class MagazineInteractionService {
         } else {
             // Fallback for legacy AI response (flat content)
             String content = (String) map.get("content");
-            if (content != null) {
+            if (content != null && !content.trim().isEmpty()) {
+
+                String subtitle = (String) map.get("caption");
+                if (subtitle == null || subtitle.trim().isEmpty()) {
+                    subtitle = (String) map.get("heading");
+                }
+                if (subtitle == null || subtitle.trim().isEmpty()) {
+                    subtitle = "소제목 내용"; // Database constraint fallback
+                }
+
                 Paragraph p = Paragraph.builder()
                         .text(content)
                         .imageUrl((String) map.get("image_url"))
-                        .subtitle((String) map.get("caption"))
+                        .subtitle(subtitle)
                         .displayOrder(0)
                         .build();
                 section.addParagraph(p);
