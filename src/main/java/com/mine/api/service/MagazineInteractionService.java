@@ -176,38 +176,54 @@ public class MagazineInteractionService {
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedMagazine = (Map<String, Object>) response.get("updated_magazine");
 
-        // [NEW] S3 이미지 변환 로직 (thumbnailUrl 및 paragraphs 내 이미지)
-        // 1. 단일 섹션 응답의 S3 변환
-        if (updatedMagazine != null) {
-            uploadImagesInMap(updatedMagazine);
+        Integer sectionIndex = null;
+        if (response.containsKey("section_index")) {
+            Object idxObj = response.get("section_index");
+            if (idxObj instanceof Number) {
+                sectionIndex = ((Number) idxObj).intValue();
+            }
         }
 
-        // 2. 전체 섹션 변경(change_tone)의 S3 변환
-        if ("change_tone".equals(action)) {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> newSections = (List<Map<String, Object>>) response.get("new_sections");
-            if (newSections != null) {
-                for (Map<String, Object> sec : newSections) {
-                    uploadImagesInMap(sec);
+        // [NEW] Python V2 응답 구조 대응: updatedMagazine이 래퍼 객체이고 실제 데이터는 new_sections에 있음
+        Map<String, Object> sectionData = updatedMagazine;
+        List<Map<String, Object>> newSectionsList = null;
+        List<Number> deletedSectionIds = null;
+
+        if (updatedMagazine != null) {
+            if (updatedMagazine.containsKey("new_sections")) {
+                newSectionsList = (List<Map<String, Object>>) updatedMagazine.get("new_sections");
+                if (newSectionsList != null && !newSectionsList.isEmpty()) {
+                    sectionData = newSectionsList.get(0);
                 }
+            }
+            if (updatedMagazine.containsKey("deleted_section_ids")) {
+                deletedSectionIds = (List<Number>) updatedMagazine.get("deleted_section_ids");
+            }
+        }
+
+        // S3 이미지 변환
+        if (sectionData != null && !sectionData.containsKey("new_sections")) {
+            uploadImagesInMap(sectionData);
+        }
+        if ("change_tone".equals(action) && newSectionsList != null) {
+            for (Map<String, Object> sec : newSectionsList) {
+                uploadImagesInMap(sec);
             }
         }
 
         // 1. 섹션 재생성
         if ("regenerate_section".equals(action)) {
-            Integer sectionIndex = (Integer) response.get("section_index");
-
-            if (sectionIndex != null && updatedMagazine != null && sectionIndex >= 0
+            if (sectionIndex != null && sectionData != null && sectionIndex >= 0
                     && sectionIndex < magazine.getSections().size()) {
                 MagazineSection section = magazine.getSections().get(sectionIndex);
-                updateSectionFromMap(section, updatedMagazine);
+                updateSectionFromMap(section, sectionData);
             }
         }
 
         // 2. 섹션 추가
         else if ("add_section".equals(action)) {
-            if (updatedMagazine != null) {
-                MagazineSection section = createSectionFromMap(updatedMagazine, magazine.getSections().size());
+            if (sectionData != null) {
+                MagazineSection section = createSectionFromMap(sectionData, magazine.getSections().size());
                 section.setMagazine(magazine);
                 magazine.getSections().add(section);
             }
@@ -215,11 +231,19 @@ public class MagazineInteractionService {
 
         // 3. 섹션 삭제
         else if ("delete_section".equals(action)) {
-            Integer sectionIndex = (Integer) response.get("section_index");
-
-            if (sectionIndex != null && sectionIndex >= 0 && sectionIndex < magazine.getSections().size()) {
+            boolean deleted = false;
+            // V2 방식: deleted_section_ids 활용
+            if (deletedSectionIds != null && !deletedSectionIds.isEmpty()) {
+                Long targetId = deletedSectionIds.get(0).longValue();
+                deleted = magazine.getSections().removeIf(s -> s.getId() != null && s.getId().equals(targetId));
+            }
+            // V1 방식: section_index 활용
+            if (!deleted && sectionIndex != null && sectionIndex >= 0 && sectionIndex < magazine.getSections().size()) {
                 magazine.getSections().remove(sectionIndex.intValue());
+                deleted = true;
+            }
 
+            if (deleted) {
                 // 삭제 후 순서 재정렬
                 for (int i = 0; i < magazine.getSections().size(); i++) {
                     magazine.getSections().get(i).setDisplayOrder(i);
@@ -229,13 +253,10 @@ public class MagazineInteractionService {
 
         // 4. 전체 톤 변경 (모든 섹션 교체)
         else if ("change_tone".equals(action)) {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> newSections = (List<Map<String, Object>>) response.get("new_sections");
-
-            if (newSections != null) {
+            if (newSectionsList != null) {
                 magazine.getSections().clear();
 
-                for (Map<String, Object> sec : newSections) {
+                for (Map<String, Object> sec : newSectionsList) {
                     MagazineSection section = createSectionFromMap(sec, magazine.getSections().size());
                     section.setMagazine(magazine);
                     magazine.getSections().add(section);
