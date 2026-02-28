@@ -212,10 +212,12 @@ public class SectionService {
                     (String) updatedSection.get("layout_hint"),
                     (String) updatedSection.get("layout_type"));
 
-            // paragraphs 업데이트
+            // paragraphs 업데이트 (2가지 형식 지원)
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) updatedSection.get("paragraphs");
+
             if (paragraphs != null) {
+                // 형식 1: paragraphs 배열이 직접 온 경우
                 section.getParagraphs().clear();
                 for (int i = 0; i < paragraphs.size(); i++) {
                     Map<String, Object> pMap = paragraphs.get(i);
@@ -230,6 +232,29 @@ public class SectionService {
                             .displayOrder(i)
                             .build();
                     section.addParagraph(p);
+                }
+            } else {
+                // 형식 2: Python AI 서버가 content (HTML 문자열)로 반환한 경우
+                String content = (String) updatedSection.get("content");
+                if (content != null && !content.isBlank()) {
+                    log.info("[DEBUG] Updating paragraphs from content HTML (length={})", content.length());
+                    List<com.mine.api.domain.Paragraph> existingParagraphs = section.getParagraphs();
+                    if (!existingParagraphs.isEmpty()) {
+                        // 기존 첫 번째 paragraph의 text를 AI 응답 content로 교체
+                        existingParagraphs.get(0).update(
+                                existingParagraphs.get(0).getSubtitle(),
+                                content,
+                                existingParagraphs.get(0).getImageUrl());
+                    } else {
+                        // paragraph가 하나도 없으면 새로 생성
+                        com.mine.api.domain.Paragraph p = com.mine.api.domain.Paragraph.builder()
+                                .subtitle((String) updatedSection.get("heading"))
+                                .text(content)
+                                .imageUrl(null)
+                                .displayOrder(0)
+                                .build();
+                        section.addParagraph(p);
+                    }
                 }
             }
 

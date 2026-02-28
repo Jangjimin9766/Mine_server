@@ -1,0 +1,379 @@
+diff --git a/src/main/java/com/mine/api/controller/UserController.java b/src/main/java/com/mine/api/controller/UserController.java
+index b5c8e08..61fcea7 100644
+--- a/src/main/java/com/mine/api/controller/UserController.java
++++ b/src/main/java/com/mine/api/controller/UserController.java
+@@ -37,6 +37,16 @@ public class UserController {
+     // ⭐ Phase 5: 프로필 수정 (multipart/form-data 지원)
+     @Tag(name = "5. 사용자 (User) 👤")
+     @Operation(summary = "프로필 수정", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
++    @PatchMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
++    public ResponseEntity<UserDto.ProfileResponse> updateMyProfileJson(
++            @RequestBody UserDto.UpdateRequest request,
++            @AuthenticationPrincipal UserDetails userDetails) {
++        return ResponseEntity.ok(userService.updateProfile(userDetails.getUsername(), request));
++    }
++
++    // ⭐ Phase 5: 프로필 수정 (multipart/form-data 지원)
++    @Tag(name = "5. 사용자 (User) 👤")
++    @Operation(summary = "프로필 수정 (파일 업로드)", description = "로그인한 사용자의 프로필(닉네임, 아이디, 이미지)을 수정합니다. 이미지는 파일로 직접 업로드하세요.")
+     @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+     public ResponseEntity<UserDto.ProfileResponse> updateMyProfile(
+             @io.swagger.v3.oas.annotations.Parameter(description = "닉네임", example = "감성충전") @RequestPart(value = "nickname", required = false) String nickname,
+diff --git a/src/main/java/com/mine/api/dto/ParagraphDto.java b/src/main/java/com/mine/api/dto/ParagraphDto.java
+index 8a209d8..c803296 100644
+--- a/src/main/java/com/mine/api/dto/ParagraphDto.java
++++ b/src/main/java/com/mine/api/dto/ParagraphDto.java
+@@ -20,7 +20,6 @@ public class ParagraphDto {
+     @Schema(description = "문단 상세 정보")
+     public static class Response {
+         @Schema(description = "문단 ID", example = "10")
+-        @JsonProperty("paragraphId")
+         private Long id;
+ 
+         @Schema(description = "문단 소제목", example = "국밥의 성지, 서면")
+@@ -30,7 +29,7 @@ public class ParagraphDto {
+         private String text;
+ 
+         @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
+-        @JsonProperty("image_url")
++        @JsonProperty("imageUrl")
+         private String imageUrl;
+     }
+ 
+@@ -46,7 +45,7 @@ public class ParagraphDto {
+         private String text;
+ 
+         @Schema(description = "문단 이미지 URL", example = "https://example.com/new_image.jpg")
+-        @JsonProperty("image_url")
++        @JsonProperty("imageUrl")
+         private String imageUrl;
+     }
+ }
+diff --git a/src/main/java/com/mine/api/dto/SectionDto.java b/src/main/java/com/mine/api/dto/SectionDto.java
+index c9b48fd..8c8eb1c 100644
+--- a/src/main/java/com/mine/api/dto/SectionDto.java
++++ b/src/main/java/com/mine/api/dto/SectionDto.java
+@@ -31,7 +31,7 @@ public class SectionDto {
+         // ===== 새로 추가된 필드 =====
+ 
+         @Schema(description = "섹션 썸네일 URL", example = "https://example.com/thumbnail.jpg")
+-        @JsonProperty("thumbnail_url")
++        @JsonProperty("thumbnailUrl")
+         private String thumbnailUrl;
+ 
+         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
+@@ -40,15 +40,15 @@ public class SectionDto {
+         // ===== 기존 필드 =====
+ 
+         @Schema(description = "레이아웃 타입", example = "card")
+-        @JsonProperty("layout_type")
++        @JsonProperty("layoutType")
+         private String layoutType;
+ 
+         @Schema(description = "레이아웃 힌트", example = "full_width")
+-        @JsonProperty("layout_hint")
++        @JsonProperty("layoutHint")
+         private String layoutHint;
+ 
+         @Schema(description = "표시 순서", example = "1")
+-        @JsonProperty("display_order")
++        @JsonProperty("displayOrder")
+         private Integer displayOrder;
+     }
+ 
+diff --git a/src/main/java/com/mine/api/exception/GlobalExceptionHandler.java b/src/main/java/com/mine/api/exception/GlobalExceptionHandler.java
+index 28fa587..ac42504 100644
+--- a/src/main/java/com/mine/api/exception/GlobalExceptionHandler.java
++++ b/src/main/java/com/mine/api/exception/GlobalExceptionHandler.java
+@@ -3,6 +3,7 @@ package com.mine.api.exception;
+ import com.mine.api.dto.ErrorResponse;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.ResponseEntity;
++import org.springframework.security.access.AccessDeniedException;
+ import org.springframework.web.bind.annotation.ExceptionHandler;
+ import org.springframework.web.bind.annotation.RestControllerAdvice;
+ 
+@@ -15,11 +16,28 @@ public class GlobalExceptionHandler {
+         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+     }
+ 
++    @ExceptionHandler(SecurityException.class)
++    public ResponseEntity<ErrorResponse> handleSecurityException(SecurityException ex) {
++        ErrorResponse response = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
++        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
++    }
++
++    @ExceptionHandler(AccessDeniedException.class)
++    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
++        ErrorResponse response = new ErrorResponse(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다.");
++        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
++    }
++
++    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
++    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(jakarta.persistence.EntityNotFoundException ex) {
++        ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
++        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
++    }
++
+     @ExceptionHandler(Exception.class)
+     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+-        // 보안을 위해 내부 에러 메시지는 서버 로그에만 남기고 클라이언트에는 숨김
+-        // log.error("Internal Server Error: ", ex); // 실제 로그는 로거 사용 시 활성화
+         System.err.println("Internal Server Error: " + ex.getMessage());
++        ex.printStackTrace();
+ 
+         ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                 "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+diff --git a/src/main/java/com/mine/api/service/MagazineService.java b/src/main/java/com/mine/api/service/MagazineService.java
+index 9f16a9f..66affed 100644
+--- a/src/main/java/com/mine/api/service/MagazineService.java
++++ b/src/main/java/com/mine/api/service/MagazineService.java
+@@ -362,7 +362,7 @@ public class MagazineService {
+                     .introduction(m.getIntroduction())
+                     .coverImageUrl(m.getCoverImageUrl())
+                     .username(user.getUsername()) // 조회한 유저 이름 사용
+-                    .likeCount(0)
++                    .likeCount((int) magazineLikeRepository.countByMagazine(m))
+                     .commentCount(0)
+                     .createdAt(m.getCreatedAt().toString())
+                     .build());
+diff --git a/src/main/java/com/mine/api/service/MoodboardService.java b/src/main/java/com/mine/api/service/MoodboardService.java
+index cf2ec5b..e3458ae 100644
+--- a/src/main/java/com/mine/api/service/MoodboardService.java
++++ b/src/main/java/com/mine/api/service/MoodboardService.java
+@@ -181,10 +181,9 @@ public class MoodboardService {
+                 .magazineId(magazineId)
+                 .build());
+ 
+-        // 10. Magazine의 moodboardImageUrl + coverImageUrl 업데이트
++        // 10. Magazine의 moodboardImageUrl 업데이트 (배경 자동 변경)
+         magazine.setMoodboardImageUrl(s3Url);
+         magazine.setMoodboardDescription(description);
+-        magazine.setCoverImageUrl(s3Url); // 무드보드 = 커버이미지
+         magazineRepository.save(magazine);
+ 
+         return s3Url;
+diff --git a/src/main/java/com/mine/api/service/S3Service.java b/src/main/java/com/mine/api/service/S3Service.java
+index bcb2f26..6c159a8 100644
+--- a/src/main/java/com/mine/api/service/S3Service.java
++++ b/src/main/java/com/mine/api/service/S3Service.java
+@@ -1,9 +1,6 @@
+ package com.mine.api.service;
+ 
+-import software.amazon.awssdk.core.sync.RequestBody;
+-import software.amazon.awssdk.services.s3.S3Client;
+-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
++import io.awspring.cloud.s3.S3Template;
+ import lombok.RequiredArgsConstructor;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.stereotype.Service;
+@@ -18,7 +15,7 @@ import java.util.UUID;
+ @lombok.extern.slf4j.Slf4j
+ public class S3Service {
+ 
+-    private final S3Client s3Client;
++    private final S3Template s3Template;
+ 
+     @Value("${spring.cloud.aws.s3.bucket}")
+     private String bucketName;
+@@ -41,18 +38,8 @@ public class S3Service {
+         // 파일을 'uploads/' 경로에 저장
+         String key = "uploads/" + UUID.randomUUID().toString() + extension;
+ 
+-        String contentType = file.getContentType();
+-        if (contentType == null)
+-            contentType = "image/jpeg";
+-
+         try (InputStream inputStream = file.getInputStream()) {
+-            PutObjectRequest request = PutObjectRequest.builder()
+-                    .bucket(bucketName)
+-                    .key(key)
+-                    .contentType(contentType)
+-                    .acl(ObjectCannedACL.PUBLIC_READ)
+-                    .build();
+-            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
++            s3Template.upload(bucketName, key, inputStream);
+         }
+ 
+         // S3 URL 반환
+@@ -88,36 +75,8 @@ public class S3Service {
+ 
+             String key = "uploads/" + UUID.randomUUID().toString() + extension;
+ 
+-            java.net.URLConnection connection = url.openConnection();
+-            // 자바 봇이 아닌 일반 다운로더처럼 위장
+-            connection.setRequestProperty("User-Agent",
+-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+-
+-            String contentType = connection.getContentType();
+-            if (contentType == null || !contentType.startsWith("image/")) {
+-                contentType = "image/jpeg";
+-                if (extension.equalsIgnoreCase(".png"))
+-                    contentType = "image/png";
+-                else if (extension.equalsIgnoreCase(".gif"))
+-                    contentType = "image/gif";
+-                else if (extension.equalsIgnoreCase(".webp"))
+-                    contentType = "image/webp";
+-            }
+-
+-            try (InputStream inputStream = connection.getInputStream()) {
+-                PutObjectRequest request = PutObjectRequest.builder()
+-                        .bucket(bucketName)
+-                        .key(key)
+-                        .contentType(contentType)
+-                        .acl(ObjectCannedACL.PUBLIC_READ)
+-                        .build();
+-                long contentLength = connection.getContentLengthLong();
+-                if (contentLength > 0) {
+-                    s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
+-                } else {
+-                    byte[] imageBytes = inputStream.readAllBytes();
+-                    s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+-                }
++            try (InputStream inputStream = url.openStream()) {
++                s3Template.upload(bucketName, key, inputStream);
+             }
+ 
+             // S3 URL 반환
+@@ -127,8 +86,9 @@ public class S3Service {
+ 
+         } catch (Exception e) {
+             log.error("Failed to upload image from URL: {}", imageUrl, e);
+-            // 실패 시 원본 이미지 URL이라도 그대로 반환하여 클라이언트에서 보이게 함
+-            return imageUrl;
++            // 실패 시 기본 이미지 반환 (또는 원본 URL 유지)
++            // 여기서는 "기본 이미지"를 반환하도록 수정하여 엑스박스를 방지합니다.
++            return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
+         }
+     }
+ 
+@@ -150,13 +110,7 @@ public class S3Service {
+         byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
+ 
+         String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
+-        PutObjectRequest request = PutObjectRequest.builder()
+-                .bucket(bucketName)
+-                .key(s3FileName)
+-                .contentType("image/png")
+-                .acl(ObjectCannedACL.PUBLIC_READ)
+-                .build();
+-        s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
++        s3Template.upload(bucketName, s3FileName, new java.io.ByteArrayInputStream(imageBytes));
+ 
+         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3FileName);
+     }
+diff --git a/src/main/java/com/mine/api/service/SectionService.java b/src/main/java/com/mine/api/service/SectionService.java
+index c73f0f4..faad8aa 100644
+--- a/src/main/java/com/mine/api/service/SectionService.java
++++ b/src/main/java/com/mine/api/service/SectionService.java
+@@ -243,7 +243,6 @@ public class SectionService {
+         // paragraphs 변환
+         List<ParagraphDto.Response> paragraphsList = section.getParagraphs().stream()
+                 .map(p -> ParagraphDto.Response.builder()
+-                        .id(p.getId())
+                         .subtitle(p.getSubtitle())
+                         .text(p.getText())
+                         .imageUrl(p.getImageUrl())
+diff --git a/src/main/resources/application.yml b/src/main/resources/application.yml
+index 38f4c84..537c615 100644
+--- a/src/main/resources/application.yml
++++ b/src/main/resources/application.yml
+@@ -3,12 +3,12 @@ spring:
+     import: "optional:file:src/main/resources/application-secret.yml"
+   sql:
+     init:
+-      mode: never
++      mode: always
+       encoding: UTF-8
+   datasource:
+-    url: jdbc:mysql://localhost:3306/mine_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
++    url: jdbc:mysql://localhost:3306/mine_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci
+     username: root
+-    password: "1234"
++    password: "injae9030@"
+     driver-class-name: com.mysql.cj.jdbc.Driver
+   jpa:
+     hibernate:
+diff --git a/src/main/resources/data.sql b/src/main/resources/data.sql
+index c35bdbc..67ec1f7 100644
+--- a/src/main/resources/data.sql
++++ b/src/main/resources/data.sql
+@@ -66,17 +66,16 @@ INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크')
+ -- =====================================================
+ -- 테스트용 계정 (팀 공용 테스트 및 개발용)
+ -- =====================================================
+--- 비밀번호: password (BCrypt 해시)
+ -- 공용 계정: shared_user (팀 공용)
+ -- 개인 계정: antigravity_user (테스트용)
+ -- =====================================================
+ 
+-INSERT INTO users (username, password, email, nickname, created_at) 
+-VALUES ('shared_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'shared@mine.com', '공용테스터', NOW())
++INSERT INTO users (username, password, email, nickname, created_at, is_public) 
++VALUES ('shared_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'shared@mine.com', '공용테스터', NOW(), true)
+ ON DUPLICATE KEY UPDATE username=username;
+ 
+-INSERT INTO users (username, password, email, nickname, created_at) 
+-VALUES ('antigravity_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'antigravity@mine.com', '인재테스터', NOW())
++INSERT INTO users (username, password, email, nickname, created_at, is_public) 
++VALUES ('antigravity_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'antigravity@mine.com', '인재테스터', NOW(), true)
+ ON DUPLICATE KEY UPDATE username=username;
+ 
+ -- =====================================================
+@@ -99,29 +98,32 @@ ON DUPLICATE KEY UPDATE title=title;
+ -- 더미 섹션 데이터 (첫 번째 매거진용)
+ -- =====================================================
+ 
+-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
+-SELECT m.id, '니트의 귀환', '<p>올 겨울, 니트가 다시 돌아왔습니다. 오버사이즈 니트부터 크롭 니트까지 다양한 스타일링을 만나보세요.</p>',
+-       'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800', 'split_left', 0
+-FROM magazines m JOIN users u ON m.user_id = u.id 
+-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
+-LIMIT 1
+-ON DUPLICATE KEY UPDATE heading=heading;
+-
+-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
+-SELECT m.id, '레이어드의 정석', '<p>추운 겨울, 레이어드는 필수입니다. 얇은 옷을 여러 겹 겹쳐 입어 스타일과 보온성을 모두 잡으세요.</p>',
+-       'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800', 'split_right', 1
+-FROM magazines m JOIN users u ON m.user_id = u.id 
+-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
+-LIMIT 1
+-ON DUPLICATE KEY UPDATE heading=heading;
+-
+-INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
+-SELECT m.id, '컬러 매치 팁', '<p>겨울이라고 무채색만? 아니요! 버건디, 머스타드, 포레스트 그린 등 깊은 컬러로 포인트를 주세요.</p>',
+-       'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800', 'basic', 2
+-FROM magazines m JOIN users u ON m.user_id = u.id 
+-WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
+-LIMIT 1
+-ON DUPLICATE KEY UPDATE heading=heading;
++-- NOTE: 기존 스키마에서 사용하던 더미 섹션 INSERT 문.
++-- 현재 테이블에는 content / image_url 컬럼이 없으므로 실행 시 에러가 발생하여 주석 처리함.
++-- 애플리케이션 동작에는 필수 데이터가 아니므로, 필요 시 스키마에 맞게 수정 후 다시 활성화할 것.
++-- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
++-- SELECT m.id, '니트의 귀환', '<p>올 겨울, 니트가 다시 돌아왔습니다. 오버사이즈 니트부터 크롭 니트까지 다양한 스타일링을 만나보세요.</p>',
++--        'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800', 'split_left', 0
++-- FROM magazines m JOIN users u ON m.user_id = u.id 
++-- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
++-- LIMIT 1
++-- ON DUPLICATE KEY UPDATE heading=heading;
++
++-- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
++-- SELECT m.id, '레이어드의 정석', '<p>추운 겨울, 레이어드는 필수입니다. 얇은 옷을 여러 겹 겹쳐 입어 스타일과 보온성을 모두 잡으세요.</p>',
++--        'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800', 'split_right', 1
++-- FROM magazines m JOIN users u ON m.user_id = u.id 
++-- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
++-- LIMIT 1
++-- ON DUPLICATE KEY UPDATE heading=heading;
++
++-- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
++-- SELECT m.id, '컬러 매치 팁', '<p>겨울이라고 무채색만? 아니요! 버건디, 머스타드, 포레스트 그린 등 깊은 컬러로 포인트를 주세요.</p>',
++--        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800', 'basic', 2
++-- FROM magazines m JOIN users u ON m.user_id = u.id 
++-- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
++-- LIMIT 1
++-- ON DUPLICATE KEY UPDATE heading=heading;
+ 
+ -- 마이그레이션: 기존 유저 public 설정 보장
+ 
