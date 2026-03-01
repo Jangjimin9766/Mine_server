@@ -23,7 +23,7 @@ public class SectionHistoryController {
     private final SectionViewHistoryService sectionViewHistoryService;
 
     @GetMapping("/recent")
-    @Operation(summary = "📜 최근 열람 섹션 목록", description = "최근 한 달 내 열람한 섹션 목록을 최신순으로 반환합니다. (최대 30개)")
+    @Operation(summary = "📜 최근 열람 섹션 목록", description = "최근 한 달 내 열람한 섹션 목록을 최신순으로 반환합니다. (최대 5개)")
     public ResponseEntity<List<SectionViewHistoryDto.Response>> getRecentSections(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(

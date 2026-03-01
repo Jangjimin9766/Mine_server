@@ -54,7 +54,7 @@ public class SectionViewHistoryService {
     }
 
     /**
-     * 최근 열람 기록 조회 (30개, 한 달 이내)
+     * 최근 열람 기록 조회 (5개, 한 달 이내)
      */
     public List<SectionViewHistoryDto.Response> getRecentViews(String username) {
         User user = userRepository.findByUsername(username)
@@ -62,7 +62,7 @@ public class SectionViewHistoryService {
 
         LocalDateTime oneMonthAgo = LocalDateTime.now().minusDays(RETENTION_DAYS);
         List<SectionViewHistory> histories = viewHistoryRepository
-                .findTop30ByUserAndViewedAtAfterOrderByViewedAtDesc(user, oneMonthAgo);
+                .findTop5ByUserAndViewedAtAfterOrderByViewedAtDesc(user, oneMonthAgo);
 
         return histories.stream()
                 .map(this::toResponse)

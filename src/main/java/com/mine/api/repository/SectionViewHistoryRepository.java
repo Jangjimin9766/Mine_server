@@ -17,9 +17,9 @@ import java.util.Optional;
 public interface SectionViewHistoryRepository extends JpaRepository<SectionViewHistory, Long> {
 
         /**
-         * 최근 열람 기록 조회 (30개, 한 달 이내)
+         * 최근 열람 기록 조회 (5개, 한 달 이내)
          */
-        List<SectionViewHistory> findTop30ByUserAndViewedAtAfterOrderByViewedAtDesc(
+        List<SectionViewHistory> findTop5ByUserAndViewedAtAfterOrderByViewedAtDesc(
                         User user, LocalDateTime after);
 
         /**
