@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SectionViewHistoryService {
 
-    private static final int MAX_HISTORY_COUNT = 30;
+    private static final int MAX_HISTORY_COUNT = 5;
     private static final int RETENTION_DAYS = 30;
 
     private final SectionViewHistoryRepository viewHistoryRepository;
