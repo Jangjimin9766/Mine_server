@@ -36,8 +36,9 @@ public class MagazineController {
     public ResponseEntity<com.mine.api.dto.MagazineDto.DetailResponse> getMagazineDetail(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
+        String viewerUsername = userDetails != null ? userDetails.getUsername() : null;
         com.mine.api.dto.MagazineDto.DetailResponse response = magazineService.getMagazineDetail(id,
-                userDetails.getUsername());
+                viewerUsername);
         return ResponseEntity.ok(response);
     }
 
