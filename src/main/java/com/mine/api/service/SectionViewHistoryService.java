@@ -90,9 +90,12 @@ public class SectionViewHistoryService {
     private SectionViewHistoryDto.Response toResponse(SectionViewHistory history) {
         MagazineSection section = history.getSection();
         return SectionViewHistoryDto.Response.builder()
+                .id(section.getId())
+                .heading(section.getHeading())
                 .layoutType(section.getLayoutType())
                 .layoutHint(section.getLayoutHint())
                 .displayOrder(section.getDisplayOrder())
+                .magazineId(section.getMagazine().getId())
                 .magazineTitle(section.getMagazine().getTitle())
                 .viewedAt(history.getViewedAt())
                 .build();
