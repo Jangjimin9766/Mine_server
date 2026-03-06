@@ -20,7 +20,7 @@ public class SectionViewHistoryDto {
     @Schema(description = "최근 열람 섹션 정보")
     public static class Response {
         @Schema(description = "섹션 ID", example = "223")
-        private Long id;
+        private Long sectionId;
 
         @Schema(description = "소제목", example = "3주 유럽여행 코스 추천")
         private String heading;
