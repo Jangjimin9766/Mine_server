@@ -29,6 +29,7 @@ public class MagazineService {
     private final MoodboardService moodboardService;
     private final com.mine.api.repository.MoodboardRepository moodboardRepository;
     private final S3Service s3Service;
+    private final SectionService sectionService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -235,6 +236,13 @@ public class MagazineService {
 
             // 3. 받은 데이터로 저장 로직 수행
             Long magazineId = saveMagazine(generatedData, username);
+
+            // 3-1. paragraph 없는 섹션 및 섹션 없는 매거진 자동 정리
+            try {
+                sectionService.cleanupEmptySectionsAndMagazines(magazineId);
+            } catch (Exception e) {
+                log.warn("Cleanup after magazine save failed: {}", e.getMessage());
+            }
 
             // 4. [FIX] 무드보드 자동 생성 및 커버 이미지 교체
             try {

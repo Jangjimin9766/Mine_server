@@ -12,6 +12,7 @@ import com.mine.api.repository.MagazineSectionRepository;
 import com.mine.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +43,23 @@ public class SectionService {
      */
     @Transactional
     public SectionDto.Response getSection(Long magazineId, Long sectionId, String username) {
-        Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
+        // 소유자가 아니더라도 공개 매거진이면 열람 허용
+        Magazine magazine = magazineRepository.findById(magazineId)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+
+        boolean isOwner = magazine.getUser().getUsername().equals(username);
+        if (!isOwner && !magazine.getUser().getIsPublic()) {
+            throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
+        }
+
         MagazineSection section = getSectionFromMagazine(magazine, sectionId);
 
-        // 열람 기록 저장
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
-        sectionViewHistoryService.recordView(user, section);
+        // 열람 기록 저장 (로그인한 사용자만)
+        if (username != null && !username.isBlank()) {
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
+            sectionViewHistoryService.recordView(user, section);
+        }
 
         return toResponse(section);
     }
@@ -71,8 +82,42 @@ public class SectionService {
         // 순서 재정렬
         reorderAfterDelete(magazine);
 
+        // 섹션이 없어진 매거진은 자동 삭제
+        if (magazine.getSections().isEmpty()) {
+            magazineRepository.delete(magazine);
+            log.info("Magazine auto-deleted (no sections left): magazineId={}", magazineId);
+        }
+
         log.info("Section deleted: magazineId={}, sectionId={}, username={}",
                 magazineId, sectionId, username);
+    }
+
+    /**
+     * paragraph가 없는 섹션을 자동 삭제하고, 섹션이 없어진 매거진도 자동 삭제합니다.
+     * 매거진 저장 후 후처리 용도로 사용합니다.
+     */
+    @Transactional
+    public void cleanupEmptySectionsAndMagazines(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId).orElse(null);
+        if (magazine == null)
+            return;
+
+        List<MagazineSection> sectionsToRemove = new ArrayList<>();
+        for (MagazineSection section : magazine.getSections()) {
+            if (section.getParagraphs() == null || section.getParagraphs().isEmpty()) {
+                sectionViewHistoryService.deleteBySection(section);
+                sectionsToRemove.add(section);
+                log.info("Section auto-deleted (no paragraphs): sectionId={}", section.getId());
+            }
+        }
+        magazine.getSections().removeAll(sectionsToRemove);
+
+        if (magazine.getSections().isEmpty()) {
+            magazineRepository.delete(magazine);
+            log.info("Magazine auto-deleted (no sections left after cleanup): magazineId={}", magazineId);
+        } else {
+            reorderAfterDelete(magazine);
+        }
     }
 
     /**

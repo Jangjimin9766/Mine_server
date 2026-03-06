@@ -26,8 +26,9 @@ public class SectionController {
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,
             @AuthenticationPrincipal UserDetails userDetails) {
+        String username = userDetails != null ? userDetails.getUsername() : null;
         return ResponseEntity.ok(
-                sectionService.getSection(magazineId, sectionId, userDetails.getUsername()));
+                sectionService.getSection(magazineId, sectionId, username));
     }
 
     @DeleteMapping("/{sectionId}")
