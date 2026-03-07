@@ -93,6 +93,14 @@ public class SectionService {
     }
 
     /**
+     * 섹션의 열람 기록 삭제 (매거진 삭제 등 FK 해소용)
+     */
+    @Transactional
+    public void deleteSectionViewHistory(MagazineSection section) {
+        sectionViewHistoryService.deleteBySection(section);
+    }
+
+    /**
      * paragraph가 없는 섹션을 자동 삭제하고, 섹션이 없어진 매거진도 자동 삭제합니다.
      * 매거진 저장 후 후처리 용도로 사용합니다.
      */

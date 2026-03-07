@@ -161,17 +161,21 @@ public class MagazineService {
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 본인 매거진이 아니고 비공개 계정이면 접근 불가
-        boolean isOwner = magazine.getUser().getUsername().equals(username);
+        boolean isOwner = username != null && magazine.getUser().getUsername().equals(username);
         boolean isPublicAccount = magazine.getUser().getIsPublic();
 
         if (!isOwner && !isPublicAccount) {
             throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
         }
 
-        // 좋아요 여부 조회
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
-        boolean isLiked = magazineLikeRepository.existsByUserAndMagazine(user, magazine);
+        // 좋아요 여부 조회 (비로그인 시 isLiked = false)
+        boolean isLiked = false;
+        if (username != null) {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null) {
+                isLiked = magazineLikeRepository.existsByUserAndMagazine(user, magazine);
+            }
+        }
 
         // displayOrder 순으로 섹션 정렬
         magazine.getSections().sort((s1, s2) -> {
@@ -273,7 +277,13 @@ public class MagazineService {
         if (!magazine.isOwnedBy(user)) {
             throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
-        // 4. 삭제 (CASCADE로 섹션, 상호작용도 자동 삭제)
+
+        // FK 제약조건 해소: 모든 섹션의 열람 기록 먼저 삭제
+        for (MagazineSection section : magazine.getSections()) {
+            sectionService.deleteSectionViewHistory(section);
+        }
+
+        // 삭제 (CASCADE로 섹션, 상호작용도 자동 삭제)
         magazineRepository.delete(magazine);
 
         log.info("Magazine deleted successfully: magazineId={}, username={}", magazineId, username);
