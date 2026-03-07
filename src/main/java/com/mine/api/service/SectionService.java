@@ -47,7 +47,7 @@ public class SectionService {
         Magazine magazine = magazineRepository.findById(magazineId)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
-        boolean isOwner = magazine.getUser().getUsername().equals(username);
+        boolean isOwner = username != null && magazine.getUser().getUsername().equals(username);
         if (!isOwner && !magazine.getUser().getIsPublic()) {
             throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);
         }
