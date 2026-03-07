@@ -27,6 +27,7 @@ public class MagazineInteractionService {
     private final MagazineInteractionRepository interactionRepository;
     private final RunPodService runPodService;
     private final S3Service s3Service;
+    private final SectionService sectionService;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -235,10 +236,16 @@ public class MagazineInteractionService {
             // V2 방식: deleted_section_ids 활용
             if (deletedSectionIds != null && !deletedSectionIds.isEmpty()) {
                 Long targetId = deletedSectionIds.get(0).longValue();
+                // FK 해소: 삭제 대상 섹션의 열람 기록 먼저 삭제
+                magazine.getSections().stream()
+                        .filter(s -> s.getId() != null && s.getId().equals(targetId))
+                        .findFirst()
+                        .ifPresent(s -> sectionService.deleteSectionViewHistory(s));
                 deleted = magazine.getSections().removeIf(s -> s.getId() != null && s.getId().equals(targetId));
             }
             // V1 방식: section_index 활용
             if (!deleted && sectionIndex != null && sectionIndex >= 0 && sectionIndex < magazine.getSections().size()) {
+                sectionService.deleteSectionViewHistory(magazine.getSections().get(sectionIndex));
                 magazine.getSections().remove(sectionIndex.intValue());
                 deleted = true;
             }
@@ -254,6 +261,10 @@ public class MagazineInteractionService {
         // 4. 전체 톤 변경 (모든 섹션 교체)
         else if ("change_tone".equals(action)) {
             if (newSectionsList != null) {
+                // FK 해소: 기존 모든 섹션의 열람 기록 삭제
+                for (MagazineSection s : magazine.getSections()) {
+                    sectionService.deleteSectionViewHistory(s);
+                }
                 magazine.getSections().clear();
 
                 for (Map<String, Object> sec : newSectionsList) {

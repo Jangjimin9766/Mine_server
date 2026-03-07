@@ -278,9 +278,19 @@ public class SectionService {
                     if (paraImageUrl != null) {
                         paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
                     }
+
+                    String subtitle = (String) pMap.get("subtitle");
+                    if (subtitle == null || subtitle.trim().isEmpty()) {
+                        subtitle = "소제목 내용";
+                    }
+                    String text = (String) pMap.get("text");
+                    if (text == null || text.trim().isEmpty()) {
+                        text = "내용을 입력해주세요.";
+                    }
+
                     com.mine.api.domain.Paragraph p = com.mine.api.domain.Paragraph.builder()
-                            .subtitle((String) pMap.get("subtitle"))
-                            .text((String) pMap.get("text"))
+                            .subtitle(subtitle)
+                            .text(text)
                             .imageUrl(paraImageUrl)
                             .displayOrder(i)
                             .build();
