@@ -256,7 +256,8 @@ public class SectionService {
                 thumbUrl = (String) updatedSection.get("image_url");
             }
             if (thumbUrl != null) {
-                thumbUrl = s3Service.uploadImageFromUrl(thumbUrl);
+                String uploadedThumb = s3Service.uploadImageFromUrl(thumbUrl);
+                thumbUrl = uploadedThumb != null ? uploadedThumb : thumbUrl; // 실패해도 최소한 원본은 유지
                 section.setThumbnailUrl(thumbUrl);
             }
 
@@ -277,6 +278,7 @@ public class SectionService {
                     String paraImageUrl = (String) pMap.get("image_url");
                     if (paraImageUrl != null) {
                         paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
+                        // 실패(null) 시 그대로 null 저장
                     }
 
                     String subtitle = (String) pMap.get("subtitle");

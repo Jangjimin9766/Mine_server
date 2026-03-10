@@ -83,9 +83,11 @@ public class MagazineService {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
 
                 // [NEW] 외부 썸네일 이미지를 S3로 업로드
-                String thumbnailUrl = sectionDto.getThumbnailUrl();
+                String originalThumbnailUrl = sectionDto.getThumbnailUrl();
+                String thumbnailUrl = originalThumbnailUrl;
                 if (thumbnailUrl != null) {
-                    thumbnailUrl = s3Service.uploadImageFromUrl(thumbnailUrl);
+                    String uploadedUrl = s3Service.uploadImageFromUrl(thumbnailUrl);
+                    thumbnailUrl = uploadedUrl != null ? uploadedUrl : originalThumbnailUrl; // 썸네일은 실패해도 원본 유지 (최소한의 방어)
                 }
 
                 MagazineSection section = MagazineSection.builder()
@@ -106,10 +108,11 @@ public class MagazineService {
                         String paraImageUrl = paraDto.getImageUrl();
                         if (paraImageUrl != null) {
                             paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
+                            // 문단 이미지는 실패(null)하면 그대로 null 처리해서 엑스박스 대신 빈칸 노출
                         }
 
-                        // 첫 번째 문단의 이미지를 썸네일 후보로 저장
-                        if (j == 0 && paraImageUrl != null) {
+                        // 첫 번째 '성공한' 문단 이미지를 썸네일 후보로 저장
+                        if (firstParagraphImageUrl == null && paraImageUrl != null) {
                             firstParagraphImageUrl = paraImageUrl;
                         }
 

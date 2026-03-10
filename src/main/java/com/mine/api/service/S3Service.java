@@ -146,8 +146,8 @@ public class S3Service {
 
         } catch (Exception e) {
             log.error("Failed to upload image from URL: {}", imageUrl, e);
-            // 실패 시 원본 이미지 URL이라도 그대로 반환하여 클라이언트에서 보이게 함
-            return imageUrl;
+            // 실패 시 원본 이미지 URL 대신 null 반환 (엑스박스 방지 및 백엔드 측에서의 안전한 fallback 처리를 위함)
+            return null;
         }
     }
 
