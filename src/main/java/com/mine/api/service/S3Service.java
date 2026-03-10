@@ -94,14 +94,11 @@ public class S3Service {
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             String contentType = connection.getContentType();
+            
+            // [MODIFIED] 만약 Content-Type이 사진이 아니거나(예: text/html) 누락된 경우 업로드 중단
             if (contentType == null || !contentType.startsWith("image/")) {
-                contentType = "image/jpeg";
-                if (extension.equalsIgnoreCase(".png"))
-                    contentType = "image/png";
-                else if (extension.equalsIgnoreCase(".gif"))
-                    contentType = "image/gif";
-                else if (extension.equalsIgnoreCase(".webp"))
-                    contentType = "image/webp";
+                log.warn("Target URL is not a valid image. Content-Type: {}, URL: {}", contentType, imageUrl);
+                return null; // 가짜 이미지(HTML 등) 저장 방지
             }
 
             try (InputStream inputStream = connection.getInputStream()) {
