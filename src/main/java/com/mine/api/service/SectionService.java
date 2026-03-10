@@ -260,10 +260,6 @@ public class SectionService {
                 thumbUrl = uploadedThumb != null ? uploadedThumb : thumbUrl; 
             }
             
-            // 썸네일 최종 엑스박스 방지
-            if (thumbUrl == null || !thumbUrl.startsWith("https://mine-moodboard")) {
-                thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
-            }
             section.setThumbnailUrl(thumbUrl);
 
             section.update(

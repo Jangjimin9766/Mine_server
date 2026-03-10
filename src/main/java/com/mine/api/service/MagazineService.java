@@ -130,15 +130,11 @@ public class MagazineService {
                     }
                 }
 
-                // 썸네일이 없으면 첫 번째 문단의 이미지로 대체
+                // 썸네일이 없으면 첫 번째 '원본이 아닌' 문단의 이미지로 대체 시도
                 if (section.getThumbnailUrl() == null || section.getThumbnailUrl().equals(originalThumbnailUrl)) {
                     // 원본 URL은 엑스박스 가능성이 높으므로 가급적 첫 번째 "성공한" 문단 이미지로 교체 시도
                     if (firstParagraphImageUrl != null) {
                         section.setThumbnailUrl(firstParagraphImageUrl);
-                    } else if (section.getThumbnailUrl() == null || !section.getThumbnailUrl().startsWith("https://mine-moodboard")) {
-                        // 모든 문단 이미지가 실패했고, 썸네일마저 S3 업로드 실패(=원본 URL 유지 상태)인 최악의 경우
-                        // 무조건 100% 엑스박스가 뜨지 않는 자체 S3 기본 플레이스홀더로 강제 교체
-                        section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png");
                     }
                 }
 
