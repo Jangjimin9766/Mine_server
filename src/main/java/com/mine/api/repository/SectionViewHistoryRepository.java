@@ -33,12 +33,10 @@ public interface SectionViewHistoryRepository extends JpaRepository<SectionViewH
         long countByUser(User user);
 
         /**
-         * 가장 오래된 열람 기록 삭제 (30개 초과 시)
+         * 가장 오래된 열람 기록 조회 (삭제용)
          */
-        @Modifying
-        @Query("DELETE FROM SectionViewHistory s WHERE s.user = :user AND s.id IN " +
-                        "(SELECT h.id FROM SectionViewHistory h WHERE h.user = :user ORDER BY h.viewedAt ASC LIMIT :count)")
-        void deleteOldestByUser(@Param("user") User user, @Param("count") int count);
+        @Query("SELECT s FROM SectionViewHistory s WHERE s.user = :user ORDER BY s.viewedAt ASC")
+        List<SectionViewHistory> findOldestByUser(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
 
         /**
          * 30일 이상 지난 기록 삭제

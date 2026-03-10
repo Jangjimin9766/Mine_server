@@ -42,7 +42,9 @@ public class SectionViewHistoryService {
         long currentCount = viewHistoryRepository.countByUser(user);
         if (currentCount >= MAX_HISTORY_COUNT) {
             int deleteCount = (int) (currentCount - MAX_HISTORY_COUNT + 1);
-            viewHistoryRepository.deleteOldestByUser(user, deleteCount);
+            List<SectionViewHistory> oldHistories = viewHistoryRepository.findOldestByUser(
+                    user, org.springframework.data.domain.PageRequest.of(0, deleteCount));
+            viewHistoryRepository.deleteAllInBatch(oldHistories);
         }
 
         // 새 기록 저장
