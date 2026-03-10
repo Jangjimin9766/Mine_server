@@ -27,4 +27,8 @@ public interface MagazineLikeRepository extends JpaRepository<MagazineLike, Long
     // ⭐ 피드 추천용: 좋아요한 매거진 목록 (페이징 없이)
     @Query("SELECT ml.magazine FROM MagazineLike ml WHERE ml.user = :user")
     java.util.List<Magazine> findAllLikedMagazinesByUser(@Param("user") User user);
+
+    // ⭐ 회원 탈퇴 시 사용자의 좋아요 일괄 삭제
+    @org.springframework.data.jpa.repository.Modifying
+    void deleteByUser(User user);
 }

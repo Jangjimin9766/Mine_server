@@ -46,7 +46,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " + // Paragraph text 검색으로 변경
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " + // Paragraph subtitle 검색 추가
-                        "AND (m.is_public = true OR u.username = :username)", countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m "
+                        "AND (u.is_public = true OR u.username = :username)", countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m "
                                         +
                                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
@@ -56,7 +56,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
-                                        "AND (m.is_public = true OR u.username = :username)", nativeQuery = true)
+                                        "AND (u.is_public = true OR u.username = :username)", nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchByKeyword(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         @org.springframework.data.repository.query.Param("username") String username,

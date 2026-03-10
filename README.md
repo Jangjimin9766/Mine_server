@@ -804,6 +804,16 @@ brew services restart redis
 - [ ] OAuth 소셜 로그인
 - [ ] 매거진 추천 모델 고도화
 
+### 🔧 기술 부채 (Technical Debt) — 나중에 할 일
+> ⚠️ 아래 항목은 여러 파일을 동시에 수정해야 하므로 충분한 테스트 후 진행 필요
+
+- [ ] **Moodboard JPA 관계 매핑**: `Moodboard.userId`(Long) → `@ManyToOne User`, `magazineId`(Long) → `@ManyToOne Magazine` 전환. Repository 쿼리 메서드명·Service 빌더·엔티티 필드를 동시에 변경해야 하므로 주의
+- [ ] **피드 쿼리 성능 개선**: `findRecommendedFeedCursor`의 6개 `LIKE '%...%'` → Full-Text Search 또는 Elasticsearch 전환. `LEFT JOIN FETCH + Pageable` 조합으로 Hibernate가 메모리 페이징하는 문제도 개선 필요
+- [ ] **User hard delete 로직**: 현재 soft delete 후 연관 데이터는 정리되지만, magazines·moodboards 등 사용자가 생성한 콘텐츠의 처리 정책 결정 필요
+- [ ] **RunPod 비동기 아키텍처 개선**: 현재 Spring WebClient 폴링이 서블릿 스레드(플랫폼 스레드)를 최대 15분간 블로킹함. Spring Webflux로 완전한 Non-blocking 구조로 전환 또는 Virtual Threads 설정
+- [ ] **보안 설정 강도 조절**: 현재 `SecurityConfig`의 CORS 정책이 `*` (모든 도메인 허용) + `allowCredentials(true)`로 개방적임. CSRF 방어를 위해 프론트엔드 도메인 명시 필요
+- [ ] **API 엔드포인트 중복 리팩토링**: `UserController`의 `PATCH /me` (JSON용, Multipart용) 분리 개선
+
 ## 📄 라이선스
 
 이 프로젝트는 개인 프로젝트입니다.

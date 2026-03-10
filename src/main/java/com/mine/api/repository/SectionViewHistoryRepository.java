@@ -51,4 +51,8 @@ public interface SectionViewHistoryRepository extends JpaRepository<SectionViewH
          */
         @Modifying
         void deleteBySection(MagazineSection section);
+
+        // ⭐ 회원 탈퇴 시 사용자의 열람 기록 일괄 삭제
+        @Modifying
+        void deleteByUser(User user);
 }

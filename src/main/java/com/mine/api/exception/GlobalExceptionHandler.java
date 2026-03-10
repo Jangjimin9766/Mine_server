@@ -34,6 +34,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    // ⭐ 낙관적 락 충돌 처리 (동시 수정 시 409 반환)
+    @ExceptionHandler({
+            jakarta.persistence.OptimisticLockException.class,
+            org.springframework.orm.ObjectOptimisticLockingFailureException.class
+    })
+    public ResponseEntity<ErrorResponse> handleOptimisticLockException(Exception ex) {
+        ErrorResponse response = new ErrorResponse(HttpStatus.CONFLICT.value(),
+                "다른 사용자가 동시에 수정 중입니다. 잠시 후 다시 시도해주세요.");
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         System.err.println("Internal Server Error: " + ex.getMessage());

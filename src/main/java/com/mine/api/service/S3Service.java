@@ -112,10 +112,29 @@ public class S3Service {
                         .acl(ObjectCannedACL.PUBLIC_READ)
                         .build();
                 long contentLength = connection.getContentLengthLong();
+                if (contentLength > 10 * 1024 * 1024) {
+                    log.warn("Image from URL exceeds 10MB limit: {}", imageUrl);
+                    return imageUrl;
+                }
+
                 if (contentLength > 0) {
                     s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
                 } else {
-                    byte[] imageBytes = inputStream.readAllBytes();
+                    // contentLength 확보 불가능한 경우 방어 로직 (최대 10MB 스트림 복사)
+                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                    int nRead;
+                    byte[] data = new byte[16384];
+                    long totalBytes = 0;
+                    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                        buffer.write(data, 0, nRead);
+                        totalBytes += nRead;
+                        if (totalBytes > 10 * 1024 * 1024) {
+                            log.warn("Streamed image exceeds 10MB limit: {}", imageUrl);
+                            buffer.close();
+                            return imageUrl;
+                        }
+                    }
+                    byte[] imageBytes = buffer.toByteArray();
                     s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
                 }
             }
@@ -144,20 +163,29 @@ public class S3Service {
             return base64Image;
         }
 
-        if (base64Image.contains(",")) {
-            base64Image = base64Image.split(",")[1];
+        try {
+            if (base64Image.contains(",")) {
+                base64Image = base64Image.split(",")[1];
+            }
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
+
+            String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3FileName)
+                    .contentType("image/png")
+                    .acl(ObjectCannedACL.PUBLIC_READ)
+                    .build();
+            s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+
+            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3FileName);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to decode Base64 image", e);
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to upload Base64 image to S3", e);
+            return null;
         }
-        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Image);
-
-        String s3FileName = "moodboards/" + UUID.randomUUID() + ".png";
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(s3FileName)
-                .contentType("image/png")
-                .acl(ObjectCannedACL.PUBLIC_READ)
-                .build();
-        s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
-
-        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3FileName);
     }
 }

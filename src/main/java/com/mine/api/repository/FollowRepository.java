@@ -8,23 +8,27 @@ import java.util.List;
 
 public interface FollowRepository extends JpaRepository<Follow, Long> {
 
-    boolean existsByFollowerAndFollowing(User follower, User following);
+        boolean existsByFollowerAndFollowing(User follower, User following);
 
-    void deleteByFollowerAndFollowing(User follower, User following);
+        void deleteByFollowerAndFollowing(User follower, User following);
 
-    List<Follow> findByFollower(User follower);
+        List<Follow> findByFollower(User follower);
 
-    List<Follow> findByFollowing(User following);
+        List<Follow> findByFollowing(User following);
 
-    java.util.Optional<Follow> findByFollowerAndFollowing(User follower, User following);
+        java.util.Optional<Follow> findByFollowerAndFollowing(User follower, User following);
 
-    org.springframework.data.domain.Page<Follow> findByFollower(User follower,
-            org.springframework.data.domain.Pageable pageable);
+        org.springframework.data.domain.Page<Follow> findByFollower(User follower,
+                        org.springframework.data.domain.Pageable pageable);
 
-    org.springframework.data.domain.Page<Follow> findByFollowing(User following,
-            org.springframework.data.domain.Pageable pageable);
+        org.springframework.data.domain.Page<Follow> findByFollowing(User following,
+                        org.springframework.data.domain.Pageable pageable);
 
-    long countByFollower(User follower);
+        long countByFollower(User follower);
 
-    long countByFollowing(User following);
+        long countByFollowing(User following);
+
+        // ⭐ 회원 탈퇴 시 관련 팔로우 일괄 삭제
+        @org.springframework.data.jpa.repository.Modifying
+        void deleteByFollowerOrFollowing(User follower, User following);
 }

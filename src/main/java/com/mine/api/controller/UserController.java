@@ -96,14 +96,27 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    public static class VisibilityRequest {
+        @io.swagger.v3.oas.annotations.media.Schema(description = "계정 공개 여부 (true: 공개, false: 비공개)", example = "true")
+        private Boolean isPublic;
+
+        public Boolean getIsPublic() {
+            return isPublic;
+        }
+
+        public void setIsPublic(Boolean isPublic) {
+            this.isPublic = isPublic;
+        }
+    }
+
     // ⭐ 계정 공개/비공개 설정
     @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "🔒 계정 공개 설정", description = "계정을 공개 또는 비공개로 설정합니다. 비공개 계정의 매거진은 다른 사용자에게 보이지 않습니다.")
     @PatchMapping("/me/visibility")
     public ResponseEntity<?> setAccountVisibility(
-            @RequestBody java.util.Map<String, Boolean> request,
+            @RequestBody VisibilityRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Boolean isPublic = request.get("isPublic");
+        Boolean isPublic = request.getIsPublic();
         if (isPublic == null) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", "isPublic 값이 필요합니다"));
         }

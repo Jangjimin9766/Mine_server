@@ -40,6 +40,11 @@ public class MagazineSection {
     @OrderBy("displayOrder ASC")
     private List<Paragraph> paragraphs = new ArrayList<>();
 
+    // ⭐ SectionViewHistory cascade: 섹션 삭제 시 열람 기록 자동 삭제 (FK 위반 방지)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SectionViewHistory> viewHistories = new ArrayList<>();
+
     // ===== 기존 필드 =====
 
     @Column(name = "layout_hint")

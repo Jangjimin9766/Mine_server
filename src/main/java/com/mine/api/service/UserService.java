@@ -22,6 +22,8 @@ public class UserService {
         private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
         private final com.mine.api.security.JwtTokenProvider jwtTokenProvider;
         private final com.mine.api.repository.UserInterestRepository userInterestRepository;
+        private final com.mine.api.repository.SectionViewHistoryRepository sectionViewHistoryRepository;
+        private final com.mine.api.repository.MagazineLikeRepository magazineLikeRepository;
 
         /**
          * 팔로우 하기
@@ -146,11 +148,18 @@ public class UserService {
 
         /**
          * 회원 탈퇴 (Soft Delete)
+         * ⭐ FK 안전: soft delete 전에 연관 데이터를 정리합니다
          */
         @Transactional
         public void withdrawUser(String username) {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+                // ⭐ FK 안전: 연관 데이터 정리 (향후 hard delete 대비)
+                followRepository.deleteByFollowerOrFollowing(user, user);
+                userInterestRepository.deleteByUser(user);
+                sectionViewHistoryRepository.deleteByUser(user);
+                magazineLikeRepository.deleteByUser(user);
 
                 user.softDelete();
         }

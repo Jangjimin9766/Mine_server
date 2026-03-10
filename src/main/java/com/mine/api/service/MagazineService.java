@@ -114,8 +114,12 @@ public class MagazineService {
                         }
 
                         Paragraph paragraph = Paragraph.builder()
-                                .subtitle(paraDto.getSubtitle())
-                                .text(paraDto.getText())
+                                .subtitle(paraDto.getSubtitle() != null && !paraDto.getSubtitle().trim().isEmpty()
+                                        ? paraDto.getSubtitle()
+                                        : "소제목 내용")
+                                .text(paraDto.getText() != null && !paraDto.getText().trim().isEmpty()
+                                        ? paraDto.getText()
+                                        : "내용을 입력해주세요.")
                                 .imageUrl(paraImageUrl)
                                 .displayOrder(j)
                                 .build();
