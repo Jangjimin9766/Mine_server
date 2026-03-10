@@ -257,9 +257,14 @@ public class SectionService {
             }
             if (thumbUrl != null) {
                 String uploadedThumb = s3Service.uploadImageFromUrl(thumbUrl);
-                thumbUrl = uploadedThumb != null ? uploadedThumb : thumbUrl; // 실패해도 최소한 원본은 유지
-                section.setThumbnailUrl(thumbUrl);
+                thumbUrl = uploadedThumb != null ? uploadedThumb : thumbUrl; 
             }
+            
+            // 썸네일 최종 엑스박스 방지
+            if (thumbUrl == null || !thumbUrl.startsWith("https://mine-moodboard")) {
+                thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
+            }
+            section.setThumbnailUrl(thumbUrl);
 
             section.update(
                     (String) updatedSection.get("heading"),
