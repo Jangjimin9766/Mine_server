@@ -18,7 +18,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final InterestService interestService;
-    private final MagazineService magazineService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     private final com.mine.api.repository.RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
@@ -44,8 +44,8 @@ public class AuthService {
         if (request.getInterests() != null && !request.getInterests().isEmpty()) {
             interestService.updateUserInterests(savedUser.getUsername(), request.getInterests());
             
-            // [NEW] 회원가입 축하 매거진 비동기 자동 생성 트리거
-            magazineService.generateInitialMagazinesAsync(savedUser, request.getInterests());
+            // [NEW] 회원가입 완료 이벤트 발행 (트랜잭션 커밋 후 비동기 처리됨)
+            eventPublisher.publishEvent(new com.mine.api.event.UserSignupEvent(this, savedUser, request.getInterests()));
         }
 
         return savedUser.getId();

@@ -519,6 +519,16 @@ public class MagazineService {
         return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
     }
     /**
+     * 회원가입 완료 트랜잭션 커밋 직후 발생하는 이벤트를 수신하여 비동기 메서드 호출
+     */
+    @org.springframework.transaction.event.TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
+    public void handleUserSignupEvent(com.mine.api.event.UserSignupEvent event) {
+        log.info("Received UserSignupEvent for user: {}. Triggering async magazine generation.", event.getUser().getUsername());
+        // 실제 비동기 처리는 아래 메서드에서 별도 스레드로 수행됨
+        generateInitialMagazinesAsync(event.getUser(), event.getInterests());
+    }
+
+    /**
      * 회원가입 직후 관심사 기반 매거진 자동 생성 (비동기)
      */
     @org.springframework.scheduling.annotation.Async
