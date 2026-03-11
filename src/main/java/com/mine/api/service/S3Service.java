@@ -72,80 +72,89 @@ public class S3Service {
             return imageUrl;
         }
 
-        try {
-            java.net.URL url = new java.net.URL(imageUrl);
-            String extension = ".jpg"; // 기본 확장자
+        int maxRetries = 2;
+        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                java.net.URL url = new java.net.URL(imageUrl);
+                String extension = ".jpg"; // 기본 확장자
 
-            // URL 경로에서 확장자 추출 시도
-            String path = url.getPath();
-            int dotIndex = path.lastIndexOf(".");
-            if (dotIndex >= 0) {
-                String ext = path.substring(dotIndex);
-                if (ext.matches("(?i)\\.(jpg|jpeg|png|gif|webp|bmp)$")) {
-                    extension = ext;
-                }
-            }
-
-            String key = "uploads/" + UUID.randomUUID().toString() + extension;
-
-            java.net.URLConnection connection = url.openConnection();
-            // 자바 봇이 아닌 일반 다운로더처럼 위장
-            connection.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-
-            String contentType = connection.getContentType();
-            
-            // [MODIFIED] 만약 Content-Type이 사진이 아니거나(예: text/html) 누락된 경우 업로드 중단
-            if (contentType == null || !contentType.startsWith("image/")) {
-                log.warn("Target URL is not a valid image. Content-Type: {}, URL: {}", contentType, imageUrl);
-                return null; // 가짜 이미지(HTML 등) 저장 방지
-            }
-
-            try (InputStream inputStream = connection.getInputStream()) {
-                PutObjectRequest request = PutObjectRequest.builder()
-                        .bucket(bucketName)
-                        .key(key)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
-                        .build();
-                long contentLength = connection.getContentLengthLong();
-                if (contentLength > 10 * 1024 * 1024) {
-                    log.warn("Image from URL exceeds 10MB limit: {}", imageUrl);
-                    return imageUrl;
-                }
-
-                if (contentLength > 0) {
-                    s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
-                } else {
-                    // contentLength 확보 불가능한 경우 방어 로직 (최대 10MB 스트림 복사)
-                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-                    int nRead;
-                    byte[] data = new byte[16384];
-                    long totalBytes = 0;
-                    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-                        buffer.write(data, 0, nRead);
-                        totalBytes += nRead;
-                        if (totalBytes > 10 * 1024 * 1024) {
-                            log.warn("Streamed image exceeds 10MB limit: {}", imageUrl);
-                            buffer.close();
-                            return imageUrl;
-                        }
+                // URL 경로에서 확장자 추출 시도
+                String path = url.getPath();
+                int dotIndex = path.lastIndexOf(".");
+                if (dotIndex >= 0) {
+                    String ext = path.substring(dotIndex);
+                    if (ext.matches("(?i)\\.(jpg|jpeg|png|gif|webp|bmp)$")) {
+                        extension = ext;
                     }
-                    byte[] imageBytes = buffer.toByteArray();
-                    s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+                }
+
+                String key = "uploads/" + UUID.randomUUID().toString() + extension;
+
+                java.net.URLConnection connection = url.openConnection();
+                // 자바 봇이 아닌 일반 다운로더처럼 위장
+                connection.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                connection.setConnectTimeout(10000); // 10초 타임아웃
+                connection.setReadTimeout(10000);    // 10초 타임아웃
+
+                String contentType = connection.getContentType();
+                
+                // [MODIFIED] 만약 Content-Type이 사진이 아니거나(예: text/html) 누락된 경우 업로드 중단
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    log.warn("Target URL is not a valid image. Content-Type: {}, URL: {}", contentType, imageUrl);
+                    return null; // 가짜 이미지(HTML 등) 저장 방지
+                }
+
+                try (InputStream inputStream = connection.getInputStream()) {
+                    PutObjectRequest request = PutObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(key)
+                            .contentType(contentType)
+                            .acl(ObjectCannedACL.PUBLIC_READ)
+                            .build();
+                    long contentLength = connection.getContentLengthLong();
+                    if (contentLength > 10 * 1024 * 1024) {
+                        log.warn("Image from URL exceeds 10MB limit: {}", imageUrl);
+                        return imageUrl;
+                    }
+
+                    if (contentLength > 0) {
+                        s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
+                    } else {
+                        // contentLength 확보 불가능한 경우 방어 로직 (최대 10MB 스트림 복사)
+                        java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                        int nRead;
+                        byte[] data = new byte[16384];
+                        long totalBytes = 0;
+                        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                            buffer.write(data, 0, nRead);
+                            totalBytes += nRead;
+                            if (totalBytes > 10 * 1024 * 1024) {
+                                log.warn("Streamed image exceeds 10MB limit: {}", imageUrl);
+                                buffer.close();
+                                return imageUrl;
+                            }
+                        }
+                        byte[] imageBytes = buffer.toByteArray();
+                        s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+                    }
+                }
+
+                // S3 URL 반환
+                String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+                log.info("Uploaded external image to S3: {} -> {}", imageUrl, s3Url);
+                return s3Url;
+
+            } catch (Exception e) {
+                if (attempt < maxRetries) {
+                    log.warn("Failed to upload image from URL: {} (Attempt {}/{}). Retrying...", imageUrl, attempt + 1, maxRetries + 1);
+                    try { Thread.sleep(1000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                } else {
+                    log.error("Failed to upload image from URL after {} attempts: {}", maxRetries + 1, imageUrl, e);
                 }
             }
-
-            // S3 URL 반환
-            String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
-            log.info("Uploaded external image to S3: {} -> {}", imageUrl, s3Url);
-            return s3Url;
-
-        } catch (Exception e) {
-            log.error("Failed to upload image from URL: {}", imageUrl, e);
-            // 실패 시 원본 이미지 URL 대신 null 반환 (엑스박스 방지 및 백엔드 측에서의 안전한 fallback 처리를 위함)
-            return null;
         }
+        return null;
     }
 
     /**

@@ -257,7 +257,13 @@ public class SectionService {
             }
             if (thumbUrl != null) {
                 String uploadedThumb = s3Service.uploadImageFromUrl(thumbUrl);
-                thumbUrl = uploadedThumb != null ? uploadedThumb : thumbUrl; 
+                if (uploadedThumb != null) {
+                    thumbUrl = uploadedThumb;
+                } else {
+                    thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png";
+                }
+            } else {
+                thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png";
             }
             
             section.setThumbnailUrl(thumbUrl);

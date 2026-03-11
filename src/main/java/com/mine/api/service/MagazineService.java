@@ -138,6 +138,11 @@ public class MagazineService {
                     }
                 }
 
+                // [최후의 보류] 여전히 썸네일이 없다면 기본 플레이스홀더 사용
+                if (section.getThumbnailUrl() == null) {
+                    section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png");
+                }
+
                 magazine.addSection(section);
             }
         }
