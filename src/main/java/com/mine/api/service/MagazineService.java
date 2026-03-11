@@ -537,9 +537,18 @@ public class MagazineService {
             return;
         }
 
-        log.info("Starting initial magazine generation for user: {} with interests: {}", user.getUsername(), interests);
+        // 1. 관심사 목록 중복 방지 및 복사본 생성 (Unmodifiable list 우회)
+        java.util.List<String> modifiableInterests = new java.util.ArrayList<>(interests);
+        
+        // 2. 관심사 목록을 무작위로 섞음 (랜덤 추출)
+        java.util.Collections.shuffle(modifiableInterests);
+        
+        // 3. 최대 2개까지만 리스트를 자름 (1개면 1개, 2개 이상이면 2개)
+        java.util.List<String> targetInterests = modifiableInterests.subList(0, Math.min(2, modifiableInterests.size()));
 
-        for (String interestCode : interests) {
+        log.info("Starting initial magazine generation for user: {} with interests: {}", user.getUsername(), targetInterests);
+
+        for (String interestCode : targetInterests) {
             try {
                 // 각 관심사를 주제로 매거진 생성 요청
                 com.mine.api.dto.MagazineGenerationRequest genRequest = new com.mine.api.dto.MagazineGenerationRequest();
