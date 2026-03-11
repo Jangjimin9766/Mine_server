@@ -18,6 +18,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final InterestService interestService;
+    private final MagazineService magazineService;
     private final com.mine.api.repository.RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
@@ -42,6 +43,9 @@ public class AuthService {
         // 관심사 저장 (선택사항)
         if (request.getInterests() != null && !request.getInterests().isEmpty()) {
             interestService.updateUserInterests(savedUser.getUsername(), request.getInterests());
+            
+            // [NEW] 회원가입 축하 매거진 비동기 자동 생성 트리거
+            magazineService.generateInitialMagazinesAsync(savedUser, request.getInterests());
         }
 
         return savedUser.getId();

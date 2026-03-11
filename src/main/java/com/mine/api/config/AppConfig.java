@@ -6,6 +6,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@org.springframework.scheduling.annotation.EnableAsync
 public class AppConfig {
 
     @Bean

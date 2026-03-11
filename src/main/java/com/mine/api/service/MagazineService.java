@@ -518,4 +518,34 @@ public class MagazineService {
 
         return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
     }
+    /**
+     * 회원가입 직후 관심사 기반 매거진 자동 생성 (비동기)
+     */
+    @org.springframework.scheduling.annotation.Async
+    public void generateInitialMagazinesAsync(User user, java.util.List<String> interests) {
+        if (interests == null || interests.isEmpty()) {
+            return;
+        }
+
+        log.info("Starting initial magazine generation for user: {} with interests: {}", user.getUsername(), interests);
+
+        for (String interestCode : interests) {
+            try {
+                // 각 관심사를 주제로 매거진 생성 요청
+                com.mine.api.dto.MagazineGenerationRequest genRequest = new com.mine.api.dto.MagazineGenerationRequest();
+                genRequest.setTopic(interestCode); // 우선 관심사 코드를 주제로 설정
+                genRequest.setUserMood("vibrant"); // 기본 분위기 설정
+
+                log.info("Generating welcome magazine for interest: {} (User: {})", interestCode, user.getUsername());
+                generateAndSaveMagazine(genRequest, user.getUsername());
+                
+                // AI 서버 부하 분산을 위해 짧은 지연 (RunPod 큐 고려)
+                Thread.sleep(10000); 
+                
+            } catch (Exception e) {
+                log.error("Failed to generate initial magazine for interest: {} (User: {})", interestCode, user.getUsername(), e);
+            }
+        }
+        log.info("Completed initial magazine generation for user: {}", user.getUsername());
+    }
 }
