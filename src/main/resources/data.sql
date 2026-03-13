@@ -71,23 +71,23 @@ INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크')
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
 VALUES ('jiwoo_kim', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'jiwoo@example.com', '지우의일상', NOW(), true, 'USER', false)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role), deleted=VALUES(deleted);
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
 VALUES ('minjun_lee', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'minjun@example.com', '민준테크', NOW(), true, 'USER', false)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role), deleted=VALUES(deleted);
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
 VALUES ('seoyun_park', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'seoyun@example.com', '서윤아트', NOW(), true, 'USER', false)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role), deleted=VALUES(deleted);
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
 VALUES ('hyejin_choi', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'hyejin@example.com', '혜진의서재', NOW(), true, 'USER', false)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role), deleted=VALUES(deleted);
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
 VALUES ('taeyang_lee', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'taeyang@example.com', '태양스포츠', NOW(), true, 'USER', false)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role), deleted=VALUES(deleted);
 
 -- =====================================================
 -- 유저별 매거진 데이터 (각 유저당 3개)
