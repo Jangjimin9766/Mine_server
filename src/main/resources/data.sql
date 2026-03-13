@@ -64,66 +64,111 @@ INSERT INTO interests (code, name, category) VALUES ('HEALTH', '건강', '활동
 INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크') ON DUPLICATE KEY UPDATE name=name;
 
 -- =====================================================
--- 테스트용 계정 (팀 공용 테스트 및 개발용)
+-- 현실적인 테스트 계정 (유저 5명)
 -- =====================================================
--- 공용 계정: shared_user (팀 공용)
--- 개인 계정: antigravity_user (테스트용)
+-- 비밀번호: password ($2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi)
 -- =====================================================
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('shared_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'shared@mine.com', '공용테스터', NOW(), true)
+VALUES ('jiwoo_kim', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'jiwoo@example.com', '지우의일상', NOW(), true)
 ON DUPLICATE KEY UPDATE username=username;
 
 INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('antigravity_user', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'antigravity@mine.com', '인재테스터', NOW(), true)
+VALUES ('minjun_lee', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'minjun@example.com', '민준테크', NOW(), true)
+ON DUPLICATE KEY UPDATE username=username;
+
+INSERT INTO users (username, password, email, nickname, created_at, is_public) 
+VALUES ('seoyun_park', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'seoyun@example.com', '서윤아트', NOW(), true)
+ON DUPLICATE KEY UPDATE username=username;
+
+INSERT INTO users (username, password, email, nickname, created_at, is_public) 
+VALUES ('hyejin_choi', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'hyejin@example.com', '혜진의서재', NOW(), true)
+ON DUPLICATE KEY UPDATE username=username;
+
+INSERT INTO users (username, password, email, nickname, created_at, is_public) 
+VALUES ('taeyang_lee', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'taeyang@example.com', '태양스포츠', NOW(), true)
 ON DUPLICATE KEY UPDATE username=username;
 
 -- =====================================================
--- 더미 매거진 데이터 (shared_user 소유)
+-- 유저별 매거진 데이터 (각 유저당 3개)
 -- =====================================================
+
+-- 1. 김지우 (jiwoo_kim)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '2025 봄 패션 예고', '화사한 색감의 귀환', '올 봄 유행할 트렌드 컬러와 스타일링을 제안합니다.', 
+       'https://images.unsplash.com/photo-1520635360276-79f3dbd80916?w=800', '패션,봄,트렌드', NOW()
+FROM users u WHERE u.username = 'jiwoo_kim' ON DUPLICATE KEY UPDATE title=title;
 
 INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
-SELECT u.id, '겨울 패션 트렌드 2025', '따뜻함과 스타일을 동시에', '올 겨울 꼭 알아야 할 패션 트렌드를 소개합니다.',
-       'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800', '패션,겨울,트렌드', NOW()
-FROM users u WHERE u.username = 'shared_user'
-ON DUPLICATE KEY UPDATE title=title;
+SELECT u.id, '제주 한 달 살기 기록', '느리게 걷는 법', '제주도에서 보낸 한 달간의 여유와 기록.', 
+       'https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=800', '여행,제주,힐링', NOW()
+FROM users u WHERE u.username = 'jiwoo_kim' ON DUPLICATE KEY UPDATE title=title;
 
 INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
-SELECT u.id, '서울 카페 투어', '숨겨진 명소를 찾아서', '서울의 감성 카페들을 모아봤습니다.',
-       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800', '카페,서울,여행', NOW()
-FROM users u WHERE u.username = 'shared_user'
-ON DUPLICATE KEY UPDATE title=title;
+SELECT u.id, '매거진의 시작: 패션', 'Welcome Magazine', '지우님의 첫 번째 매거진입니다.', 
+       'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800', '웰컴,패션', NOW()
+FROM users u WHERE u.username = 'jiwoo_kim' ON DUPLICATE KEY UPDATE title=title;
 
--- =====================================================
--- 더미 섹션 데이터 (첫 번째 매거진용)
--- =====================================================
+-- 2. 이민준 (minjun_lee)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '데스크테리어의 정석', '나만의 생산성 공간', '집중력을 높여주는 데스크 셋업 가이드.', 
+       'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800', 'IT,인테리어,데스크', NOW()
+FROM users u WHERE u.username = 'minjun_lee' ON DUPLICATE KEY UPDATE title=title;
 
--- NOTE: 기존 스키마에서 사용하던 더미 섹션 INSERT 문.
--- 현재 테이블에는 content / image_url 컬럼이 없으므로 실행 시 에러가 발생하여 주석 처리함.
--- 애플리케이션 동작에는 필수 데이터가 아니므로, 필요 시 스키마에 맞게 수정 후 다시 활성화할 것.
--- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
--- SELECT m.id, '니트의 귀환', '<p>올 겨울, 니트가 다시 돌아왔습니다. 오버사이즈 니트부터 크롭 니트까지 다양한 스타일링을 만나보세요.</p>',
---        'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800', 'split_left', 0
--- FROM magazines m JOIN users u ON m.user_id = u.id 
--- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
--- LIMIT 1
--- ON DUPLICATE KEY UPDATE heading=heading;
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '2024 최고의 가젯들', '테크 라이프 스타일', '올해 직접 써보고 추천하는 IT 기기 리뷰.', 
+       'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800', '테크,리뷰,IT', NOW()
+FROM users u WHERE u.username = 'minjun_lee' ON DUPLICATE KEY UPDATE title=title;
 
--- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
--- SELECT m.id, '레이어드의 정석', '<p>추운 겨울, 레이어드는 필수입니다. 얇은 옷을 여러 겹 겹쳐 입어 스타일과 보온성을 모두 잡으세요.</p>',
---        'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800', 'split_right', 1
--- FROM magazines m JOIN users u ON m.user_id = u.id 
--- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
--- LIMIT 1
--- ON DUPLICATE KEY UPDATE heading=heading;
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '매거진의 시작: IT', 'Welcome Magazine', '민준님의 첫 번째 IT 매거진입니다.', 
+       'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800', '웰컴,IT', NOW()
+FROM users u WHERE u.username = 'minjun_lee' ON DUPLICATE KEY UPDATE title=title;
 
--- INSERT INTO magazine_sections (magazine_id, heading, content, image_url, layout_type, display_order)
--- SELECT m.id, '컬러 매치 팁', '<p>겨울이라고 무채색만? 아니요! 버건디, 머스타드, 포레스트 그린 등 깊은 컬러로 포인트를 주세요.</p>',
---        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800', 'basic', 2
--- FROM magazines m JOIN users u ON m.user_id = u.id 
--- WHERE u.username = 'shared_user' AND m.title LIKE '%겨울 패션%'
--- LIMIT 1
--- ON DUPLICATE KEY UPDATE heading=heading;
+-- 3. 박서윤 (seoyun_park)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '미니멀 라이프 인테리어', '비움의 미학', '단순함이 주는 평온함을 담은 집 꾸미기.', 
+       'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=800', '인테리어,미니멀', NOW()
+FROM users u WHERE u.username = 'seoyun_park' ON DUPLICATE KEY UPDATE title=title;
 
--- 마이그레이션: 기존 유저 public 설정 보장
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '전시회 나들이 가이드', '예술과 함께하는 주말', '서울 주요 갤러리 전시 리뷰와 팁.', 
+       'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=800', '미술,전시,아트', NOW()
+FROM users u WHERE u.username = 'seoyun_park' ON DUPLICATE KEY UPDATE title=title;
 
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '매거진의 시작: 디자인', 'Welcome Magazine', '서윤님의 디자인 매거진입니다.', 
+       'https://images.unsplash.com/photo-1551033541-20948943715c?w=800', '웰컴,디자인', NOW()
+FROM users u WHERE u.username = 'seoyun_park' ON DUPLICATE KEY UPDATE title=title;
+
+-- 4. 최혜진 (hyejin_choi)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '주말엔 방구석 시네마', '놓치기 아까운 수작들', 'OTT에서 바로 볼 수 있는 인생 영화 추천.', 
+       'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800', '영화,OTT,추천', NOW()
+FROM users u WHERE u.username = 'hyejin_choi' ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '심리학으로 읽는 책', '마음의 온도계', '일상의 고민을 명쾌하게 풀어주는 도서 리뷰.', 
+       'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800', '독서,심리,에세이', NOW()
+FROM users u WHERE u.username = 'hyejin_choi' ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '매거진의 시작: 독서', 'Welcome Magazine', '혜진님의 독서 매거진입니다.', 
+       'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800', '웰컴,독서', NOW()
+FROM users u WHERE u.username = 'hyejin_choi' ON DUPLICATE KEY UPDATE title=title;
+
+-- 5. 이태양 (taeyang_lee)
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '초보 캠퍼를 위한 가이드', '자연 속으로!', '첫 캠핑 준비물부터 장소 선정까지 완벽 정리.', 
+       'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800', '캠핑,여행,아웃도어', NOW()
+FROM users u WHERE u.username = 'taeyang_lee' ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '오운완: 챌린지 기록', '매일 더 건강하게', '체력 증진을 위한 30일 홈트 프로젝트.', 
+       'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800', '운동,헬스,건강', NOW()
+FROM users u WHERE u.username = 'taeyang_lee' ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO magazines (user_id, title, subtitle, introduction, cover_image_url, tags, created_at)
+SELECT u.id, '매거진의 시작: 스포츠', 'Welcome Magazine', '태양님의 스포츠 매거진입니다.', 
+       'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800', '웰컴,스포츠', NOW()
+FROM users u WHERE u.username = 'taeyang_lee' ON DUPLICATE KEY UPDATE title=title;
