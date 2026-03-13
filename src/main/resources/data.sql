@@ -69,24 +69,24 @@ INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크')
 -- 비밀번호: password ($2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi)
 -- =====================================================
 
-INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('jiwoo_kim', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'jiwoo@example.com', '지우의일상', NOW(), true)
+INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
+VALUES ('jiwoo_kim', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'jiwoo@example.com', '지우의일상', NOW(), true, 'USER', false)
 ON DUPLICATE KEY UPDATE username=username;
 
-INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('minjun_lee', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'minjun@example.com', '민준테크', NOW(), true)
+INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
+VALUES ('minjun_lee', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'minjun@example.com', '민준테크', NOW(), true, 'USER', false)
 ON DUPLICATE KEY UPDATE username=username;
 
-INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('seoyun_park', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'seoyun@example.com', '서윤아트', NOW(), true)
+INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
+VALUES ('seoyun_park', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'seoyun@example.com', '서윤아트', NOW(), true, 'USER', false)
 ON DUPLICATE KEY UPDATE username=username;
 
-INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('hyejin_choi', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'hyejin@example.com', '혜진의서재', NOW(), true)
+INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
+VALUES ('hyejin_choi', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'hyejin@example.com', '혜진의서재', NOW(), true, 'USER', false)
 ON DUPLICATE KEY UPDATE username=username;
 
-INSERT INTO users (username, password, email, nickname, created_at, is_public) 
-VALUES ('taeyang_lee', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqtqzZME3xpB8vCqMRK3H.KxD6Qdi', 'taeyang@example.com', '태양스포츠', NOW(), true)
+INSERT INTO users (username, password, email, nickname, created_at, is_public, role, deleted) 
+VALUES ('taeyang_lee', '$2a$10$kCJc0.9IFfdx.Ku7i9vNuucIkM1GAzOkQ0N42DjdgGGfHUJ0M14Z.', 'taeyang@example.com', '태양스포츠', NOW(), true, 'USER', false)
 ON DUPLICATE KEY UPDATE username=username;
 
 -- =====================================================
