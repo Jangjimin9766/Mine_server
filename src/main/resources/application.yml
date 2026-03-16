@@ -47,6 +47,10 @@ python:
     # RunPod의 공인 IP/URL로 변경 필요 (예: http://YOUR-RUNPOD-ID-8000.proxy.runpod.net/api/magazine/create)
     url: ${PYTHON_API_URL:http://localhost:8000/api/magazine/create}
     key: "${PYTHON_API_KEY:mine-secret-key-1234}"
+
+mine:
+  internal:
+    secret-key: "mine-admin-1234"
     moodboard-url: ${PYTHON_MOODBOARD_URL:http://localhost:8000/api/magazine/moodboard}
 
 springdoc:

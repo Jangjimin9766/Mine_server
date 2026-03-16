@@ -18,7 +18,7 @@ public class InternalApiController {
 
     private final MagazineService magazineService;
 
-    @org.springframework.beans.factory.annotation.Value("${python.api.key:mine-secret-key-1234}")
+    @org.springframework.beans.factory.annotation.Value("${mine.internal.secret-key:mine-admin-1234}")
     private String internalApiKey;
 
     public InternalApiController(MagazineService magazineService) {
@@ -30,10 +30,10 @@ public class InternalApiController {
             @RequestBody MagazineCreateRequest request,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        if (internalApiKey == null || !internalApiKey.equals(apiKey)) {
+        if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
             log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.length() : "null"), 
-                    (apiKey != null ? apiKey.length() : "null"));
+                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
+                    (apiKey != null ? apiKey.trim().length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
@@ -49,10 +49,10 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestParam String username,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        if (internalApiKey == null || !internalApiKey.equals(apiKey)) {
+        if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
             log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.length() : "null"), 
-                    (apiKey != null ? apiKey.length() : "null"));
+                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
+                    (apiKey != null ? apiKey.trim().length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
