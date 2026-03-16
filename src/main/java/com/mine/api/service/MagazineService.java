@@ -249,8 +249,20 @@ public class MagazineService {
                     .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
 
-            if (generatedData == null) {
-                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MAGAZINE);
+            if (generatedData == null || generatedData.getSections() == null || generatedData.getSections().isEmpty()) {
+                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MAGAZINE + " (생성된 섹션이 없습니다)");
+            }
+
+            // [FIX] 문단(Paragraph)이 하나도 없는 빈 섹션만 있는지 딥 체크
+            boolean hasValidParagraph = false;
+            for (MagazineCreateRequest.SectionDto sectionDto : generatedData.getSections()) {
+                if (sectionDto.getParagraphs() != null && !sectionDto.getParagraphs().isEmpty()) {
+                    hasValidParagraph = true;
+                    break;
+                }
+            }
+            if (!hasValidParagraph) {
+                throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MAGAZINE + " (생성된 유효한 문단이 하나도 없습니다)");
             }
 
             // 3. 받은 데이터로 저장 로직 수행
