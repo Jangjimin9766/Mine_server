@@ -59,7 +59,7 @@ public class RunPodService {
                 .retrieve()
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
                 })
-                .block(Duration.ofSeconds(60));
+                .block(Duration.ofSeconds(120));
 
         if (response == null || !response.containsKey("id")) {
             throw new RuntimeException("Failed to start RunPod job: No ID returned");

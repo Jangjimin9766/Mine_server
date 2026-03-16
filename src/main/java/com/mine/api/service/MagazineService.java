@@ -48,22 +48,63 @@ public class MagazineService {
             tagsJson = String.join(",", request.getTags());
         }
 
-        // 2. 무드보드 정보 추출
+        // 2. 무드보드 정보 추출 (이미 있으면 S3 업로드)
         String moodboardImageUrl = null;
         String moodboardDescription = null;
         if (request.getMoodboard() != null) {
             moodboardImageUrl = request.getMoodboard().getImage_url();
             moodboardDescription = request.getMoodboard().getDescription();
 
-            // Base64 이미지인 경우 S3 업로드 처리
             if (moodboardImageUrl != null
                     && (moodboardImageUrl.startsWith("data:image") || moodboardImageUrl.length() > 255)) {
                 moodboardImageUrl = s3Service.uploadBase64ToS3(moodboardImageUrl);
             }
         }
 
-        // 3. Magazine 엔티티 생성
-        // 무드보드가 있으면 커버 이미지도 무드보드로 설정
+        // 3. [OPTIMIZE] 섹션 및 문단 이미지 병렬 업로드 준비
+        java.util.List<java.util.concurrent.CompletableFuture<Void>> uploadTasks = new java.util.ArrayList<>();
+
+        // 섹션 썸네일 업로드 태스크
+        if (request.getSections() != null) {
+            for (MagazineCreateRequest.SectionDto sectionDto : request.getSections()) {
+                String originalUrl = sectionDto.getThumbnailUrl();
+                if (originalUrl != null && !originalUrl.isBlank()) {
+                    uploadTasks.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        String uploadedUrl = s3Service.uploadImageFromUrl(originalUrl);
+                        if (uploadedUrl != null) {
+                            sectionDto.setThumbnailUrl(uploadedUrl);
+                        }
+                    }));
+                }
+
+                // 문단 이미지 업로드 태스크
+                if (sectionDto.getParagraphs() != null) {
+                    for (MagazineCreateRequest.ParagraphDto paraDto : sectionDto.getParagraphs()) {
+                        String pUrl = paraDto.getImageUrl();
+                        if (pUrl != null && !pUrl.isBlank()) {
+                            uploadTasks.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
+                                String uploadedUrl = s3Service.uploadImageFromUrl(pUrl);
+                                if (uploadedUrl != null) {
+                                    paraDto.setImageUrl(uploadedUrl);
+                                }
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 모든 업로드 완료 대기 (최대 30초)
+        if (!uploadTasks.isEmpty()) {
+            try {
+                java.util.concurrent.CompletableFuture.allOf(uploadTasks.toArray(new java.util.concurrent.CompletableFuture[0]))
+                        .get(30, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.warn("Some image uploads timed out or failed, proceeding with available URLs", e);
+            }
+        }
+
+        // 4. Magazine 엔티티 생성
         String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
 
         Magazine magazine = Magazine.builder()
@@ -77,66 +118,43 @@ public class MagazineService {
                 .user(user)
                 .build();
 
-        // 4. Section 엔티티 생성 및 연관관계 설정
+        // 5. Section/Paragraph 엔티티 생성 및 저장
         if (request.getSections() != null) {
             for (int i = 0; i < request.getSections().size(); i++) {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
 
-                // [NEW] 외부 썸네일 이미지를 S3로 업로드
-                String originalThumbnailUrl = sectionDto.getThumbnailUrl();
-                String thumbnailUrl = originalThumbnailUrl;
-                if (thumbnailUrl != null) {
-                    String uploadedUrl = s3Service.uploadImageFromUrl(thumbnailUrl);
-                    thumbnailUrl = uploadedUrl != null ? uploadedUrl : originalThumbnailUrl; // 썸네일은 실패해도 원본 유지 (최소한의 방어)
-                }
-
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
-                        .thumbnailUrl(thumbnailUrl)
-                        .displayOrder(i) // 생성 순서대로 0부터 할당
+                        .thumbnailUrl(sectionDto.getThumbnailUrl())
+                        .displayOrder(i)
                         .build();
 
-                // paragraphs 처리 (새 구조 지원)
-                String firstParagraphImageUrl = null;
+                String firstParaImageUrl = null;
                 if (sectionDto.getParagraphs() != null) {
                     for (int j = 0; j < sectionDto.getParagraphs().size(); j++) {
                         MagazineCreateRequest.ParagraphDto paraDto = sectionDto.getParagraphs().get(j);
-
-                        // [NEW] 문단 이미지를 S3로 업로드
-                        String paraImageUrl = paraDto.getImageUrl();
-                        if (paraImageUrl != null) {
-                            paraImageUrl = s3Service.uploadImageFromUrl(paraImageUrl);
-                            // 문단 이미지는 실패(null)하면 그대로 null 처리해서 엑스박스 대신 빈칸 노출
-                        }
-
-                        // 첫 번째 '성공한' 문단 이미지를 썸네일 후보로 저장
-                        if (firstParagraphImageUrl == null && paraImageUrl != null) {
-                            firstParagraphImageUrl = paraImageUrl;
+                        
+                        if (firstParaImageUrl == null && paraDto.getImageUrl() != null) {
+                            firstParaImageUrl = paraDto.getImageUrl();
                         }
 
                         Paragraph paragraph = Paragraph.builder()
-                                .subtitle(paraDto.getSubtitle() != null && !paraDto.getSubtitle().trim().isEmpty()
-                                        ? paraDto.getSubtitle()
-                                        : "소제목 내용")
-                                .text(paraDto.getText() != null && !paraDto.getText().trim().isEmpty()
-                                        ? paraDto.getText()
-                                        : "내용을 입력해주세요.")
-                                .imageUrl(paraImageUrl)
+                                .subtitle(paraDto.getSubtitle() != null && !paraDto.getSubtitle().isEmpty() ? paraDto.getSubtitle() : "소제목 내용")
+                                .text(paraDto.getText() != null && !paraDto.getText().isEmpty() ? paraDto.getText() : "내용을 입력해주세요.")
+                                .imageUrl(paraDto.getImageUrl())
                                 .displayOrder(j)
                                 .build();
                         section.addParagraph(paragraph);
                     }
                 }
 
-                // 썸네일이 없으면 첫 번째 '원본이 아닌' 문단의 이미지로 대체 시도
-                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().equals(originalThumbnailUrl)) {
-                    // 원본 URL은 엑스박스 가능성이 높으므로 가급적 첫 번째 "성공한" 문단 이미지로 교체 시도
-                    if (firstParagraphImageUrl != null) {
-                        section.setThumbnailUrl(firstParagraphImageUrl);
+                // 썸네일 보정 (없으면 첫 문단 이미지로)
+                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().startsWith("http")) { // 원본 URL이 남아있는 경우 포함
+                    if (firstParaImageUrl != null) {
+                        section.setThumbnailUrl(firstParaImageUrl);
                     }
                 }
 
-                // [최후의 보류] 여전히 썸네일이 없다면 기본 플레이스홀더 사용
                 if (section.getThumbnailUrl() == null) {
                     section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png");
                 }
