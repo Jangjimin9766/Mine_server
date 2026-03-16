@@ -23,6 +23,9 @@ public class SwaggerConfig {
                                                 .bearerFormat("JWT"));
 
                 return new OpenAPI()
+                                .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("https://api.minelover.com").description("Production Server (HTTPS)"))
+                                .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("http://api.minelover.com").description("Production Server (HTTP - Redirects to HTTPS)"))
+                                .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("http://localhost:8080").description("Local Test Server"))
                                 .info(new Info()
                                                 .title("Mine Server API")
                                                 .version("v1.0")
