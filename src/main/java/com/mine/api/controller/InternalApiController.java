@@ -57,7 +57,7 @@ public class InternalApiController {
         }
 
         // 비동기 생성을 위해 username만 넘김 (Lazy loading 및 Detached entity 방지)
-        magazineGenerationListener.generateInitialMagazinesAsync(username);
+        magazineService.generateInitialMagazinesAsync(username);
 
         return ResponseEntity.ok("Async generation triggered for user: " + username);
     }
