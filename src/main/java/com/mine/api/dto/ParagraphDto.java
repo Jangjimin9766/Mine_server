@@ -49,4 +49,13 @@ public class ParagraphDto {
         @JsonProperty("imageUrl")
         private String imageUrl;
     }
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "AI 문단 생성 요청")
+    public static class AiCreateRequest {
+        @Schema(description = "AI에게 전달할 메시지 (주제, 지시사항 등)", example = "해운대 맛집에 대한 내용을 추가해줘")
+        private String message;
+    }
 }
+

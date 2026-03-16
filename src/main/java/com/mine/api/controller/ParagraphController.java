@@ -10,8 +10,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/magazines/{magazineId}/sections/{sectionId}/paragraphs")
 @RequiredArgsConstructor
@@ -29,6 +27,18 @@ public class ParagraphController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         Long paragraphId = paragraphService.createParagraph(magazineId, sectionId, request, userDetails.getUsername());
+        return ResponseEntity.ok(paragraphId);
+    }
+
+    @Operation(summary = "✨ AI 문단 추가", description = "AI를 사용하여 섹션의 맨 마지막에 새로운 문단을 생성하고 추가합니다.")
+    @PostMapping("/ai")
+    public ResponseEntity<Long> createParagraphWithAi(
+            @PathVariable Long magazineId,
+            @PathVariable Long sectionId,
+            @RequestBody ParagraphDto.AiCreateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long paragraphId = paragraphService.createParagraphWithAi(magazineId, sectionId, request, userDetails.getUsername());
         return ResponseEntity.ok(paragraphId);
     }
 
