@@ -17,15 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalApiController {
 
     private final MagazineService magazineService;
-    private final com.mine.api.listener.MagazineGenerationListener magazineGenerationListener;
     private final String internalApiKey;
 
     public InternalApiController(
             MagazineService magazineService,
-            com.mine.api.listener.MagazineGenerationListener magazineGenerationListener,
             @org.springframework.beans.factory.annotation.Value("${python.api.key}") String internalApiKey) {
         this.magazineService = magazineService;
-        this.magazineGenerationListener = magazineGenerationListener;
         this.internalApiKey = internalApiKey;
     }
 
