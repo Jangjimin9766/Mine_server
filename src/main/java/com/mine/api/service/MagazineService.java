@@ -218,7 +218,6 @@ public class MagazineService {
         return com.mine.api.dto.MagazineDto.DetailResponse.from(magazine, isLiked);
     }
 
-    @Transactional
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
         try {
             // 1. 사용자 관심사 조회

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -24,7 +23,6 @@ public class MoodboardService {
     @Value("${python.api.moodboard-url}")
     private String moodboardApiUrl;
 
-    @Transactional
     public String createMoodboard(String username, MoodboardRequestDto requestDto) {
         // 0. Find User
         com.mine.api.domain.User user = userRepository.findByUsername(username)
@@ -98,7 +96,6 @@ public class MoodboardService {
      * 매거진 기반 무드보드 생성 (신규 API)
      * magazineId만으로 매거진 정보를 조회하여 무드보드를 생성합니다.
      */
-    @Transactional
     public String createMoodboardForMagazine(Long magazineId, String username) {
         // 1. User 조회
         com.mine.api.domain.User user = userRepository.findByUsername(username)
@@ -213,7 +210,6 @@ public class MoodboardService {
      * 이 메서드는 @Async 어노테이션을 사용하여 백그라운드에서 실행됩니다.
      */
     @org.springframework.scheduling.annotation.Async
-    @Transactional
     public void createMoodboardForMagazineAsync(Long magazineId, String username) {
         log.info("Async moodboard generation started for magazine: {}", magazineId);
         try {
