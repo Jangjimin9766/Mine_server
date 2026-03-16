@@ -17,13 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalApiController {
 
     private final MagazineService magazineService;
-    private final String internalApiKey;
 
-    public InternalApiController(
-            MagazineService magazineService,
-            @org.springframework.beans.factory.annotation.Value("${python.api.key}") String internalApiKey) {
+    @org.springframework.beans.factory.annotation.Value("${python.api.key:mine-secret-key-1234}")
+    private String internalApiKey;
+
+    public InternalApiController(MagazineService magazineService) {
         this.magazineService = magazineService;
-        this.internalApiKey = internalApiKey;
     }
 
     @PostMapping("/magazine")
@@ -32,7 +31,9 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
         if (internalApiKey == null || !internalApiKey.equals(apiKey)) {
-            log.warn("Invalid API Key attempt for /magazine");
+            log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
+                    (internalApiKey != null ? internalApiKey.length() : "null"), 
+                    (apiKey != null ? apiKey.length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
@@ -49,7 +50,9 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
         if (internalApiKey == null || !internalApiKey.equals(apiKey)) {
-            log.warn("Invalid API Key attempt for /trigger-initial");
+            log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}", 
+                    (internalApiKey != null ? internalApiKey.length() : "null"), 
+                    (apiKey != null ? apiKey.length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
