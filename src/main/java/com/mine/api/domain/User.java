@@ -57,12 +57,13 @@ public class User {
     private int magazineCount;
 
     @Builder
-    public User(String username, String email, String password, String nickname, Role role) {
+    public User(String username, String email, String password, String nickname, Role role, String profileImageUrl) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.role = role;
+        this.profileImageUrl = profileImageUrl;
         this.createdAt = LocalDateTime.now();
     }
 

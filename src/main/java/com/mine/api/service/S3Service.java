@@ -194,4 +194,22 @@ public class S3Service {
             return null;
         }
     }
+    /**
+     * 기본 정적 자산(플레이스홀더 등) 초기화
+     */
+    public void initializeStaticAssets(byte[] imageBytes, String fileName) {
+        try {
+            String key = "assets/" + fileName;
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType("image/png")
+                    .acl(ObjectCannedACL.PUBLIC_READ)
+                    .build();
+            s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+            log.info("Successfully initialized static asset: {}", key);
+        } catch (Exception e) {
+            log.error("Failed to initialize static asset: {}", fileName, e);
+        }
+    }
 }

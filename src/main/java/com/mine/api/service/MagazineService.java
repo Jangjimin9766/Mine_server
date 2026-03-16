@@ -66,14 +66,8 @@ public class MagazineService {
         // 무드보드가 있으면 커버 이미지도 무드보드로 설정
         String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
 
-        // [NEW] 제목 글자 수 제한 (공백 포함 22자 이내)
-        String safeTitle = request.getTitle();
-        if (safeTitle != null && safeTitle.length() > 22) {
-            safeTitle = safeTitle.substring(0, 21) + "…";
-        }
-
         Magazine magazine = Magazine.builder()
-                .title(safeTitle)
+                .title(request.getTitle())
                 .subtitle(request.getSubtitle())
                 .introduction(request.getIntroduction())
                 .coverImageUrl(coverImageUrl)
@@ -144,7 +138,7 @@ public class MagazineService {
 
                 // [최후의 보류] 여전히 썸네일이 없다면 기본 플레이스홀더 사용
                 if (section.getThumbnailUrl() == null) {
-                    section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png");
+                    section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png");
                 }
 
                 magazine.addSection(section);
