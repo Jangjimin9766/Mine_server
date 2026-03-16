@@ -3,7 +3,7 @@ server:
 
 spring:
   config:
-    import: "optional:file:src/main/resources/application-secret.yml"
+    import: "optional:classpath:application-secret.yml"
   sql:
     init:
       mode: always
