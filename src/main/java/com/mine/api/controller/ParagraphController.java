@@ -20,17 +20,16 @@ public class ParagraphController {
 
     private final ParagraphService paragraphService;
 
-    @Operation(summary = "✏️ 문단 수정", description = "특정 문단의 내용(소제목, 본문, 이미지)을 수정합니다.")
-    @PutMapping("/{paragraphId}")
-    public ResponseEntity<?> updateParagraph(
+    @Operation(summary = "➕ 문단 추가", description = "섹션의 맨 마지막에 새로운 문단을 추가합니다.")
+    @PostMapping
+    public ResponseEntity<Long> createParagraph(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,
-            @PathVariable Long paragraphId,
-            @RequestBody ParagraphDto.UpdateRequest request,
+            @RequestBody ParagraphDto.CreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        paragraphService.updateParagraph(magazineId, sectionId, paragraphId, request, userDetails.getUsername());
-        return ResponseEntity.ok(Map.of("message", "문단이 수정되었습니다."));
+        Long paragraphId = paragraphService.createParagraph(magazineId, sectionId, request, userDetails.getUsername());
+        return ResponseEntity.ok(paragraphId);
     }
 
     @Operation(summary = "🗑️ 문단 삭제", description = "특정 문단을 삭제합니다.")

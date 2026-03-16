@@ -25,27 +25,36 @@ public class ParagraphService {
     private final S3Service s3Service;
 
     @Transactional
-    public void updateParagraph(Long magazineId, Long sectionId, Long paragraphId, ParagraphDto.UpdateRequest request,
-            String username) {
+    public Long createParagraph(Long magazineId, Long sectionId, ParagraphDto.CreateRequest request, String username) {
         validateOwnership(magazineId, sectionId, username);
 
-        Paragraph paragraph = paragraphRepository.findById(paragraphId)
-                .orElseThrow(() -> new IllegalArgumentException("Paragraph not found"));
+        MagazineSection section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Section not found"));
 
-        if (!paragraph.getMagazineSection().getId().equals(sectionId)) {
-            throw new IllegalArgumentException("Paragraph does not belong to the specified section");
-        }
-
-        // 이미지 업로드 처리 (URL이 변경되었거나 새로 입력된 경우)
+        // 이미지 업로드 처리
         String imageUrl = request.getImageUrl();
-        if (imageUrl != null && !imageUrl.equals(paragraph.getImageUrl())) {
+        if (imageUrl != null && !imageUrl.isBlank()) {
             imageUrl = s3Service.uploadImageFromUrl(imageUrl);
         }
 
-        paragraph.update(request.getSubtitle(), request.getText(), imageUrl);
-        paragraphRepository.save(paragraph);
+        // 마지막 순서 계산 (항상 맨 밑에 추가)
+        Integer maxOrder = paragraphRepository.findMaxDisplayOrderBySectionId(sectionId);
+        int nextOrder = (maxOrder == null) ? 0 : maxOrder + 1;
 
-        log.info("Paragraph updated: id={}, magazineId={}, username={}", paragraphId, magazineId, username);
+        Paragraph paragraph = Paragraph.builder()
+                .subtitle(request.getSubtitle())
+                .text(request.getText())
+                .imageUrl(imageUrl)
+                .displayOrder(nextOrder)
+                .build();
+
+        section.addParagraph(paragraph);
+        Paragraph savedParagraph = paragraphRepository.save(paragraph);
+
+        log.info("Paragraph created: id={}, magazineId={}, sectionId={}, order={}, username={}", 
+                savedParagraph.getId(), magazineId, sectionId, nextOrder, username);
+        
+        return savedParagraph.getId();
     }
 
     @Transactional

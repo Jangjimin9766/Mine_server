@@ -37,12 +37,12 @@ public class ParagraphDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(description = "문단 수정 요청")
-    public static class UpdateRequest {
-        @Schema(description = "문단 소제목", example = "국밥의 성지, 서면 (수정)")
+    @Schema(description = "문단 생성 요청")
+    public static class CreateRequest {
+        @Schema(description = "문단 소제목", example = "새로운 문단 제목")
         private String subtitle;
 
-        @Schema(description = "문단 본문 (150-300자)", example = "돼지국밥은 부산의 대표 음식으로...")
+        @Schema(description = "문단 본문 (150-300자)", example = "추가된 문단의 내용입니다...")
         private String text;
 
         @Schema(description = "문단 이미지 URL", example = "https://example.com/new_image.jpg")
