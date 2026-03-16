@@ -9,6 +9,6 @@ public interface ParagraphRepository extends JpaRepository<Paragraph, Long> {
 
     List<Paragraph> findBySectionIdOrderByDisplayOrderAsc(Long sectionId);
 
-    @org.springframework.data.jpa.repository.Query("SELECT max(p.displayOrder) FROM Paragraph p WHERE p.magazineSection.id = :sectionId")
+    @org.springframework.data.jpa.repository.Query("SELECT max(p.displayOrder) FROM Paragraph p WHERE p.section.id = :sectionId")
     Integer findMaxDisplayOrderBySectionId(Long sectionId);
 }
