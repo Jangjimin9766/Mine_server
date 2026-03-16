@@ -64,15 +64,6 @@ INSERT INTO interests (code, name, category) VALUES ('HEALTH', '건강', '활동
 INSERT INTO interests (code, name, category) VALUES ('TECH', '테크', '테크') ON DUPLICATE KEY UPDATE name=name;
 
 -- =====================================================
--- 기존 테스트 데이터 강제 초기화 (기존 유저 및 매거진 삭제)
--- =====================================================
-SET FOREIGN_KEY_CHECKS = 0;
-DELETE FROM magazine_sections WHERE magazine_id IN (SELECT id FROM magazines WHERE user_id IN (SELECT id FROM users WHERE username IN ('jiwoo_kim', 'minjun_lee', 'seoyun_park', 'hyejin_choi', 'taeyang_lee')));
-DELETE FROM magazines WHERE user_id IN (SELECT id FROM users WHERE username IN ('jiwoo_kim', 'minjun_lee', 'seoyun_park', 'hyejin_choi', 'taeyang_lee'));
-DELETE FROM users WHERE username IN ('jiwoo_kim', 'minjun_lee', 'seoyun_park', 'hyejin_choi', 'taeyang_lee');
-SET FOREIGN_KEY_CHECKS = 1;
-
--- =====================================================
 -- 현실적인 테스트 계정 (유저 5명) 및 유저별 매거진 삭제됨
 -- 이제 generate_real_dummy.py 스크립트를 통해
 -- 회원가입 API와 AI 연동을 거쳐 실제 양질의 데이터로
