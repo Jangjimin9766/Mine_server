@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalApiController {
 
     private final MagazineService magazineService;
+    private final com.mine.api.listener.MagazineGenerationListener magazineGenerationListener;
+    private final com.mine.api.repository.UserRepository userRepository;
+    private final com.mine.api.repository.UserInterestRepository userInterestRepository;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.key}")
     private String internalApiKey;
@@ -32,5 +35,29 @@ public class InternalApiController {
 
         Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
         return ResponseEntity.ok(magazineId);
+    }
+
+    /**
+     * [복구용] 특정 유저의 초기 매거진 생성을 강제로 트리거
+     */
+    @PostMapping("/trigger-initial")
+    public ResponseEntity<?> triggerInitial(
+            @org.springframework.web.bind.annotation.RequestParam String username,
+            @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
+
+        if (!internalApiKey.equals(apiKey)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
+        }
+
+        com.mine.api.domain.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        java.util.List<String> interests = userInterestRepository.findByUser(user).stream()
+                .map(ui -> ui.getInterest().getCode())
+                .collect(java.util.stream.Collectors.toList());
+
+        magazineGenerationListener.generateInitialMagazinesAsync(user, interests);
+
+        return ResponseEntity.ok("Async generation triggered for user: " + username);
     }
 }

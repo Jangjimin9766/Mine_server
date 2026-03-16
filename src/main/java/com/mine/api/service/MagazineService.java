@@ -534,53 +534,5 @@ public class MagazineService {
 
         return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
     }
-    /**
-     * 회원가입 완료 트랜잭션 커밋 직후 발생하는 이벤트를 수신하여 비동기 메서드 호출
-     */
-    @org.springframework.transaction.event.TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
-    public void handleUserSignupEvent(com.mine.api.event.UserSignupEvent event) {
-        log.info("Received UserSignupEvent for user: {}. Triggering async magazine generation.", event.getUser().getUsername());
-        // 실제 비동기 처리는 아래 메서드에서 별도 스레드로 수행됨
-        generateInitialMagazinesAsync(event.getUser(), event.getInterests());
-    }
-
-    /**
-     * 회원가입 직후 관심사 기반 매거진 자동 생성 (비동기)
-     */
-    @org.springframework.scheduling.annotation.Async
-    public void generateInitialMagazinesAsync(User user, java.util.List<String> interests) {
-        if (interests == null || interests.isEmpty()) {
-            return;
-        }
-
-        // 1. 관심사 목록 중복 방지 및 복사본 생성 (Unmodifiable list 우회)
-        java.util.List<String> modifiableInterests = new java.util.ArrayList<>(interests);
-        
-        // 2. 관심사 목록을 무작위로 섞음 (랜덤 추출)
-        java.util.Collections.shuffle(modifiableInterests);
-        
-        // 3. 최대 2개까지만 리스트를 자름 (1개면 1개, 2개 이상이면 2개)
-        java.util.List<String> targetInterests = modifiableInterests.subList(0, Math.min(2, modifiableInterests.size()));
-
-        log.info("Starting initial magazine generation for user: {} with interests: {}", user.getUsername(), targetInterests);
-
-        for (String interestCode : targetInterests) {
-            try {
-                // 각 관심사를 주제로 매거진 생성 요청
-                com.mine.api.dto.MagazineGenerationRequest genRequest = new com.mine.api.dto.MagazineGenerationRequest();
-                genRequest.setTopic(interestCode); // 우선 관심사 코드를 주제로 설정
-                genRequest.setUserMood("vibrant"); // 기본 분위기 설정
-
-                log.info("Generating welcome magazine for interest: {} (User: {})", interestCode, user.getUsername());
-                generateAndSaveMagazine(genRequest, user.getUsername());
-                
-                // AI 서버 부하 분산을 위해 짧은 지연 (RunPod 큐 고려)
-                Thread.sleep(10000); 
-                
-            } catch (Exception e) {
-                log.error("Failed to generate initial magazine for interest: {} (User: {})", interestCode, user.getUsername(), e);
-            }
-        }
-        log.info("Completed initial magazine generation for user: {}", user.getUsername());
-    }
+    // [REFACTORED] 이벤트 리스너 로직은 MagazineGenerationListener로 이동되었습니다.
 }
