@@ -47,6 +47,45 @@ jobs:
           sleep 10
           sudo systemctl status mine
 
+    - name: Setup SSL and Nginx
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # 1. Nginx 및 Certbot 설치
+          sudo apt-get update
+          sudo apt-get install -y nginx certbot python3-certbot-nginx
+
+          # 2. Nginx 설정 파일 생성 (있을 경우 건너뜀)
+          if [ ! -f /etc/nginx/sites-available/mine ]; then
+            sudo bash -c 'cat > /etc/nginx/sites-available/mine <<EOF
+          server {
+              listen 80;
+              server_name api.minelover.com;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          EOF'
+            sudo ln -s /etc/nginx/sites-available/mine /etc/nginx/sites-enabled/
+            sudo rm -f /etc/nginx/sites-enabled/default
+          fi
+
+          # 3. Nginx 테스트 및 실행
+          sudo nginx -t && sudo systemctl restart nginx
+
+          # 4. SSL 인증서 발급 (인증서가 없을 때만 실행)
+          if [ ! -d /etc/letsencrypt/live/api.minelover.com ]; then
+            sudo certbot --nginx -d api.minelover.com --non-interactive --agree-tos -m jangjimin9766@gmail.com
+          fi
+
     - name: Discord Notification
       uses: sarisia/actions-status-discord@v1
       if: always()
