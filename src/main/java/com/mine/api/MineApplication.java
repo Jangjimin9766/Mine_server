@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @org.springframework.scheduling.annotation.EnableAsync
+// Initializing the Spring Boot application configuration
 public class MineApplication {
 
     public static void main(String[] args) {
