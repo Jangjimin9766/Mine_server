@@ -66,8 +66,14 @@ public class MagazineService {
         // 무드보드가 있으면 커버 이미지도 무드보드로 설정
         String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
 
+        // [NEW] 제목 글자 수 제한 (공백 포함 22자 이내)
+        String safeTitle = request.getTitle();
+        if (safeTitle != null && safeTitle.length() > 22) {
+            safeTitle = safeTitle.substring(0, 21) + "…";
+        }
+
         Magazine magazine = Magazine.builder()
-                .title(request.getTitle())
+                .title(safeTitle)
                 .subtitle(request.getSubtitle())
                 .introduction(request.getIntroduction())
                 .coverImageUrl(coverImageUrl)
