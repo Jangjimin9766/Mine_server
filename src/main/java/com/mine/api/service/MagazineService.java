@@ -534,5 +534,53 @@ public class MagazineService {
 
         return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
     }
+
+    /**
+     * 회원가입 직후 관심사 기반 매거진 자동 생성 (비동기)
+     * Listener에서 호출될 때 프록시를 통해 별도 스레드에서 실행됨
+     */
+    @org.springframework.scheduling.annotation.Async
+    @Transactional
+    public void generateInitialMagazinesAsync(String username) {
+        try {
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+            java.util.List<String> interests = userInterestRepository.findByUser(user).stream()
+                    .map(ui -> ui.getInterest().getCode())
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (interests == null || interests.isEmpty()) {
+                log.warn("No interests found for user: {}. Skipping initial magazine generation.", username);
+                return;
+            }
+
+            // 1. 관심사 목록 랜덤 추출
+            java.util.List<String> targetInterests = new java.util.ArrayList<>(interests);
+            java.util.Collections.shuffle(targetInterests);
+            targetInterests = targetInterests.subList(0, Math.min(2, targetInterests.size()));
+
+            log.info("Starting initial magazine generation for user: {} with interests: {}", username, targetInterests);
+
+            for (String interestCode : targetInterests) {
+                try {
+                    com.mine.api.dto.MagazineGenerationRequest genRequest = new com.mine.api.dto.MagazineGenerationRequest();
+                    genRequest.setTopic(interestCode);
+                    genRequest.setUserMood("vibrant");
+
+                    log.info("Generating welcome magazine for interest: {} (User: {})", interestCode, username);
+                    this.generateAndSaveMagazine(genRequest, username);
+                    
+                    Thread.sleep(5000); 
+                    
+                } catch (Exception e) {
+                    log.error("Failed to generate initial magazine for user: {}", username, e);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error in generateInitialMagazinesAsync", e);
+        }
+    }
+
     // [REFACTORED] 이벤트 리스너 로직은 MagazineGenerationListener로 이동되었습니다.
 }
