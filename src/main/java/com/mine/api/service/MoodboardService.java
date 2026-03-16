@@ -207,4 +207,20 @@ public class MoodboardService {
 
         return moodboardRepository.findByMagazineIdOrderByCreatedAtDesc(magazineId);
     }
+
+    /**
+     * 매거진 기반 무드보드 생성 (비동기 버전)
+     * 이 메서드는 @Async 어노테이션을 사용하여 백그라운드에서 실행됩니다.
+     */
+    @org.springframework.scheduling.annotation.Async
+    @Transactional
+    public void createMoodboardForMagazineAsync(Long magazineId, String username) {
+        log.info("Async moodboard generation started for magazine: {}", magazineId);
+        try {
+            createMoodboardForMagazine(magazineId, username);
+            log.info("Async moodboard generation completed for magazine: {}", magazineId);
+        } catch (Exception e) {
+            log.error("Async moodboard generation failed for magazine {}: {}", magazineId, e.getMessage());
+        }
+    }
 }

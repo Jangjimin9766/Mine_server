@@ -273,14 +273,12 @@ public class MagazineService {
                 log.warn("Cleanup after magazine save failed: {}", e.getMessage());
             }
 
-            // 4. [FIX] 무드보드 자동 생성 및 커버 이미지 교체
+            // 4. [FIX] 무드보드 자동 생성 및 커버 이미지 교체 (비동기 호출로 변경)
             try {
-                log.info("Starting automatic moodboard generation for magazine: {}", magazineId);
-                moodboardService.createMoodboardForMagazine(magazineId, username);
-                log.info("Moodboard generated and cover updated for magazine: {}", magazineId);
+                log.info("Triggering async moodboard generation for magazine: {}", magazineId);
+                moodboardService.createMoodboardForMagazineAsync(magazineId, username);
             } catch (Exception e) {
-                log.error("Failed to generate moodboard for magazine {}: {}", magazineId, e.getMessage());
-                // 무드보드 생성 실패해도 매거진 생성은 성공으로 처리
+                log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
             }
 
             return magazineId;
