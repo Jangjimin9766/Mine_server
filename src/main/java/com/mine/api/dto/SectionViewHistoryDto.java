@@ -24,12 +24,6 @@ public class SectionViewHistoryDto {
 
         @Schema(description = "소제목", example = "3주 유럽여행 코스 추천")
         private String heading;
-        @Schema(description = "레이아웃 타입", example = "hero")
-        private String layoutType;
-
-        @Schema(description = "레이아웃 힌트", example = "image_left")
-        private String layoutHint;
-
         @Schema(description = "표시 순서", example = "0")
         private Integer displayOrder;
 

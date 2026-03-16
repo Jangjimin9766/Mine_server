@@ -75,16 +75,5 @@ public class MagazineCreateRequest {
 
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
         private List<ParagraphDto> paragraphs;
-
-        // ===== 기존 필드 =====
-
-        @Schema(description = "레이아웃 힌트", example = "image_left")
-        @JsonProperty("layout_hint")
-        private String layoutHint;
-
-        @Schema(description = "레이아웃 타입", example = "hero", allowableValues = { "hero", "quote", "split_left",
-                "split_right", "basic" })
-        @JsonProperty("layout_type")
-        private String layoutType;
     }
 }

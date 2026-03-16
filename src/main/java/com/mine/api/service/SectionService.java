@@ -144,18 +144,6 @@ public class SectionService {
         if (request.getThumbnailUrl() != null) {
             section.setThumbnailUrl(request.getThumbnailUrl());
         }
-        if (request.getLayoutType() != null) {
-            section.update(
-                    section.getHeading(),
-                    request.getLayoutHint() != null ? request.getLayoutHint() : section.getLayoutHint(),
-                    request.getLayoutType());
-        } else if (request.getLayoutHint() != null) {
-            section.update(
-                    section.getHeading(),
-                    request.getLayoutHint(),
-                    section.getLayoutType());
-        }
-
         // paragraphs 업데이트
         if (request.getParagraphs() != null) {
             section.getParagraphs().clear();
@@ -269,9 +257,7 @@ public class SectionService {
             section.setThumbnailUrl(thumbUrl);
 
             section.update(
-                    (String) updatedSection.get("heading"),
-                    (String) updatedSection.get("layout_hint"),
-                    (String) updatedSection.get("layout_type"));
+                    (String) updatedSection.get("heading"));
 
             // paragraphs 업데이트 (2가지 형식 지원)
             @SuppressWarnings("unchecked")
@@ -390,8 +376,6 @@ public class SectionService {
                 .collect(Collectors.toList());
         map.put("paragraphs", paragraphsList);
 
-        map.put("layout_hint", section.getLayoutHint());
-        map.put("layout_type", section.getLayoutType());
         return map;
     }
 
@@ -411,8 +395,6 @@ public class SectionService {
                 .heading(section.getHeading())
                 .thumbnailUrl(section.getThumbnailUrl())
                 .paragraphs(paragraphsList)
-                .layoutType(section.getLayoutType())
-                .layoutHint(section.getLayoutHint())
                 .displayOrder(section.getDisplayOrder())
                 .build();
     }

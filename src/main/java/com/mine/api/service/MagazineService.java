@@ -99,8 +99,6 @@ public class MagazineService {
                 MagazineSection section = MagazineSection.builder()
                         .heading(sectionDto.getHeading())
                         .thumbnailUrl(thumbnailUrl)
-                        .layoutHint(sectionDto.getLayoutHint())
-                        .layoutType(sectionDto.getLayoutType())
                         .displayOrder(i) // 생성 순서대로 0부터 할당
                         .build();
 

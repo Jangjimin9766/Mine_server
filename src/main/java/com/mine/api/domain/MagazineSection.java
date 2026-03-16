@@ -47,16 +47,9 @@ public class MagazineSection {
 
     // ===== 기존 필드 =====
 
-    @Column(name = "layout_hint")
-    private String layoutHint;
-
     // 그리드 표시 순서
     @Column(name = "display_order")
     private Integer displayOrder;
-
-    // 레이아웃 타입: 'hero', 'quote', 'split_left', 'split_right', 'basic' 등
-    @Column(name = "layout_type")
-    private String layoutType;
 
     @com.fasterxml.jackson.annotation.JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
@@ -64,11 +57,8 @@ public class MagazineSection {
     private Magazine magazine;
 
     @Builder
-    public MagazineSection(String heading, String layoutHint,
-            String layoutType, Integer displayOrder, String thumbnailUrl) {
+    public MagazineSection(String heading, Integer displayOrder, String thumbnailUrl) {
         this.heading = heading;
-        this.layoutHint = layoutHint;
-        this.layoutType = layoutType;
         this.displayOrder = displayOrder;
         this.thumbnailUrl = thumbnailUrl;
     }
@@ -90,11 +80,8 @@ public class MagazineSection {
         paragraph.setSection(null);
     }
 
-    public void update(String heading, String layoutHint,
-            String layoutType) {
+    public void update(String heading) {
         this.heading = heading;
-        this.layoutHint = layoutHint;
-        this.layoutType = layoutType;
     }
 
     public void setDisplayOrder(Integer displayOrder) {

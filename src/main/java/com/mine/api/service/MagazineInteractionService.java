@@ -149,9 +149,6 @@ public class MagazineInteractionService {
         return sections.stream()
                 .map(section -> {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("heading", section.getHeading());
-                    map.put("layout_hint", section.getLayoutHint());
-                    map.put("layout_type", section.getLayoutType());
                     map.put("thumbnail_url", section.getThumbnailUrl());
 
                     // paragraphs 변환
@@ -304,9 +301,7 @@ public class MagazineInteractionService {
 
     private void updateSectionFromMap(MagazineSection section, Map<String, Object> map) {
         section.update(
-                (String) map.get("heading"),
-                (String) map.get("layout_hint"),
-                (String) map.get("layout_type"));
+                (String) map.get("heading"));
 
         // Update thumbnail
         if (map.get("thumbnail_url") != null) {
@@ -325,8 +320,6 @@ public class MagazineInteractionService {
 
         MagazineSection section = MagazineSection.builder()
                 .heading((String) map.get("heading"))
-                .layoutHint((String) map.get("layout_hint"))
-                .layoutType((String) map.get("layout_type"))
                 .thumbnailUrl(thumbUrl)
                 .displayOrder(displayOrder)
                 .build();

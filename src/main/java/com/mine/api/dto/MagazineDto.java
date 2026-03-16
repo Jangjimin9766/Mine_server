@@ -246,9 +246,6 @@ public class MagazineDto {
             @Schema(description = "문단 배열")
             private List<ParagraphDto.Response> paragraphs;
 
-            @Schema(description = "레이아웃 타입", example = "card")
-            private String layoutType;
-
             @Schema(description = "표시 순서", example = "1")
             private Integer displayOrder;
         }
@@ -280,7 +277,6 @@ public class MagazineDto {
                                             .imageUrl(p.getImageUrl())
                                             .build())
                                     .toList())
-                            .layoutType(section.getLayoutType())
                             .displayOrder(section.getDisplayOrder())
                             .build())
                     .toList();

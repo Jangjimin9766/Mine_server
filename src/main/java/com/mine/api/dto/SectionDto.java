@@ -37,16 +37,6 @@ public class SectionDto {
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
         private List<ParagraphDto.Response> paragraphs;
 
-        // ===== 기존 필드 =====
-
-        @Schema(description = "레이아웃 타입", example = "card")
-        @JsonProperty("layoutType")
-        private String layoutType;
-
-        @Schema(description = "레이아웃 힌트", example = "full_width")
-        @JsonProperty("layoutHint")
-        private String layoutHint;
-
         @Schema(description = "표시 순서", example = "1")
         @JsonProperty("displayOrder")
         private Integer displayOrder;
@@ -93,12 +83,6 @@ public class SectionDto {
 
         @Schema(description = "수정할 썸네일 URL", example = "https://example.com/new-thumb.jpg")
         private String thumbnailUrl;
-
-        @Schema(description = "수정할 레이아웃 타입", example = "card")
-        private String layoutType;
-
-        @Schema(description = "수정할 레이아웃 힌트", example = "full_width")
-        private String layoutHint;
 
         @Schema(description = "수정할 문단 목록")
         private List<ParagraphUpdateRequest> paragraphs;
