@@ -71,6 +71,7 @@ public class RunPodService {
         // 4. Poll Status (GET /status/{id})
         // Construct status URL: replace /run with /status/{id}
         String statusUrl = runUrl.replace("/run", "/status/" + jobId);
+        log.info("Starting RunPod polling at: {}", statusUrl);
 
         for (int i = 0; i < MAX_RETRIES; i++) {
             try {
@@ -98,8 +99,10 @@ public class RunPodService {
             log.debug("Job status: {}", status);
 
             if ("COMPLETED".equals(status)) {
+                log.info("RunPod job COMPLETED. Extracting output.");
                 return statusResponse; // Contains "output"
             } else if ("FAILED".equals(status)) {
+                log.error("RunPod job FAILED. Full response: {}", statusResponse);
                 throw new RuntimeException("RunPod job failed: " + statusResponse);
             } else if ("IN_QUEUE".equals(status) || "IN_PROGRESS".equals(status)) {
                 // Wait more

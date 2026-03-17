@@ -50,8 +50,13 @@ public class GlobalExceptionHandler {
         System.err.println("Internal Server Error: " + ex.getMessage());
         ex.printStackTrace();
 
-        ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        // [DEBUG] 실서버 오류 확인을 위해 메시지 노출 (추후 원복 필요)
+        String message = "서버 내부 오류: " + ex.getMessage();
+        if (ex.getCause() != null) {
+            message += " (Cause: " + ex.getCause().getMessage() + ")";
+        }
+
+        ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), message);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
