@@ -262,9 +262,21 @@ public class MagazineService {
             // output을 MagazineCreateRequest로 변환
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
                     .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            MagazineCreateRequest generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
+            
+            MagazineCreateRequest generatedData;
+            try {
+                generatedData = mapper.convertValue(outputData, MagazineCreateRequest.class);
+            } catch (Exception e) {
+                log.error("Failed to parse AI server response to MagazineCreateRequest. Data: {}", outputData, e);
+                throw new RuntimeException("AI 서버 응답 형식이 올바르지 않습니다: " + e.getMessage());
+            }
 
-            if (generatedData == null || generatedData.getSections() == null || generatedData.getSections().isEmpty()) {
+            if (generatedData == null) {
+                log.error("Generated data is null after conversion. Output was: {}", outputData);
+                throw new RuntimeException("AI 서버의 응답을 변환할 수 없습니다.");
+            }
+
+            if (generatedData.getSections() == null || generatedData.getSections().isEmpty()) {
                 throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MAGAZINE + " (생성된 섹션이 없습니다)");
             }
 
