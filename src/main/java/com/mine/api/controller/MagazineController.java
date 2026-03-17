@@ -194,14 +194,15 @@ public class MagazineController {
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")
-    @Operation(summary = "📡 추천 피드 (커서 기반)", description = "내 관심사와 팔로우한 사람들의 새 글을 모아서 보여줍니다. (무한 스크롤)")
+    @Operation(summary = "📡 추천 피드 (커서 기반)", description = "내 관심사와 팔로우한 사람들의 새 글을 모아서 보여줍니다. (무한 스크롤) ?isTest=true 시 모든 공개글을 최신순으로 반환합니다.")
     @GetMapping("/feed")
     public ResponseEntity<com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem>> getPersonalizedFeed(
             @AuthenticationPrincipal UserDetails userDetails,
             @io.swagger.v3.oas.annotations.Parameter(description = "마지막으로 조회한 매거진 ID (첫 조회 시 null)") @org.springframework.web.bind.annotation.RequestParam(required = false) Long cursorId,
-            @io.swagger.v3.oas.annotations.Parameter(description = "한 번에 가져올 개수") @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "한 번에 가져올 개수") @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int limit,
+            @io.swagger.v3.oas.annotations.Parameter(description = "테스트 모드 여부 (true 시 전체 공개글 최신순)") @org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean isTest) {
 
-        return ResponseEntity.ok(magazineService.getPersonalizedFeedCursor(userDetails.getUsername(), cursorId, limit));
+        return ResponseEntity.ok(magazineService.getPersonalizedFeedCursor(userDetails.getUsername(), cursorId, limit, isTest));
     }
 
     // ⭐ 매거진 기반 무드보드 생성

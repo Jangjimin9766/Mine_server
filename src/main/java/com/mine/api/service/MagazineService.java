@@ -510,7 +510,13 @@ public class MagazineService {
 
     // ⭐ Phase 4: 개인화 피드 (커서 기반) - 좋아요 + 관심사 기반
     public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeedCursor(
-            String username, Long cursorId, int limit) {
+            String username, Long cursorId, int limit, boolean isTest) {
+        
+        // 테스트 모드인 경우 전체 피드 반환
+        if (isTest) {
+            return getTestFeedCursor(cursorId, limit);
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
@@ -550,6 +556,32 @@ public class MagazineService {
                 limit + 1);
         java.util.List<Magazine> magazines = magazineRepository.findRecommendedFeedCursor(
                 keyword1, keyword2, keyword3, user.getId(), cursorId, pageable);
+
+        boolean hasNext = false;
+        if (magazines.size() > limit) {
+            hasNext = true;
+            magazines.remove(limit);
+        }
+
+        Long nextCursor = null;
+        if (!magazines.isEmpty()) {
+            nextCursor = magazines.get(magazines.size() - 1).getId();
+        }
+
+        java.util.List<com.mine.api.dto.MagazineDto.ListItem> content = magazines.stream()
+                .map(com.mine.api.dto.MagazineDto.ListItem::from)
+                .collect(java.util.stream.Collectors.toList());
+
+    return new com.mine.api.dto.CursorResponse<>(content, nextCursor, hasNext);
+    }
+
+    /**
+     * 프론트엔드 무한 스크롤 테스트용 피드 (모든 공개 매거진 최신순)
+     */
+    public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getTestFeedCursor(Long cursorId, int limit) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit + 1);
+        
+        java.util.List<Magazine> magazines = magazineRepository.findPublicMagazinesCursor(cursorId, pageable);
 
         boolean hasNext = false;
         if (magazines.size() > limit) {

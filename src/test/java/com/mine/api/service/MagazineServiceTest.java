@@ -322,7 +322,7 @@ class MagazineServiceTest {
                 when(magazineLikeRepository.findAllLikedMagazinesByUser(user)).thenReturn(List.of()); // 좋아요한 건 없음
 
                 // When
-                magazineService.getPersonalizedFeedCursor(username, null, 10);
+                magazineService.getPersonalizedFeedCursor(username, null, 10, false);
 
                 // Then
                 verify(magazineRepository).findRecommendedFeedCursor(

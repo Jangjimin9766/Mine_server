@@ -106,4 +106,12 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         @org.springframework.data.repository.query.Param("lastId") Long lastId,
                         org.springframework.data.domain.Pageable pageable);
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM Magazine m " +
+            "LEFT JOIN FETCH m.user " +
+            "WHERE m.user.isPublic = true " +
+            "AND (:lastId IS NULL OR m.id < :lastId) " +
+            "ORDER BY m.id DESC")
+    java.util.List<Magazine> findPublicMagazinesCursor(
+            @org.springframework.data.repository.query.Param("lastId") Long lastId,
+            org.springframework.data.domain.Pageable pageable);
 }

@@ -1,0 +1,1 @@
+{"detail":[{"type":"missing","loc":["header","x-api-key"],"msg":"Field required","input":null},{"type":"missing","loc":["body","action"],"msg":"Field required","input":{"topic":"세계여행","user_mood":""}}]}
