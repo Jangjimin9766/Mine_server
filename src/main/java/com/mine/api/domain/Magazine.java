@@ -20,15 +20,17 @@ public class Magazine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 500)
     private String title;
 
     // [NEW] 부제
+    @Column(length = 500)
     private String subtitle;
 
     @Column(columnDefinition = "TEXT")
     private String introduction;
 
-    @Column(name = "cover_image_url")
+    @Column(name = "cover_image_url", length = 1000)
     private String coverImageUrl;
 
     // [NEW] 태그 목록 (JSON 형태로 저장)
@@ -36,7 +38,7 @@ public class Magazine {
     private String tags;
 
     // [NEW] 무드보드 이미지 URL
-    @Column(name = "moodboard_image_url")
+    @Column(name = "moodboard_image_url", length = 1000)
     private String moodboardImageUrl;
 
     // [NEW] 무드보드 설명

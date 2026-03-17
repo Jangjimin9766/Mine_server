@@ -108,12 +108,12 @@ public class MagazineService {
         String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
 
         Magazine magazine = Magazine.builder()
-                .title(request.getTitle())
-                .subtitle(request.getSubtitle())
+                .title(truncate(request.getTitle(), 490))
+                .subtitle(truncate(request.getSubtitle(), 490))
                 .introduction(request.getIntroduction())
-                .coverImageUrl(coverImageUrl)
+                .coverImageUrl(truncate(coverImageUrl, 990))
                 .tags(tagsJson)
-                .moodboardImageUrl(moodboardImageUrl)
+                .moodboardImageUrl(truncate(moodboardImageUrl, 990))
                 .moodboardDescription(moodboardDescription)
                 .user(user)
                 .build();
@@ -124,8 +124,8 @@ public class MagazineService {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
 
                 MagazineSection section = MagazineSection.builder()
-                        .heading(sectionDto.getHeading())
-                        .thumbnailUrl(sectionDto.getThumbnailUrl())
+                        .heading(truncate(sectionDto.getHeading(), 490))
+                        .thumbnailUrl(truncate(sectionDto.getThumbnailUrl(), 990))
                         .displayOrder(i)
                         .build();
 
@@ -139,9 +139,9 @@ public class MagazineService {
                         }
 
                         Paragraph paragraph = Paragraph.builder()
-                                .subtitle(paraDto.getSubtitle() != null && !paraDto.getSubtitle().isEmpty() ? paraDto.getSubtitle() : "소제목 내용")
+                                .subtitle(truncate(paraDto.getSubtitle() != null && !paraDto.getSubtitle().isEmpty() ? paraDto.getSubtitle() : "소제목 내용", 490))
                                 .text(paraDto.getText() != null && !paraDto.getText().isEmpty() ? paraDto.getText() : "내용을 입력해주세요.")
-                                .imageUrl(paraDto.getImageUrl())
+                                .imageUrl(truncate(paraDto.getImageUrl(), 990))
                                 .displayOrder(j)
                                 .build();
                         section.addParagraph(paragraph);
@@ -164,7 +164,14 @@ public class MagazineService {
         }
 
         // 5. 저장 (CascadeType.ALL로 인해 Section도 함께 저장됨)
-        Magazine savedMagazine = magazineRepository.save(magazine);
+        log.info("Saving magazine entity: {}", magazine.getTitle());
+        Magazine savedMagazine;
+        try {
+            savedMagazine = magazineRepository.save(magazine);
+        } catch (Exception e) {
+            log.error("Failed to save magazine entity to DB", e);
+            throw new RuntimeException("매거진 데이터베이스 저장 실패: " + e.getMessage());
+        }
 
         // 6. 무드보드가 있으면 moodboards 테이블에도 저장 (히스토리 용)
         if (moodboardImageUrl != null && moodboardDescription != null) {
@@ -178,6 +185,11 @@ public class MagazineService {
         }
 
         return savedMagazine.getId();
+    }
+
+    private String truncate(String str, int length) {
+        if (str == null) return null;
+        return str.length() > length ? str.substring(0, length) : str;
     }
 
     /**

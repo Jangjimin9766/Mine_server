@@ -19,6 +19,7 @@ public class MagazineSection {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 500)
     private String heading;
 
     // ===== 새로 추가된 필드 =====
@@ -27,7 +28,7 @@ public class MagazineSection {
      * 섹션 썸네일 (커버 이미지)
      * 섹션 목록에서 미리보기로 사용
      */
-    @Column(name = "thumbnail_url", length = 500)
+    @Column(name = "thumbnail_url", length = 1000)
     private String thumbnailUrl;
 
     /**

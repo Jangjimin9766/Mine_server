@@ -29,7 +29,7 @@ public class Paragraph {
     /**
      * 문단 소제목 (예: "국밥의 성지, 서면")
      */
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 500)
     private String subtitle;
 
     /**
@@ -41,7 +41,7 @@ public class Paragraph {
     /**
      * 문단 이미지 URL
      */
-    @Column(name = "image_url", length = 500)
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     /**
