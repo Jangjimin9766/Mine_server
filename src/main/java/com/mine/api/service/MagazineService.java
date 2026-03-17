@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @lombok.extern.slf4j.Slf4j
 public class MagazineService {
 
@@ -195,10 +194,12 @@ public class MagazineService {
     /**
      * N+1 쿼리 방지: fetch join으로 sections와 user를 한 번에 조회
      */
+    @Transactional(readOnly = true)
     public java.util.List<Magazine> getMagazinesByUser(String username) {
         return magazineRepository.findByUserUsernameWithSections(username);
     }
 
+    @Transactional(readOnly = true)
     public com.mine.api.dto.MagazineDto.DetailResponse getMagazineDetail(Long id, String username) {
         Magazine magazine = magazineRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
