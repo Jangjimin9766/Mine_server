@@ -78,7 +78,7 @@ public class UserService {
         /**
          * 팔로워 목록 조회 (특정 유저를 팔로우하는 사람들)
          */
-        public Page<UserDto.ProfileResponse> getFollowers(Long userId, String currentUsername, Pageable pageable) {
+        public Page<UserDto.SimpleProfileResponse> getFollowers(Long userId, String currentUsername, Pageable pageable) {
                 User targetUser = userRepository.findById(userId)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
@@ -87,13 +87,13 @@ public class UserService {
                                 : null;
 
                 return followRepository.findByFollowing(targetUser, pageable)
-                                .map(follow -> convertToProfileResponse(follow.getFollower(), currentUser));
+                                .map(follow -> convertToSimpleProfileResponse(follow.getFollower(), currentUser));
         }
 
         /**
          * 팔로잉 목록 조회 (특정 유저가 팔로우하는 사람들)
          */
-        public Page<UserDto.ProfileResponse> getFollowing(Long userId, String currentUsername, Pageable pageable) {
+        public Page<UserDto.SimpleProfileResponse> getFollowing(Long userId, String currentUsername, Pageable pageable) {
                 User targetUser = userRepository.findById(userId)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
@@ -101,7 +101,7 @@ public class UserService {
                                 : null;
 
                 return followRepository.findByFollower(targetUser, pageable)
-                                .map(follow -> convertToProfileResponse(follow.getFollowing(), currentUser));
+                                .map(follow -> convertToSimpleProfileResponse(follow.getFollowing(), currentUser));
         }
 
         /**
@@ -211,6 +211,21 @@ public class UserService {
                                 .magazineCount(user.getMagazineCount())
                                 .isPublic(user.getIsPublic())
                                 .interests(interests)
+                                .isFollowing(isFollowing)
+                                .build();
+        }
+
+        private UserDto.SimpleProfileResponse convertToSimpleProfileResponse(User user, User currentUser) {
+                boolean isFollowing = false;
+                if (currentUser != null && !currentUser.getId().equals(user.getId())) {
+                        isFollowing = followRepository.existsByFollowerAndFollowing(currentUser, user);
+                }
+
+                return UserDto.SimpleProfileResponse.builder()
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .nickname(user.getNickname())
+                                .profileImageUrl(user.getProfileImageUrl())
                                 .isFollowing(isFollowing)
                                 .build();
         }

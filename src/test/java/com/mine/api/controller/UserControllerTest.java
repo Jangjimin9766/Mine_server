@@ -73,12 +73,12 @@ class UserControllerTest {
         @Test
         @WithMockUser(username = "user")
         void getFollowers() throws Exception {
-                UserDto.ProfileResponse profile = UserDto.ProfileResponse.builder()
+                UserDto.SimpleProfileResponse profile = UserDto.SimpleProfileResponse.builder()
                                 .id(2L)
                                 .username("follower")
                                 .nickname("Follower")
                                 .build();
-                Page<UserDto.ProfileResponse> page = new PageImpl<>(List.of(profile), PageRequest.of(0, 10), 1);
+                Page<UserDto.SimpleProfileResponse> page = new PageImpl<>(List.of(profile), PageRequest.of(0, 10), 1);
 
                 given(userService.getFollowers(eq(1L), eq("user"), any(Pageable.class))).willReturn(page);
 
@@ -90,12 +90,12 @@ class UserControllerTest {
         @Test
         @WithMockUser(username = "user")
         void getFollowing() throws Exception {
-                UserDto.ProfileResponse profile = UserDto.ProfileResponse.builder()
+                UserDto.SimpleProfileResponse profile = UserDto.SimpleProfileResponse.builder()
                                 .id(3L)
                                 .username("following")
                                 .nickname("Following")
                                 .build();
-                Page<UserDto.ProfileResponse> page = new PageImpl<>(List.of(profile), PageRequest.of(0, 10), 1);
+                Page<UserDto.SimpleProfileResponse> page = new PageImpl<>(List.of(profile), PageRequest.of(0, 10), 1);
 
                 given(userService.getFollowing(eq(1L), eq("user"), any(Pageable.class))).willReturn(page);
 

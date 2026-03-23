@@ -207,15 +207,6 @@ public class MagazineDto {
 
             @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
             private String profileImageUrl;
-
-            @Schema(description = "공개 계정 여부", example = "true")
-            private Boolean isPublic;
-
-            @Schema(description = "팔로워 수", example = "42")
-            private Integer followerCount;
-
-            @Schema(description = "매거진 수", example = "5")
-            private Integer magazineCount;
         }
 
         /**
@@ -251,9 +242,6 @@ public class MagazineDto {
                     .username(magazine.getUser().getUsername())
                     .nickname(magazine.getUser().getNickname())
                     .profileImageUrl(magazine.getUser().getProfileImageUrl())
-                    .isPublic(magazine.getUser().getIsPublic())
-                    .followerCount(magazine.getUser().getFollowerCount())
-                    .magazineCount(magazine.getUser().getMagazineCount())
                     .build();
 
             List<SectionItem> sectionItems = magazine.getSections().stream()

@@ -151,7 +151,7 @@ public class UserController {
     @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로워 목록", description = "특정 사용자를 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/followers")
-    public ResponseEntity<Page<UserDto.ProfileResponse>> getFollowers(
+    public ResponseEntity<Page<UserDto.SimpleProfileResponse>> getFollowers(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails,
             @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -164,7 +164,7 @@ public class UserController {
     @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로잉 목록", description = "특정 사용자가 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/following")
-    public ResponseEntity<Page<UserDto.ProfileResponse>> getFollowing(
+    public ResponseEntity<Page<UserDto.SimpleProfileResponse>> getFollowing(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails,
             @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {

@@ -31,6 +31,19 @@ public class UserDto {
     }
 
     @Getter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @io.swagger.v3.oas.annotations.media.Schema(name = "SimpleUserProfileResponse", description = "리스트 조회용 경량화된 프로필 응답")
+    public static class SimpleProfileResponse {
+        private Long id;
+        private String username;
+        private String nickname;
+        private String profileImageUrl;
+        private Boolean isFollowing;
+    }
+
+    @Getter
     @NoArgsConstructor
     @AllArgsConstructor
     @io.swagger.v3.oas.annotations.media.Schema(name = "UserUpdateRequest", description = "프로필 수정 요청")
