@@ -36,7 +36,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nickname(request.getNickname())
                 .role(Role.USER)
-                .profileImageUrl("https://mine-server.site/images/default-profile.png")
+                .profileImageUrl("https://api.minelover.com/images/default-profile.png")
                 .build();
 
         User savedUser = userRepository.save(user);
