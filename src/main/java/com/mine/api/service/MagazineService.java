@@ -445,8 +445,6 @@ public class MagazineService {
             return magazines.map(m -> com.mine.api.dto.MagazineDto.ListItem.builder()
                     .id(m.getId())
                     .title(m.getTitle())
-                    .subtitle(m.getSubtitle())
-                    .introduction(m.getIntroduction())
                     .coverImageUrl(m.getCoverImageUrl())
                     .username(user.getUsername()) // 조회한 유저 이름 사용
                     .likeCount((int) magazineLikeRepository.countByMagazine(m))

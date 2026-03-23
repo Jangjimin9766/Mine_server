@@ -110,12 +110,6 @@ public class MagazineDto {
         @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드")
         private String title;
 
-        @Schema(description = "매거진 부제", example = "따뜻함과 스타일을 동시에")
-        private String subtitle;
-
-        @Schema(description = "매거진 소개", example = "올 겨울 핫한 스타일링 가이드")
-        private String introduction;
-
         @Schema(description = "커버 이미지 URL", example = "https://example.com/cover.jpg")
         private String coverImageUrl;
 
@@ -135,8 +129,6 @@ public class MagazineDto {
             return ListItem.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
-                    .subtitle(magazine.getSubtitle())
-                    .introduction(magazine.getIntroduction())
                     .coverImageUrl(magazine.getCoverImageUrl())
                     .username(magazine.getUser().getUsername())
                     .likeCount(magazine.getLikes().size())
