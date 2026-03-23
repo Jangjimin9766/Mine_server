@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/magazines/public/**").permitAll() // 공개 매거진 조회
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/magazines/*/sections/*")
                         .permitAll() // 섹션 상세 조회 (비로그인 허용)
+                        .requestMatchers("/images/**").permitAll() // 기본 에셋(프로필 사진 등) 접근 허용
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // Allow
                                                                                                               // Swagger
