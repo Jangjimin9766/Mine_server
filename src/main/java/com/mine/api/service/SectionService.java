@@ -43,10 +43,10 @@ public class SectionService {
      */
     @Transactional
     public SectionDto.Response getSection(Long magazineId, Long sectionId, String username) {
-        // 소유자가 아니더라도 공개 매거진이면 열람 허용
         Magazine magazine = magazineRepository.findById(magazineId)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
+        // 소유자가 아니더라도 공개 매거진이면 열람 허용
         boolean isOwner = username != null && magazine.getUser().getUsername().equals(username);
         if (!isOwner && !magazine.getUser().getIsPublic()) {
             throw new SecurityException(ErrorMessages.PRIVATE_ACCOUNT);

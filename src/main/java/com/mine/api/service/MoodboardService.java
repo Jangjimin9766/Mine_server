@@ -78,10 +78,10 @@ public class MoodboardService {
             throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
         }
 
-        // 2, 3. Decode & Upload to S3
+        // base64 또는 URL 형태로 오면 S3에 업로드 — 클라이얰트에는 S3 URL만 노출해야 한다
         String s3Url = s3Service.uploadBase64ToS3(base64Image);
 
-        // 4. Save to DB
+        // magazineId=null — 머거진 연결 없는 독립형 무드보드
         moodboardRepository.save(Moodboard.builder()
                 .userId(user.getId())
                 .imageUrl(s3Url)
@@ -178,10 +178,10 @@ public class MoodboardService {
                 .magazineId(magazineId)
                 .build());
 
-        // 10. Magazine의 moodboardImageUrl + coverImageUrl 업데이트
+        // 매거진 커버 = 무드보드 이미지 정책 — 매거진 생성 시마다 AI가 새 커버 자동 생성
         magazine.setMoodboardImageUrl(s3Url);
         magazine.setMoodboardDescription(description);
-        magazine.setCoverImageUrl(s3Url); // 무드보드 = 커버이미지
+        magazine.setCoverImageUrl(s3Url);
         magazineRepository.save(magazine);
 
         return s3Url;

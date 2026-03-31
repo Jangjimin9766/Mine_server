@@ -67,7 +67,7 @@ public class S3Service {
             return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
         }
 
-        // 이미 내 S3에 있는 이미지라면 패스
+        // 이미 내 S3에 있는 이미지는 재업로드 없이 그대로 리턴
         if (imageUrl.contains(".amazonaws.com") && imageUrl.contains(bucketName)) {
             return imageUrl;
         }
@@ -99,7 +99,7 @@ public class S3Service {
 
                 String contentType = connection.getContentType();
                 
-                // [MODIFIED] 만약 Content-Type이 사진이 아니거나(예: text/html) 누락된 경우 업로드 중단
+                // Content-Type이 image/로 시작하지 않으면 HTML 등 가짜 이미지 — 저장 차단
                 if (contentType == null || !contentType.startsWith("image/")) {
                     log.warn("Target URL is not a valid image. Content-Type: {}, URL: {}", contentType, imageUrl);
                     return null; // 가짜 이미지(HTML 등) 저장 방지

@@ -6,7 +6,6 @@ import com.mine.api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.SortDefault;
 import org.springframework.data.domain.Sort;
@@ -151,25 +150,25 @@ public class UserController {
     @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로워 목록", description = "특정 사용자를 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/followers")
-    public ResponseEntity<Page<UserDto.SimpleProfileResponse>> getFollowers(
+    public ResponseEntity<com.mine.api.dto.PageResponse<UserDto.SimpleProfileResponse>> getFollowers(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails,
             @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         String currentUsername = userDetails != null ? userDetails.getUsername() : null;
-        return ResponseEntity.ok(userService.getFollowers(userId, currentUsername, pageable));
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(userService.getFollowers(userId, currentUsername, pageable)));
     }
 
     // ⭐ Phase 4: 팔로잉 목록
     @Tag(name = "99. 기타 (보류) 💤")
     @Operation(summary = "팔로잉 목록", description = "특정 사용자가 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/following")
-    public ResponseEntity<Page<UserDto.SimpleProfileResponse>> getFollowing(
+    public ResponseEntity<com.mine.api.dto.PageResponse<UserDto.SimpleProfileResponse>> getFollowing(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails,
             @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         String currentUsername = userDetails != null ? userDetails.getUsername() : null;
-        return ResponseEntity.ok(userService.getFollowing(userId, currentUsername, pageable));
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(userService.getFollowing(userId, currentUsername, pageable)));
     }
 }

@@ -13,6 +13,7 @@ public class SwaggerConfig {
 
         @Bean
         public OpenAPI openAPI() {
+                // Swagger UI에서 "Authorize" 버튼으로 JWT를 등록하면 모든 인증 요청에 자동 포함
                 String jwtSchemeName = "jwtAuth";
                 SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwtSchemeName);
                 Components components = new Components()
@@ -23,6 +24,7 @@ public class SwaggerConfig {
                                                 .bearerFormat("JWT"));
 
                 return new OpenAPI()
+                                // 서버 목록 등록 — Swagger UI 상단에서 서버를 선택해 직접 테스트 가능
                                 .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("https://api.minelover.com").description("Production Server (HTTPS)"))
                                 .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("http://api.minelover.com").description("Production Server (HTTP - Redirects to HTTPS)"))
                                 .addServersItem(new io.swagger.v3.oas.models.servers.Server().url("http://localhost:8080").description("Local Test Server"))

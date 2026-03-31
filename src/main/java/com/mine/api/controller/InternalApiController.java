@@ -32,6 +32,7 @@ public class InternalApiController {
             @RequestBody MagazineCreateRequest request,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
+        // JWT 없이 X-Internal-Key 헤더로 인증 — Python AI 서버가 직접 호출할 때 사용
         if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
             log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
                     (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
@@ -58,7 +59,7 @@ public class InternalApiController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
-        // 비동기 생성을 위해 username만 넘김 (Lazy loading 및 Detached entity 방지)
+        // 비동기로 실행 — username만 넘겨서 Lazy loading/Detached entity 문제 방지
         magazineService.generateInitialMagazinesAsync(username);
 
         return ResponseEntity.ok("Async generation triggered for user: " + username);

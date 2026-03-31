@@ -23,11 +23,11 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘", description = "매거진의 생성, 조회, 수정, 삭제(CRUD) 및 검색/피드 기능을 제공합니다.")
     @Operation(summary = "📂 내 매거진 목록", description = "내가 만든 매거진들을 최신순으로 모아봅니다.")
     @GetMapping
-    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getMyMagazines(
+    public ResponseEntity<com.mine.api.dto.PageResponse<com.mine.api.dto.MagazineDto.ListItem>> getMyMagazines(
             @AuthenticationPrincipal UserDetails userDetails,
             @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
 
-        return ResponseEntity.ok(magazineService.getMyMagazinesPage(userDetails.getUsername(), pageable));
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(magazineService.getMyMagazinesPage(userDetails.getUsername(), pageable)));
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")
@@ -120,11 +120,11 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "💘 내가 찜한 매거진", description = "내가 좋아요를 누른 매거진들을 모아봅니다.")
     @GetMapping("/liked")
-    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getLikedMagazines(
+    public ResponseEntity<com.mine.api.dto.PageResponse<com.mine.api.dto.MagazineDto.ListItem>> getLikedMagazines(
             @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails,
             @org.springframework.data.web.SortDefault(sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
 
-        return ResponseEntity.ok(magazineService.getLikedMagazines(userDetails.getUsername(), pageable));
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(magazineService.getLikedMagazines(userDetails.getUsername(), pageable)));
     }
 
     // ⭐ 커버 이미지 변경
@@ -162,10 +162,10 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🌍 공개 매거진 목록", description = "공개된 계정의 모든 매거진을 ID순으로 조회합니다. 로그인 없이 볼 수 있습니다.")
     @GetMapping("/public")
-    public ResponseEntity<org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem>> getPublicMagazines(
+    public ResponseEntity<com.mine.api.dto.PageResponse<com.mine.api.dto.MagazineDto.ListItem>> getPublicMagazines(
             @io.swagger.v3.oas.annotations.Parameter(description = "특정 유저 ID (선택)", required = false) @org.springframework.web.bind.annotation.RequestParam(required = false) Long userId,
             @org.springframework.data.web.SortDefault(sort = "id", direction = org.springframework.data.domain.Sort.Direction.ASC) org.springframework.data.domain.Pageable pageable) {
-        return ResponseEntity.ok(magazineService.getPublicMagazines(userId, pageable));
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(magazineService.getPublicMagazines(userId, pageable)));
     }
 
     // ⭐ Phase 2: 검색 (키워드)
@@ -190,7 +190,7 @@ public class MagazineController {
         org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
                 .searchByKeyword(keyword, username, pageable);
 
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(result));
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")

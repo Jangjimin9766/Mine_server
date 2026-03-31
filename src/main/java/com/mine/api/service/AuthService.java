@@ -23,6 +23,7 @@ public class AuthService {
 
     @Transactional
     public Long signup(AuthDto.SignupRequest request) {
+        // username/email 중복 검사 — DB 유니크 제약보다 먼저 잡아서 명확한 에러 반환
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -30,6 +31,7 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
+        // 기본 프로필 이미지는 서버에서 제공하는 정적 이미지를 사용
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -45,7 +47,7 @@ public class AuthService {
         if (request.getInterests() != null && !request.getInterests().isEmpty()) {
             interestService.updateUserInterests(savedUser.getUsername(), request.getInterests());
             
-            // [NEW] 회원가입 완료 이벤트 발행 (트랜잭션 커밋 후 비동기 처리됨)
+            // 회원가입 완료 이벤트 발행 — 트랜잭션 커밋 후 별도 스레드에서 초기 매거진 자동 생성됨
             eventPublisher.publishEvent(new com.mine.api.event.UserSignupEvent(this, savedUser, request.getInterests()));
         }
 
@@ -61,16 +63,13 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        // Access Token 생성
         String accessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
 
-        // ⭐ Phase 7: Refresh Token 생성 및 저장
         com.mine.api.domain.RefreshToken refreshToken = com.mine.api.domain.RefreshToken.builder()
                 .username(user.getUsername())
                 .build();
 
-        // 기존 Refresh Token 삭제 후 새로 저장
-        // 기존 Refresh Token 삭제 후 새로 저장
+        // 중복 로그인 방지: 기존 Refresh Token 삭제 후 새로 발급 (1계정 1토큰 원칙)
         java.util.List<com.mine.api.domain.RefreshToken> oldTokens = refreshTokenRepository
                 .findByUsername(user.getUsername());
         refreshTokenRepository.deleteAll(oldTokens);
@@ -97,7 +96,7 @@ public class AuthService {
 
         String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name());
 
-        // 4. Refresh Token Rotation: 기존 토큰 삭제 후 새로 생성
+        // Refresh Token Rotation: 재사용 공격 방지를 위해 갱신 시마다 토큰 교체
         refreshTokenRepository.delete(refreshToken);
         com.mine.api.domain.RefreshToken newRefreshToken = com.mine.api.domain.RefreshToken.builder()
                 .username(username)
@@ -134,8 +133,7 @@ public class AuthService {
         user.changePassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
-        // 3. 보안을 위해 모든 Refresh Token 삭제 (재로그인 필요)
+        // 비밀번호 변경 후 모든 Refresh Token 삭제 — 탈취된 토큰 무력화 목적
         java.util.List<com.mine.api.domain.RefreshToken> tokens = refreshTokenRepository.findByUsername(username);
         refreshTokenRepository.deleteAll(tokens);
     }

@@ -60,10 +60,9 @@ public class MagazineService {
             }
         }
 
-        // 3. [OPTIMIZE] 섹션 및 문단 이미지 병렬 업로드 준비
+        // 3. 섹션 썸네일/문단 이미지를 CompletableFuture로 병렬 S3 업로드 — 순차 업로드 대비 속도 대폭 개선
         java.util.List<java.util.concurrent.CompletableFuture<Void>> uploadTasks = new java.util.ArrayList<>();
 
-        // 섹션 썸네일 업로드 태스크
         if (request.getSections() != null) {
             for (MagazineCreateRequest.SectionDto sectionDto : request.getSections()) {
                 String originalUrl = sectionDto.getThumbnailUrl();
@@ -76,7 +75,6 @@ public class MagazineService {
                     }));
                 }
 
-                // 문단 이미지 업로드 태스크
                 if (sectionDto.getParagraphs() != null) {
                     for (MagazineCreateRequest.ParagraphDto paraDto : sectionDto.getParagraphs()) {
                         String pUrl = paraDto.getImageUrl();
@@ -93,7 +91,7 @@ public class MagazineService {
             }
         }
 
-        // 모든 업로드 완료 대기 (최대 30초)
+        // 업로드 실패는 경고만 남기고 진행 — 이미지 없이 저장하는 게 저장 실패보다 낫다
         if (!uploadTasks.isEmpty()) {
             try {
                 java.util.concurrent.CompletableFuture.allOf(uploadTasks.toArray(new java.util.concurrent.CompletableFuture[0]))
@@ -147,13 +145,14 @@ public class MagazineService {
                     }
                 }
 
-                // 썸네일 보정 (없으면 첫 문단 이미지로)
-                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().startsWith("http")) { // 원본 URL이 남아있는 경우 포함
+                // 썸네일이 없으면 첫 번째 문단 이미지를 대신 사용 — 빈 썸네일 방지
+                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().startsWith("http")) {
                     if (firstParaImageUrl != null) {
                         section.setThumbnailUrl(firstParaImageUrl);
                     }
                 }
 
+                // 그래도 없으면 기본 플레이스홀더 이미지 사용
                 if (section.getThumbnailUrl() == null) {
                     section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png");
                 }
@@ -315,13 +314,13 @@ public class MagazineService {
                 log.warn("Cleanup after magazine save failed: {}", e.getMessage());
             }
 
-            // 4. [FIX] 무드보드 자동 생성 및 커버 이미지 교체 (비동기 호출로 변경)
-            try {
-                log.info("Triggering async moodboard generation for magazine: {}", magazineId);
-                moodboardService.createMoodboardForMagazineAsync(magazineId, username);
-            } catch (Exception e) {
-                log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
-            }
+        // 무드보드이 = 커버이미지 정책 — 매거진 생성 후 비동기로 덮어씀
+        try {
+            log.info("Triggering async moodboard generation for magazine: {}", magazineId);
+            moodboardService.createMoodboardForMagazineAsync(magazineId, username);
+        } catch (Exception e) {
+            log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
+        }
 
             return magazineId;
         } catch (Exception e) {
@@ -540,11 +539,11 @@ public class MagazineService {
         allKeywords.addAll(interestKeywords);
         allKeywords.addAll(likedTags);
 
-        // 중복 제거 후 셔플
+        // 관심사 + 좋아요 태그를 합쳐 중복 제거 후 셔플 — 매번 다른 추천 순서로 다양성 확보
         java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
         java.util.Collections.shuffle(uniqueKeywords);
 
-        // 최대 3개 키워드 선택 (부족하면 빈 문자열)
+        // 최대 3개 키워드로 쿼리 제한 (빈 문자열은 쿼리에서 무시됨)
         String keyword1 = uniqueKeywords.size() > 0 ? uniqueKeywords.get(0) : "";
         String keyword2 = uniqueKeywords.size() > 1 ? uniqueKeywords.get(1) : "";
         String keyword3 = uniqueKeywords.size() > 2 ? uniqueKeywords.get(2) : "";

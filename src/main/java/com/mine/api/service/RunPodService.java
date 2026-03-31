@@ -21,6 +21,7 @@ public class RunPodService {
     @Value("${python.api.key}")
     private String apiKey;
 
+    // 5초 간격으로 최대 15분 폴링 — RunPod 콜드스타트 + AI 처리 시간 카버
     private static final int MAX_RETRIES = 180; // 5 seconds * 180 = 15 minutes
     private static final long RETRY_DELAY_MS = 5000;
 
@@ -29,19 +30,18 @@ public class RunPodService {
      */
     @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendRequest(String url, Map<String, Object> inputData) {
-        // 1. Convert /runsync URL to /run (if applicable)
+        // RunPod Serverless는 POST /run 요청 후 작업 ID를 받아 폴링하는 비동기 구조
         String runUrl = url.replace("/runsync", "/run");
         if (!runUrl.contains("/run")) {
-            // If the URL doesn't contain /run, append it
             if (!runUrl.endsWith("/"))
                 runUrl += "/";
             runUrl += "run";
         }
 
-        // 2. Prepare Request
+        // input 필드로 래핑되어야 RunPod이 인식함
         Map<String, Object> requestBody = Map.of("input", inputData);
 
-        // Increase buffer size for large responses
+        // Base64 이미지 응답 등 대용량 응답을 위해 16MB로 확장
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
                 .build();
@@ -100,12 +100,12 @@ public class RunPodService {
 
             if ("COMPLETED".equals(status)) {
                 log.info("RunPod job COMPLETED. Extracting output.");
-                return statusResponse; // Contains "output"
+                return statusResponse; // output 필드에 AI 결과가 담겨 있다
             } else if ("FAILED".equals(status)) {
                 log.error("RunPod job FAILED. Full response: {}", statusResponse);
                 throw new RuntimeException("RunPod job failed: " + statusResponse);
             } else if ("IN_QUEUE".equals(status) || "IN_PROGRESS".equals(status)) {
-                // Wait more
+                // 작업 대기 중 — 다음 폴링 시도
                 continue;
             } else {
                 continue;
@@ -115,14 +115,11 @@ public class RunPodService {
         throw new RuntimeException("RunPod job timed out after " + (MAX_RETRIES * RETRY_DELAY_MS / 1000) + " seconds");
     }
 
-    /**
-     * Local Python Server (FastAPI) Sync Request
-     */
+    // 로컴 FastAPI 서버 전용 동기 방식 — RunPod와 달리 input 래핑 및 폴링 불필요
     @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendSyncRequest(String url, Map<String, Object> requestBody) {
         log.info("Sending Sync request to: {}", url);
 
-        // Increase buffer size for large responses (Base64 images)
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
                 .build();
@@ -136,19 +133,24 @@ public class RunPodService {
                 .retrieve()
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
                 })
-                .block(Duration.ofMinutes(5));
+                .block(Duration.ofMinutes(5)); // 로컀 AI 요청은 최대 5분 대기
     }
 
-    // Fallback Method
     public Map<String, Object> fallback(String url, Map<String, Object> inputData, Throwable t) {
-        log.error("Circuit Breaker Open! AI Server is unreachable. URL: {}, Error: {}", url, t.getMessage());
+        String errorMessage = t.getMessage();
+        if (errorMessage == null) {
+            errorMessage = t.getClass().getSimpleName() + " (No detailed message)";
+        }
+        
+        log.error("Circuit Breaker Open! AI Server is unreachable. URL: {}, Error: {}", url, errorMessage);
+        log.error("Detailed Exception in RunPodService:", t);
 
         // Return a default failure response that Service can understand
         if (t instanceof io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
-            throw new RuntimeException("AI Server is currently unavailable (Circuit Open). Please try again later.");
+            throw new RuntimeException("AI Server is currently unavailable (Circuit Open). Please try again later.", t);
         }
 
         // For other exceptions, rethrow or return default
-        throw new RuntimeException("AI Server connection failed: " + t.getMessage(), t);
+        throw new RuntimeException("AI Server connection failed: " + errorMessage, t);
     }
 }

@@ -155,13 +155,14 @@ public class UserService {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
-                // ⭐ FK 안전: 연관 데이터 정리 (향후 hard delete 대비)
-                followRepository.deleteByFollowerOrFollowing(user, user);
-                userInterestRepository.deleteByUser(user);
-                sectionViewHistoryRepository.deleteByUser(user);
-                magazineLikeRepository.deleteByUser(user);
+        // 삭제 순서 중요: FK 제약 위반 방지를 위해 연관 데이터 먼저 정리
+        followRepository.deleteByFollowerOrFollowing(user, user);
+        userInterestRepository.deleteByUser(user);
+        sectionViewHistoryRepository.deleteByUser(user);
+        magazineLikeRepository.deleteByUser(user);
 
-                user.softDelete();
+        // 실제 DB 레코드는 남기고 deleted 플래그만 변경 — 데이터 복구 및 감사 로그 대비
+        user.softDelete();
         }
 
         /**
@@ -169,13 +170,14 @@ public class UserService {
          */
         @Transactional
         public void logout(String token) {
-                long expiration = jwtTokenProvider.getExpiration(token);
-                if (expiration > 0) {
-                        com.mine.api.domain.BlacklistedToken blacklistedToken = new com.mine.api.domain.BlacklistedToken(
-                                        token,
-                                        java.time.LocalDateTime.now().plusNanos(expiration * 1000000));
-                        blacklistedTokenRepository.save(blacklistedToken);
-                }
+        // 만료된 토큰은 블랙리스트 불필요 — 남은 만료 시간이 있는 경우만 등록
+        long expiration = jwtTokenProvider.getExpiration(token);
+        if (expiration > 0) {
+                com.mine.api.domain.BlacklistedToken blacklistedToken = new com.mine.api.domain.BlacklistedToken(
+                                token,
+                                java.time.LocalDateTime.now().plusNanos(expiration * 1000000));
+                blacklistedTokenRepository.save(blacklistedToken);
+        }
         }
 
         /**

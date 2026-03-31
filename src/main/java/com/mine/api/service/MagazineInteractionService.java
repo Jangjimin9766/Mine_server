@@ -56,13 +56,11 @@ public class MagazineInteractionService {
         Map<String, Object> responseBody;
         Map<String, Object> pythonResponse;
 
-        // 로컬 환경 vs RunPod 환경 분기
+        // 로컬과 RunPod의 응답 구조가 다름 — 로컬은 그대로, RunPod은 output 래핑 벗겨야 함
         if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
-            // 로컬: sendSyncRequest 사용 (플랫 JSON)
             responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
-            pythonResponse = responseBody; // 로컬은 output 래핑 없음
+            pythonResponse = responseBody;
         } else {
-            // RunPod: sendRequest 사용 (input 래핑 + 비동기 폴링)
             Map<String, Object> inputData = new HashMap<>();
             inputData.put("action", "edit_magazine");
             inputData.put("data", data);
@@ -182,7 +180,7 @@ public class MagazineInteractionService {
             }
         }
 
-        // [NEW] Python V2 응답 구조 대응: updatedMagazine이 래퍼 객체이고 실제 데이터는 new_sections에 있음
+        // Python V2 응답: updatedMagazine이 래퍼 객체이고 실제 데이터는 new_sections 키에 담겨 있다
         Map<String, Object> sectionData = updatedMagazine;
         List<Map<String, Object>> newSectionsList = null;
         List<Number> deletedSectionIds = null;
@@ -227,20 +225,20 @@ public class MagazineInteractionService {
             }
         }
 
-        // 3. 섹션 삭제
+        // 섹션 삭제 — V2(deleted_section_ids)와 V1(section_index) 두 방식 모두 지원
         else if ("delete_section".equals(action)) {
             boolean deleted = false;
-            // V2 방식: deleted_section_ids 활용
+            // V2: AI가 삭제할 섹션 ID를 직접 알려주는 방식
             if (deletedSectionIds != null && !deletedSectionIds.isEmpty()) {
                 Long targetId = deletedSectionIds.get(0).longValue();
-                // FK 해소: 삭제 대상 섹션의 열람 기록 먼저 삭제
+                // FK 제약 해소: 열람 기록 먼저 삭제 후 섹션 제거
                 magazine.getSections().stream()
                         .filter(s -> s.getId() != null && s.getId().equals(targetId))
                         .findFirst()
                         .ifPresent(s -> sectionService.deleteSectionViewHistory(s));
                 deleted = magazine.getSections().removeIf(s -> s.getId() != null && s.getId().equals(targetId));
             }
-            // V1 방식: section_index 활용
+            // V1: AI가 인덱스로 섹션 지정하는 구버전 방식
             if (!deleted && sectionIndex != null && sectionIndex >= 0 && sectionIndex < magazine.getSections().size()) {
                 sectionService.deleteSectionViewHistory(magazine.getSections().get(sectionIndex));
                 magazine.getSections().remove(sectionIndex.intValue());
@@ -248,7 +246,7 @@ public class MagazineInteractionService {
             }
 
             if (deleted) {
-                // 삭제 후 순서 재정렬
+                // 삭제 후 displayOrder 재정렬 — 연속된 순번 유지
                 for (int i = 0; i < magazine.getSections().size(); i++) {
                     magazine.getSections().get(i).setDisplayOrder(i);
                 }
