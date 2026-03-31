@@ -147,6 +147,7 @@ public class MagazineInteractionService {
         return sections.stream()
                 .map(section -> {
                     Map<String, Object> map = new HashMap<>();
+                    map.put("heading", section.getHeading());
                     map.put("thumbnail_url", section.getThumbnailUrl());
 
                     // paragraphs 변환

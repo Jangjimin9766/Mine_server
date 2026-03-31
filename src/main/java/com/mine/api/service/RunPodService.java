@@ -45,8 +45,8 @@ public class RunPodService {
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
                 .build();
-
-        WebClient client = webClientBuilder.exchangeStrategies(strategies).build();
+        // WebClient.Builder는 공용 Bean이므로 .clone()을 사용하여 부수 효과 방지 (StackOverflowError 픽스)
+        WebClient client = webClientBuilder.clone().exchangeStrategies(strategies).build();
 
         // 3. Send Async Request (POST /run)
         log.info("Sending RunPod request to: {}", runUrl);
@@ -123,8 +123,8 @@ public class RunPodService {
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
                 .build();
-
-        return webClientBuilder.exchangeStrategies(strategies).build()
+        // WebClient.Builder는 공용 Bean이므로 .clone() 사용 시 메모리 누수 방지
+        return webClientBuilder.clone().exchangeStrategies(strategies).build()
                 .post()
                 .uri(url)
                 .header("x-api-key", apiKey)
