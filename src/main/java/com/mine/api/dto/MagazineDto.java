@@ -87,9 +87,6 @@ public class MagazineDto {
         @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
         private String moodboardImageUrl;
 
-        @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기의 감성적인 스타일")
-        private String moodboardDescription;
-
         @Schema(description = "좋아요 수", example = "42")
         private int likeCount;
 
@@ -153,12 +150,6 @@ public class MagazineDto {
         @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드")
         private String title;
 
-        @Schema(description = "매거진 부제", example = "따뜻함과 스타일을 동시에")
-        private String subtitle;
-
-        @Schema(description = "매거진 소개", example = "올 겨울 핫한 스타일링 가이드")
-        private String introduction;
-
         @Schema(description = "커버 이미지 URL", example = "https://example.com/cover.jpg")
         private String coverImageUrl;
 
@@ -167,9 +158,6 @@ public class MagazineDto {
 
         @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
         private String moodboardImageUrl;
-
-        @Schema(description = "무드보드 설명", example = "따뜻한 겨울 분위기의 감성적인 스타일")
-        private String moodboardDescription;
 
         @Schema(description = "좋아요 수", example = "42")
         @JsonProperty("likeCount")
