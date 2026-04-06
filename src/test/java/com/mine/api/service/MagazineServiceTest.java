@@ -99,7 +99,6 @@ class MagazineServiceTest {
 
                 MagazineCreateRequest generatedData = new MagazineCreateRequest();
                 generatedData.setTitle("Generated Magazine");
-                generatedData.setIntroduction("Intro");
                 generatedData.setCoverImageUrl("http://image.url");
 
                 Magazine savedMagazine = Magazine.builder()
@@ -114,7 +113,6 @@ class MagazineServiceTest {
 
                 Map<String, Object> outputMap = new HashMap<>();
                 outputMap.put("title", "Generated Magazine");
-                outputMap.put("introduction", "Intro");
                 outputMap.put("cover_image_url", "http://image.url");
 
                 // 로컬 URL이므로 sendSyncRequest가 호출됨

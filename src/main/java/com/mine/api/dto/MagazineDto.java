@@ -34,8 +34,7 @@ public class MagazineDto {
 
         @JsonIgnore
         public boolean isValid() {
-            return (title != null && !title.trim().isEmpty()) ||
-                    (introduction != null && !introduction.trim().isEmpty());
+            return (title != null && !title.trim().isEmpty());
         }
     }
 
@@ -269,12 +268,9 @@ public class MagazineDto {
             return DetailResponse.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
-                    .subtitle(magazine.getSubtitle())
-                    .introduction(magazine.getIntroduction())
                     .coverImageUrl(magazine.getCoverImageUrl())
                     .tags(magazine.getTags())
                     .moodboardImageUrl(magazine.getMoodboardImageUrl())
-                    .moodboardDescription(magazine.getMoodboardDescription())
                     .likeCount(magazine.getLikes().size()) // 좋아요 수 계산
                     .isLiked(isLiked)
                     .createdAt(magazine.getCreatedAt() != null ? magazine.getCreatedAt().toString() : null)

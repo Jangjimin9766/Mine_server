@@ -137,7 +137,6 @@ public class MagazineInteractionService {
         Map<String, Object> map = new HashMap<>();
         map.put("id", magazine.getId());
         map.put("title", magazine.getTitle());
-        map.put("introduction", magazine.getIntroduction());
         map.put("cover_image_url", magazine.getCoverImageUrl());
         map.put("sections", convertSectionsToMap(magazine.getSections()));
         return map;
@@ -157,6 +156,7 @@ public class MagazineInteractionService {
                                 pMap.put("subtitle", p.getSubtitle());
                                 pMap.put("text", p.getText());
                                 pMap.put("image_url", p.getImageUrl());
+                                pMap.put("source_url", p.getSourceUrl());
                                 return pMap;
                             })
                             .collect(Collectors.toList());
@@ -355,6 +355,7 @@ public class MagazineInteractionService {
                         .subtitle(subtitle)
                         .text(text)
                         .imageUrl((String) pMap.get("image_url"))
+                        .sourceUrl((String) pMap.get("source_url"))
                         .displayOrder(i)
                         .build();
                 section.addParagraph(p);

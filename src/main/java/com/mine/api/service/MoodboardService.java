@@ -180,7 +180,6 @@ public class MoodboardService {
 
         // 매거진 커버 = 무드보드 이미지 정책 — 매거진 생성 시마다 AI가 새 커버 자동 생성
         magazine.setMoodboardImageUrl(s3Url);
-        magazine.setMoodboardDescription(description);
         magazine.setCoverImageUrl(s3Url);
         magazineRepository.save(magazine);
 

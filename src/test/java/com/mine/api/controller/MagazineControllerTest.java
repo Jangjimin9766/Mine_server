@@ -58,7 +58,6 @@ class MagazineControllerTest {
 
                 magazine = org.mockito.Mockito.mock(Magazine.class);
                 given(magazine.getTitle()).willReturn("Test Magazine");
-                given(magazine.getIntroduction()).willReturn("Test Intro");
                 given(magazine.getUser()).willReturn(user);
         }
 
@@ -86,7 +85,6 @@ class MagazineControllerTest {
                 MagazineDto.DetailResponse detailResponse = MagazineDto.DetailResponse.builder()
                                 .id(1L)
                                 .title("Test Magazine")
-                                .introduction("Test Intro")
                                 .user(MagazineDto.DetailResponse.SimpleUser.builder()
                                                 .id(1L)
                                                 .username("testuser")

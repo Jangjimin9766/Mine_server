@@ -18,12 +18,6 @@ public class MagazineCreateRequest {
     @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드", requiredMode = Schema.RequiredMode.REQUIRED)
     private String title;
 
-    @Schema(description = "매거진 부제", example = "따뜻함과 스타일을 동시에 잡는 법")
-    private String subtitle;
-
-    @Schema(description = "매거진 소개/도입부", example = "올 겨울, 패션과 따뜻함을 모두 잡는 스타일링 가이드를 소개합니다.")
-    private String introduction;
-
     @Schema(description = "커버 이미지 URL", example = "https://example.com/cover.jpg")
     @JsonProperty("cover_image_url")
     private String coverImageUrl;

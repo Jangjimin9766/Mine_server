@@ -49,10 +49,8 @@ public class MagazineService {
 
         // 2. 무드보드 정보 추출 (이미 있으면 S3 업로드)
         String moodboardImageUrl = null;
-        String moodboardDescription = null;
         if (request.getMoodboard() != null) {
             moodboardImageUrl = request.getMoodboard().getImage_url();
-            moodboardDescription = request.getMoodboard().getDescription();
 
             if (moodboardImageUrl != null
                     && (moodboardImageUrl.startsWith("data:image") || moodboardImageUrl.length() > 255)) {
@@ -106,12 +104,9 @@ public class MagazineService {
 
         Magazine magazine = Magazine.builder()
                 .title(truncate(request.getTitle(), 490))
-                .subtitle(truncate(request.getSubtitle(), 490))
-                .introduction(request.getIntroduction())
                 .coverImageUrl(truncate(coverImageUrl, 990))
                 .tags(tagsJson)
                 .moodboardImageUrl(truncate(moodboardImageUrl, 990))
-                .moodboardDescription(moodboardDescription)
                 .user(user)
                 .build();
 
@@ -174,12 +169,12 @@ public class MagazineService {
         }
 
         // 6. 무드보드가 있으면 moodboards 테이블에도 저장 (히스토리 용)
-        if (moodboardImageUrl != null && moodboardDescription != null) {
+        if (moodboardImageUrl != null && request.getMoodboard() != null && request.getMoodboard().getDescription() != null) {
             com.mine.api.domain.Moodboard moodboard = com.mine.api.domain.Moodboard.builder()
                     .userId(user.getId())
                     .magazineId(savedMagazine.getId())
                     .imageUrl(moodboardImageUrl)
-                    .prompt(moodboardDescription)
+                    .prompt(request.getMoodboard().getDescription())
                     .build();
             moodboardRepository.save(moodboard);
         }
@@ -372,7 +367,7 @@ public class MagazineService {
             throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
 
-        magazine.updateInfo(request.getTitle(), request.getIntroduction()); // 6. 저장 (변경 감지로 자동 저장)
+        magazine.updateInfo(request.getTitle()); // 6. 저장 (변경 감지로 자동 저장)
         magazineRepository.save(magazine);
 
         log.info("Magazine updated successfully: magazineId={}, username={}", magazineId, username);

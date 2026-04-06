@@ -23,13 +23,6 @@ public class Magazine {
     @Column(length = 500)
     private String title;
 
-    // [NEW] 부제
-    @Column(length = 500)
-    private String subtitle;
-
-    @Column(columnDefinition = "TEXT")
-    private String introduction;
-
     @Column(name = "cover_image_url", length = 1000)
     private String coverImageUrl;
 
@@ -40,10 +33,6 @@ public class Magazine {
     // [NEW] 무드보드 이미지 URL
     @Column(name = "moodboard_image_url", length = 1000)
     private String moodboardImageUrl;
-
-    // [NEW] 무드보드 설명
-    @Column(name = "moodboard_description", columnDefinition = "TEXT")
-    private String moodboardDescription;
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     @ManyToOne(fetch = FetchType.LAZY)
@@ -67,15 +56,12 @@ public class Magazine {
     private List<MagazineLike> likes = new ArrayList<>();
 
     @Builder
-    public Magazine(String title, String subtitle, String introduction, String coverImageUrl,
-            String tags, String moodboardImageUrl, String moodboardDescription, User user) {
+    public Magazine(String title, String coverImageUrl,
+            String tags, String moodboardImageUrl, User user) {
         this.title = title;
-        this.subtitle = subtitle;
-        this.introduction = introduction;
         this.coverImageUrl = coverImageUrl;
         this.tags = tags;
         this.moodboardImageUrl = moodboardImageUrl;
-        this.moodboardDescription = moodboardDescription;
         this.user = user;
         this.createdAt = LocalDateTime.now();
     }
@@ -86,12 +72,9 @@ public class Magazine {
     }
 
     // ⭐ Phase 1: 수정 메서드
-    public void updateInfo(String title, String introduction) {
+    public void updateInfo(String title) {
         if (title != null && !title.trim().isEmpty()) {
             this.title = title;
-        }
-        if (introduction != null && !introduction.trim().isEmpty()) {
-            this.introduction = introduction;
         }
     }
 
@@ -100,13 +83,9 @@ public class Magazine {
         this.coverImageUrl = coverImageUrl;
     }
 
-    // ⭐ 무드보드 이미지/설명 변경
+    // ⭐ 무드보드 이미지 변경
     public void setMoodboardImageUrl(String moodboardImageUrl) {
         this.moodboardImageUrl = moodboardImageUrl;
-    }
-
-    public void setMoodboardDescription(String moodboardDescription) {
-        this.moodboardDescription = moodboardDescription;
     }
 
     // ⭐ Phase 1: 소유자 확인 메서드
