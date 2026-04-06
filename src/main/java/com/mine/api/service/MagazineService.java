@@ -458,6 +458,55 @@ public class MagazineService {
         }
     }
 
+    // ⭐ Phase 2: 키워드 검색 (보관)
+    // public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
+    //         String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+    //     
+    //     // Native Query에서 Order By 절 지원을 위해 Entity 필드(createdAt)를 DB 컬럼명(created_at)으로 변환
+    //     org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
+    //             pageable.getPageNumber(), pageable.getPageSize(), 
+    //             org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+    // 
+    //     return magazineRepository.searchByKeyword(keyword, username, nativePageable)
+    //             .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    // }
+
+    /**
+     * 찜한 매거진 내에서 키워드 검색 (저장한 매거진용)
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchLikedMagazines(
+            String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
+
+        org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(), 
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+
+        return magazineRepository.searchLikedMagazines(keyword, user.getId(), nativePageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
+    /**
+     * 둘러보기(추천 피드) 대상 키워드 검색 (공개 매거진 대상)
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchExploreMagazines(
+            String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
+
+        org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(), 
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+
+        return magazineRepository.searchExploreMagazines(keyword, user.getId(), nativePageable)
+                .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
     public Magazine getPublicMagazine(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)

@@ -168,29 +168,57 @@ public class MagazineController {
         return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(magazineService.getPublicMagazines(userId, pageable)));
     }
 
-    // ⭐ Phase 2: 검색 (키워드)
-    @Tag(name = "99. 기타 (보류) 💤")
-    @Operation(summary = "🔍 매거진 검색", description = "키워드로 원하는 매거진을 찾습니다.")
-    @GetMapping("/search")
-    public ResponseEntity<?> search(
+    // ⭐ Phase 2: 검색 (키워드) - 기존 기능 봉인
+    // @Tag(name = "99. 기타 (보류) 💤")
+    // @Operation(summary = "🔍 매거진 검색", description = "키워드로 원하는 매거진을 찾습니다.")
+    // @GetMapping("/search")
+    // public ResponseEntity<?> search(
+    //         @org.springframework.web.bind.annotation.RequestParam String keyword,
+    //         @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+    //         @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
+    //         @AuthenticationPrincipal UserDetails userDetails) {
+    // 
+    //     if (keyword == null || keyword.trim().isEmpty()) {
+    //         return ResponseEntity.badRequest()
+    //                 .body(java.util.Map.of("error", "검색어를 입력해주세요"));
+    //     }
+    // 
+    //     org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+    //             page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+    // 
+    //     String username = userDetails != null ? userDetails.getUsername() : "";
+    //     org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
+    //             .searchByKeyword(keyword, username, pageable);
+    // 
+    //     return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(result));
+    // }
+
+    @Tag(name = "1. 매거진 (Magazine) 📘")
+    @Operation(summary = "🔍 찜한 매거진 검색", description = "내가 좋아요(찜)한 매거진들 중에서 키워드로 검색합니다.")
+    @GetMapping("/liked/search")
+    public ResponseEntity<com.mine.api.dto.PageResponse<com.mine.api.dto.MagazineDto.ListItem>> searchLiked(
             @org.springframework.web.bind.annotation.RequestParam String keyword,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("error", "검색어를 입력해주세요"));
-        }
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(
+                magazineService.searchLikedMagazines(keyword, userDetails.getUsername(), pageable)));
+    }
 
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
-                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+    @Tag(name = "1. 매거진 (Magazine) 📘")
+    @Operation(summary = "🔍 둘러보기 매거진 검색", description = "추천 피드(둘러보기) 대상이 되는 공개 매거진들 중에서 키워드로 검색합니다.")
+    @GetMapping("/feed/search")
+    public ResponseEntity<com.mine.api.dto.PageResponse<com.mine.api.dto.MagazineDto.ListItem>> searchExplore(
+            @org.springframework.web.bind.annotation.RequestParam String keyword,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        String username = userDetails != null ? userDetails.getUsername() : "";
-        org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
-                .searchByKeyword(keyword, username, pageable);
-
-        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(result));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(
+                magazineService.searchExploreMagazines(keyword, userDetails.getUsername(), pageable)));
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")
