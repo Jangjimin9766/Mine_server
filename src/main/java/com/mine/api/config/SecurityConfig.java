@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()                          // 로그인/회원가입은 인증 불필요
                         .requestMatchers("/api/internal/**").permitAll()                      // Python 서버 내부 API는 X-Internal-Key로 별도 인증
-                        .requestMatchers("/api/magazines/search").permitAll()                 // 검색은 비로그인 허용
+                        .requestMatchers("/api/magazines/feed/search").permitAll()            // 둘러보기 검색은 비로그인 허용
                         .requestMatchers("/api/magazines/share/**").permitAll()               // 공유 링크 비로그인 접근
                         .requestMatchers("/api/interests").permitAll()                        // 회원가입 화면에서 관심사 목록 조회 필요
                         .requestMatchers("/api/magazines/public/**").permitAll()              // 공개 피드는 누구나 열람 가능
