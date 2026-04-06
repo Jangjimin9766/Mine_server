@@ -503,8 +503,47 @@ public class MagazineService {
                 pageable.getPageNumber(), pageable.getPageSize(), 
                 org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
 
-        return magazineRepository.searchExploreMagazines(keyword, user.getId(), nativePageable)
+        // 개인화 필터링을 위한 키워드 추출
+        java.util.List<String> top3Keywords = getTop3InterestKeywords(user);
+        String kw1 = top3Keywords.size() > 0 ? top3Keywords.get(0) : "";
+        String kw2 = top3Keywords.size() > 1 ? top3Keywords.get(1) : "";
+        String kw3 = top3Keywords.size() > 2 ? top3Keywords.get(2) : "";
+
+        return magazineRepository.searchPersonalizedExploreMagazines(keyword, kw1, kw2, kw3, user.getId(), nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
+    /**
+     * 사용자의 관심 키워드 상위 3개를 추출하는 공통 메서드
+     */
+    private java.util.List<String> getTop3InterestKeywords(User user) {
+        // 1. 관심사 키워드
+        java.util.List<String> interestKeywords = userInterestRepository.findByUser(user).stream()
+                .map(ui -> ui.getInterest().getName())
+                .collect(java.util.stream.Collectors.toList());
+
+        // 2. 좋아요한 매거진의 태그
+        java.util.List<Magazine> likedMagazines = magazineLikeRepository.findAllLikedMagazinesByUser(user);
+        java.util.Set<String> likedTags = new java.util.HashSet<>();
+        for (Magazine m : likedMagazines) {
+            if (m.getTags() != null && !m.getTags().isEmpty()) {
+                String[] tags = m.getTags().split(",");
+                for (String tag : tags) {
+                    likedTags.add(tag.trim());
+                }
+            }
+        }
+
+        // 3. 중복 제거 및 정렬
+        java.util.List<String> allKeywords = new java.util.ArrayList<>();
+        allKeywords.addAll(interestKeywords);
+        allKeywords.addAll(likedTags);
+
+        java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
+        java.util.Collections.sort(uniqueKeywords);
+
+        // 상위 3개만 반환
+        return uniqueKeywords.stream().limit(3).collect(java.util.stream.Collectors.toList());
     }
 
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
@@ -573,36 +612,11 @@ public class MagazineService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
-        // 1. 사용자 관심사 가져오기
-        java.util.List<String> interestKeywords = userInterestRepository.findByUser(user).stream()
-                .map(ui -> ui.getInterest().getName())
-                .collect(java.util.stream.Collectors.toList());
-
-        // 2. 좋아요한 매거진의 태그 가져오기
-        java.util.List<Magazine> likedMagazines = magazineLikeRepository.findAllLikedMagazinesByUser(user);
-        java.util.Set<String> likedTags = new java.util.HashSet<>();
-        for (Magazine m : likedMagazines) {
-            if (m.getTags() != null && !m.getTags().isEmpty()) {
-                String[] tags = m.getTags().split(",");
-                for (String tag : tags) {
-                    likedTags.add(tag.trim());
-                }
-            }
-        }
-
-        // 3. 키워드 조합 (관심사 + 좋아요 태그에서 최대 3개 선택)
-        java.util.List<String> allKeywords = new java.util.ArrayList<>();
-        allKeywords.addAll(interestKeywords);
-        allKeywords.addAll(likedTags);
-
-        // 관심사 + 좋아요 태그를 합쳐 중복 제거 후 정렬 — 같은 유저에겐 항상 동일한 피드 보장
-        java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
-        java.util.Collections.sort(uniqueKeywords);
-
-        // 최대 3개 키워드로 쿼리 제한 (빈 문자열은 쿼리에서 무시됨)
-        String keyword1 = uniqueKeywords.size() > 0 ? uniqueKeywords.get(0) : "";
-        String keyword2 = uniqueKeywords.size() > 1 ? uniqueKeywords.get(1) : "";
-        String keyword3 = uniqueKeywords.size() > 2 ? uniqueKeywords.get(2) : "";
+        // 3. 키워드 조합 (관심사 + 좋아요 태그에서 상위 키워드 추출)
+        java.util.List<String> top3Keywords = getTop3InterestKeywords(user);
+        String keyword1 = top3Keywords.size() > 0 ? top3Keywords.get(0) : "";
+        String keyword2 = top3Keywords.size() > 1 ? top3Keywords.get(1) : "";
+        String keyword3 = top3Keywords.size() > 2 ? top3Keywords.get(2) : "";
 
         // 4. 쿼리 실행 (limit + 1개 조회)
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0,

@@ -88,7 +88,33 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ 둘러보기 검색 (Explore Search)
+        // ⭐ 둘러보기 검색 (Explore Search - Global)
+        // @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+        //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+        //                 "LEFT JOIN paragraph p ON s.id = p.section_id " +
+        //                 "LEFT JOIN users u ON m.user_id = u.id " +
+        //                 "WHERE u.is_public = true AND u.id != :userId " +
+        //                 "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR p.text LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+        //                 countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
+        //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+        //                 "LEFT JOIN paragraph p ON s.id = p.section_id " +
+        //                 "LEFT JOIN users u ON m.user_id = u.id " +
+        //                 "WHERE u.is_public = true AND u.id != :userId " +
+        //                 "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR p.text LIKE CONCAT('%', :keyword, '%') " +
+        //                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+        //                 nativeQuery = true)
+        // org.springframework.data.domain.Page<Magazine> searchExploreMagazines(
+        //                 @org.springframework.data.repository.query.Param("keyword") String keyword,
+        //                 @org.springframework.data.repository.query.Param("userId") Long userId,
+        //                 org.springframework.data.domain.Pageable pageable);
+
+        // ⭐ 개인화된 둘러보기 검색 (Personalized Explore Search)
+        // [필터] 1. 검색어 일치 (제목/섹션/본문) 2. 추천 피드 대상 (사용자 관심사/좋아요 태그 매칭)
         @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
@@ -97,7 +123,9 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
+                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))", 
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
@@ -106,10 +134,15 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
+                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))", 
                         nativeQuery = true)
-        org.springframework.data.domain.Page<Magazine> searchExploreMagazines(
+        org.springframework.data.domain.Page<Magazine> searchPersonalizedExploreMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("kw1") String kw1,
+                        @org.springframework.data.repository.query.Param("kw2") String kw2,
+                        @org.springframework.data.repository.query.Param("kw3") String kw3,
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
