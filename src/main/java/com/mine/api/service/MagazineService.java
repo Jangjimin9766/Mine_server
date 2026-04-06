@@ -140,6 +140,7 @@ public class MagazineService {
                                 .subtitle(truncate(paraDto.getSubtitle() != null && !paraDto.getSubtitle().isEmpty() ? paraDto.getSubtitle() : "소제목 내용", 490))
                                 .text(paraDto.getText() != null && !paraDto.getText().isEmpty() ? paraDto.getText() : "내용을 입력해주세요.")
                                 .imageUrl(truncate(paraDto.getImageUrl(), 990))
+                                .sourceUrl(truncate(paraDto.getSourceUrl(), 1990))
                                 .displayOrder(j)
                                 .build();
                         section.addParagraph(paragraph);

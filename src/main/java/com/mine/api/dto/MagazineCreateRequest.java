@@ -58,6 +58,10 @@ public class MagazineCreateRequest {
         @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
         @JsonProperty("image_url")
         private String imageUrl;
+
+        @Schema(description = "문단 콘텐츠의 원본 소스 URL", example = "https://example.com/source-article")
+        @JsonProperty("source_url")
+        private String sourceUrl;
     }
 
     @Schema(description = "매거진 섹션")

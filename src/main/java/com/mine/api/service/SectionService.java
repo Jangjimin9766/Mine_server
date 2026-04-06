@@ -153,6 +153,7 @@ public class SectionService {
                         .subtitle(paraReq.getSubtitle())
                         .text(paraReq.getText())
                         .imageUrl(paraReq.getImageUrl())
+                        .sourceUrl(null) // 수동 수정 시에는 출처 정보 없음
                         .displayOrder(i)
                         .build();
                 section.addParagraph(paragraph);
@@ -292,6 +293,7 @@ public class SectionService {
                             .subtitle(subtitle)
                             .text(text)
                             .imageUrl(paraImageUrl)
+                            .sourceUrl((String) pMap.get("source_url")) // 문단별 출처 매핑
                             .displayOrder(i)
                             .build();
                     section.addParagraph(p);
@@ -307,13 +309,15 @@ public class SectionService {
                         existingParagraphs.get(0).update(
                                 existingParagraphs.get(0).getSubtitle(),
                                 content,
-                                existingParagraphs.get(0).getImageUrl());
+                                existingParagraphs.get(0).getImageUrl(),
+                                null); // HTML 컨텐츠 업데이트 시 출처는 유지하거나 null 처리 (여기서는 단순 교체)
                     } else {
                         // paragraph가 하나도 없으면 새로 생성
                         com.mine.api.domain.Paragraph p = com.mine.api.domain.Paragraph.builder()
                                 .subtitle((String) updatedSection.get("heading"))
                                 .text(content)
                                 .imageUrl(null)
+                                .sourceUrl(null)
                                 .displayOrder(0)
                                 .build();
                         section.addParagraph(p);
@@ -392,6 +396,7 @@ public class SectionService {
                         .subtitle(p.getSubtitle())
                         .text(p.getText())
                         .imageUrl(p.getImageUrl())
+                        .sourceUrl(p.getSourceUrl())
                         .build())
                 .collect(Collectors.toList());
 

@@ -45,16 +45,23 @@ public class Paragraph {
     private String imageUrl;
 
     /**
+     * 문단 콘텐츠가 참조한 원본 소스 URL (One-Source-One-Use)
+     */
+    @Column(name = "source_url", length = 2000)
+    private String sourceUrl;
+
+    /**
      * 표시 순서
      */
     @Column(name = "display_order")
     private Integer displayOrder;
 
     @Builder
-    public Paragraph(String subtitle, String text, String imageUrl, Integer displayOrder) {
+    public Paragraph(String subtitle, String text, String imageUrl, String sourceUrl, Integer displayOrder) {
         this.subtitle = subtitle;
         this.text = text;
         this.imageUrl = imageUrl;
+        this.sourceUrl = sourceUrl;
         this.displayOrder = displayOrder;
     }
 
@@ -66,10 +73,11 @@ public class Paragraph {
         this.displayOrder = displayOrder;
     }
 
-    public void update(String subtitle, String text, String imageUrl) {
+    public void update(String subtitle, String text, String imageUrl, String sourceUrl) {
         this.subtitle = subtitle;
         this.text = text;
         this.imageUrl = imageUrl;
+        this.sourceUrl = sourceUrl;
     }
 
     // ParagraphService에서 사용

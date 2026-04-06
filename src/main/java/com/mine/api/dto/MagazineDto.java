@@ -258,6 +258,7 @@ public class MagazineDto {
                                             .subtitle(p.getSubtitle())
                                             .text(p.getText())
                                             .imageUrl(p.getImageUrl())
+                                            .sourceUrl(p.getSourceUrl())
                                             .build())
                                     .toList())
                             .displayOrder(section.getDisplayOrder())

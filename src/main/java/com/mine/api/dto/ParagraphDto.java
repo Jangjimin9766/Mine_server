@@ -32,6 +32,10 @@ public class ParagraphDto {
         @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
         @JsonProperty("imageUrl")
         private String imageUrl;
+
+        @Schema(description = "문단 콘텐츠의 원본 소스 URL", example = "https://example.com/source-article")
+        @JsonProperty("sourceUrl")
+        private String sourceUrl;
     }
 
     @Data
@@ -48,6 +52,10 @@ public class ParagraphDto {
         @Schema(description = "문단 이미지 URL", example = "https://example.com/new_image.jpg")
         @JsonProperty("imageUrl")
         private String imageUrl;
+
+        @Schema(description = "문단 콘텐츠의 원본 소스 URL", example = "https://example.com/source-article")
+        @JsonProperty("sourceUrl")
+        private String sourceUrl;
     }
     @Data
     @NoArgsConstructor
