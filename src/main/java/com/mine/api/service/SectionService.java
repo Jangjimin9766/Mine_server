@@ -259,6 +259,11 @@ public class SectionService {
             section.update(
                     (String) updatedSection.get("heading"));
 
+            // source_url 업데이트 (AI가 새 소스를 참조한 경우)
+            if (updatedSection.get("source_url") != null) {
+                section.setSourceUrl((String) updatedSection.get("source_url"));
+            }
+
             // paragraphs 업데이트 (2가지 형식 지원)
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) updatedSection.get("paragraphs");
@@ -396,6 +401,7 @@ public class SectionService {
                 .thumbnailUrl(section.getThumbnailUrl())
                 .paragraphs(paragraphsList)
                 .displayOrder(section.getDisplayOrder())
+                .sourceUrl(section.getSourceUrl()) // 원본 웹 소스 URL
                 .build();
     }
 }

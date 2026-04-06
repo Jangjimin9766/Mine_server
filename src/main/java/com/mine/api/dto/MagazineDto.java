@@ -231,6 +231,9 @@ public class MagazineDto {
 
             @Schema(description = "표시 순서", example = "1")
             private Integer displayOrder;
+
+            @Schema(description = "섹션 콘텐츠 생성에 사용된 원본 웹 소스 URL", example = "https://example.com/source")
+            private String sourceUrl;
         }
 
         /**
@@ -258,6 +261,7 @@ public class MagazineDto {
                                             .build())
                                     .toList())
                             .displayOrder(section.getDisplayOrder())
+                            .sourceUrl(section.getSourceUrl())
                             .build())
                     .toList();
 

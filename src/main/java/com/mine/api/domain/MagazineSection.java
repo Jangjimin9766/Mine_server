@@ -32,6 +32,14 @@ public class MagazineSection {
     private String thumbnailUrl;
 
     /**
+     * 섹션 콘텐츠 생성에 사용된 원본 웹 소스 URL
+     * AI가 이 소스를 바탕으로 섹션을 창작하며, 프론트엔드에서 '추천 출처' 링크로 표시
+     * nullable: 기존 매거진 데이터와의 하위 호환성 보장
+     */
+    @Column(name = "source_url", length = 2000)
+    private String sourceUrl;
+
+    /**
      * 문단 배열 (기본 3개)
      * 각 문단은 subtitle + text + imageUrl 세트로 구성
      * React에서 지그재그 레이아웃으로 렌더링
@@ -58,10 +66,11 @@ public class MagazineSection {
     private Magazine magazine;
 
     @Builder
-    public MagazineSection(String heading, Integer displayOrder, String thumbnailUrl) {
+    public MagazineSection(String heading, Integer displayOrder, String thumbnailUrl, String sourceUrl) {
         this.heading = heading;
         this.displayOrder = displayOrder;
         this.thumbnailUrl = thumbnailUrl;
+        this.sourceUrl = sourceUrl;
     }
 
     public void setMagazine(Magazine magazine) {
@@ -95,5 +104,9 @@ public class MagazineSection {
 
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
     }
 }

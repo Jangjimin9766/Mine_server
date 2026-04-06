@@ -307,6 +307,11 @@ public class MagazineInteractionService {
             section.setThumbnailUrl((String) map.get("thumbnail_url"));
         }
 
+        // Update source URL (원본 웹 소스 추적)
+        if (map.get("source_url") != null) {
+            section.setSourceUrl((String) map.get("source_url"));
+        }
+
         // Update paragraphs
         section.getParagraphs().clear();
         addParagraphsFromMap(section, map);
@@ -321,6 +326,7 @@ public class MagazineInteractionService {
                 .heading((String) map.get("heading"))
                 .thumbnailUrl(thumbUrl)
                 .displayOrder(displayOrder)
+                .sourceUrl((String) map.get("source_url")) // 원본 웹 소스 URL 저장
                 .build();
 
         addParagraphsFromMap(section, map);

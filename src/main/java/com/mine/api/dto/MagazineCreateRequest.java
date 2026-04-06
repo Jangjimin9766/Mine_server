@@ -75,5 +75,9 @@ public class MagazineCreateRequest {
 
         @Schema(description = "문단 배열 (지그재그 레이아웃용)")
         private List<ParagraphDto> paragraphs;
+
+        @Schema(description = "섹션 콘텐츠 생성에 사용된 원본 웹 소스 URL", example = "https://example.com/source-article")
+        @JsonProperty("source_url")
+        private String sourceUrl;
     }
 }

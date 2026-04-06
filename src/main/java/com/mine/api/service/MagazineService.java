@@ -124,6 +124,7 @@ public class MagazineService {
                         .heading(truncate(sectionDto.getHeading(), 490))
                         .thumbnailUrl(truncate(sectionDto.getThumbnailUrl(), 990))
                         .displayOrder(i)
+                        .sourceUrl(sectionDto.getSourceUrl()) // 원본 웹 소스 URL 저장
                         .build();
 
                 String firstParaImageUrl = null;
@@ -494,7 +495,13 @@ public class MagazineService {
     // ⭐ Phase 2: 키워드 검색
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
-        return magazineRepository.searchByKeyword(keyword, username, pageable)
+        
+        // Native Query에서 Order By 절 지원을 위해 Entity 필드(createdAt)를 DB 컬럼명(created_at)으로 변환
+        org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(), 
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+
+        return magazineRepository.searchByKeyword(keyword, username, nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
@@ -539,9 +546,9 @@ public class MagazineService {
         allKeywords.addAll(interestKeywords);
         allKeywords.addAll(likedTags);
 
-        // 관심사 + 좋아요 태그를 합쳐 중복 제거 후 셔플 — 매번 다른 추천 순서로 다양성 확보
+        // 관심사 + 좋아요 태그를 합쳐 중복 제거 후 정렬 — 같은 유저에겐 항상 동일한 피드 보장
         java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
-        java.util.Collections.shuffle(uniqueKeywords);
+        java.util.Collections.sort(uniqueKeywords);
 
         // 최대 3개 키워드로 쿼리 제한 (빈 문자열은 쿼리에서 무시됨)
         String keyword1 = uniqueKeywords.size() > 0 ? uniqueKeywords.get(0) : "";

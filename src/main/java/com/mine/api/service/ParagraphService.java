@@ -148,6 +148,13 @@ public class ParagraphService {
         section.addParagraph(paragraph);
         Paragraph savedParagraph = paragraphRepository.save(paragraph);
 
+        // AI가 새 source_url을 반환하면 섹션의 sourceUrl도 업데이트
+        String sourceUrl = (String) output.get("source_url");
+        if (sourceUrl != null && !sourceUrl.isBlank()) {
+            section.setSourceUrl(sourceUrl);
+            sectionRepository.save(section);
+        }
+
         log.info("AI Paragraph created: id={}, order={}, magazineId={}, username={}", 
                 savedParagraph.getId(), nextOrder, magazineId, username);
         
