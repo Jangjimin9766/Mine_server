@@ -541,18 +541,18 @@ public class MagazineService {
         magazineRepository.save(magazine);
     }
 
-    // ⭐ Phase 2: 키워드 검색
-    public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
-            String keyword, String username, org.springframework.data.domain.Pageable pageable) {
-        
-        // Native Query에서 Order By 절 지원을 위해 Entity 필드(createdAt)를 DB 컬럼명(created_at)으로 변환
-        org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
-                pageable.getPageNumber(), pageable.getPageSize(), 
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
-
-        return magazineRepository.searchByKeyword(keyword, username, nativePageable)
-                .map(com.mine.api.dto.MagazineDto.ListItem::from);
-    }
+    // ⭐ Phase 2: 키워드 검색 (보관)
+    // public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchByKeyword(
+    //         String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+    //     
+    //     // Native Query에서 Order By 절 지원을 위해 Entity 필드(createdAt)를 DB 컬럼명(created_at)으로 변환
+    //     org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
+    //             pageable.getPageNumber(), pageable.getPageSize(), 
+    //             org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+    // 
+    //     return magazineRepository.searchByKeyword(keyword, username, nativePageable)
+    //             .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    // }
 
     // ⭐ Phase 2: 내 매거진 조회
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> getMyMagazinesPage(
