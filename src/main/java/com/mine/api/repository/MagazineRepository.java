@@ -88,6 +88,29 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+                        "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+                        "LEFT JOIN paragraph p ON s.id = p.section_id " +
+                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "WHERE u.is_public = true " +
+                        "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))",
+                        countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
+                        "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
+                        "LEFT JOIN paragraph p ON s.id = p.section_id " +
+                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "WHERE u.is_public = true " +
+                        "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
+                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))",
+                        nativeQuery = true)
+        org.springframework.data.domain.Page<Magazine> searchPublicExploreMagazines(
+                        @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        org.springframework.data.domain.Pageable pageable);
+
         // ⭐ 둘러보기 검색 (Explore Search - Global)
         // @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
         //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
@@ -195,7 +218,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
             "WHERE m.user.isPublic = true " +
             "AND (:lastId IS NULL OR m.id < :lastId) " +
             "ORDER BY m.id DESC")
-    java.util.List<Magazine> findPublicMagazinesCursor(
+        java.util.List<Magazine> findPublicMagazinesCursor(
             @org.springframework.data.repository.query.Param("lastId") Long lastId,
             org.springframework.data.domain.Pageable pageable);
 }

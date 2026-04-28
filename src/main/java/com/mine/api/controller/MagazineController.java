@@ -217,8 +217,9 @@ public class MagazineController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        String username = userDetails != null ? userDetails.getUsername() : null;
         return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(
-                magazineService.searchExploreMagazines(keyword, userDetails.getUsername(), pageable)));
+                magazineService.searchExploreMagazines(keyword, username, pageable)));
     }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")

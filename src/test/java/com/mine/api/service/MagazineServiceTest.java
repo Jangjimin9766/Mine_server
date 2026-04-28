@@ -100,6 +100,14 @@ class MagazineServiceTest {
                 MagazineCreateRequest generatedData = new MagazineCreateRequest();
                 generatedData.setTitle("Generated Magazine");
                 generatedData.setCoverImageUrl("http://image.url");
+                MagazineCreateRequest.ParagraphDto paragraphDto = new MagazineCreateRequest.ParagraphDto();
+                paragraphDto.setSubtitle("Intro");
+                paragraphDto.setText("Generated text");
+
+                MagazineCreateRequest.SectionDto sectionDto = new MagazineCreateRequest.SectionDto();
+                sectionDto.setHeading("Section 1");
+                sectionDto.setParagraphs(List.of(paragraphDto));
+                generatedData.setSections(List.of(sectionDto));
 
                 Magazine savedMagazine = Magazine.builder()
                                 .user(user)
@@ -114,6 +122,11 @@ class MagazineServiceTest {
                 Map<String, Object> outputMap = new HashMap<>();
                 outputMap.put("title", "Generated Magazine");
                 outputMap.put("cover_image_url", "http://image.url");
+                outputMap.put("sections", List.of(Map.of(
+                                "heading", "Section 1",
+                                "paragraphs", List.of(Map.of(
+                                                "subtitle", "Intro",
+                                                "text", "Generated text")))));
 
                 // 로컬 URL이므로 sendSyncRequest가 호출됨
                 when(runPodService.sendSyncRequest(anyString(), any(Map.class))).thenReturn(outputMap);

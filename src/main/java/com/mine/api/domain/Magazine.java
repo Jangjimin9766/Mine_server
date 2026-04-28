@@ -44,6 +44,7 @@ public class Magazine {
 
     @com.fasterxml.jackson.annotation.JsonManagedReference
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     private List<MagazineSection> sections = new ArrayList<>();
 
     // ⭐ MagazineInteraction과의 관계 (CASCADE 추가)

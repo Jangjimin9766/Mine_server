@@ -169,6 +169,8 @@ public class MagazineInteractionService {
 
     @Transactional
     protected void handlePythonResponse(Magazine magazine, Map<String, Object> response) {
+        sortSectionsByDisplayOrder(magazine);
+
         String action = (String) response.get("intent");
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedMagazine = (Map<String, Object>) response.get("updated_magazine");
@@ -273,6 +275,14 @@ public class MagazineInteractionService {
 
         // ⭐ 변경사항 DB에 저장
         magazineRepository.save(magazine);
+    }
+
+    private void sortSectionsByDisplayOrder(Magazine magazine) {
+        magazine.getSections().sort((s1, s2) -> {
+            Integer o1 = s1.getDisplayOrder() != null ? s1.getDisplayOrder() : Integer.MAX_VALUE;
+            Integer o2 = s2.getDisplayOrder() != null ? s2.getDisplayOrder() : Integer.MAX_VALUE;
+            return o1.compareTo(o2);
+        });
     }
 
     private void uploadImagesInMap(Map<String, Object> sectionMap) {

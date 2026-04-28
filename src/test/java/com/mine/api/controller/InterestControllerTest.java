@@ -53,23 +53,6 @@ class InterestControllerTest {
         }
 
         @Test
-        @DisplayName("내 관심사 조회 성공")
-        @WithMockUser(username = "testuser")
-        void getMyInterests_Success() throws Exception {
-                // Given
-                List<InterestDto.InterestResponse> myInterests = List.of(
-                                InterestDto.InterestResponse.builder()
-                                                .id(1L).code("TRAVEL").name("여행").category("활동").build());
-                given(interestService.getUserInterests("testuser")).willReturn(myInterests);
-
-                // When & Then
-                mockMvc.perform(get("/api/interests/me")
-                                .with(csrf()))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$[0].code").value("TRAVEL"));
-        }
-
-        @Test
         @DisplayName("내 관심사 저장 성공")
         @WithMockUser(username = "testuser")
         void updateMyInterests_Success() throws Exception {

@@ -50,12 +50,15 @@ python:
   api:
     # RunPod의 공인 IP/URL로 변경 필요 (예: http://YOUR-RUNPOD-ID-8000.proxy.runpod.net/api/magazine/create)
     url: ${PYTHON_API_URL:http://localhost:8000/api/magazine/create}
-    key: "${PYTHON_API_KEY:mine-secret-key-1234}"
+    key: "${PYTHON_API_KEY:}"
+    moodboard-url: ${PYTHON_MOODBOARD_URL:http://localhost:8000/api/magazine/moodboard}
 
 mine:
   internal:
-    secret-key: "mine-admin-1234"
+    secret-key: "${MINE_INTERNAL_SECRET_KEY:}"
     moodboard-url: ${PYTHON_MOODBOARD_URL:http://localhost:8000/api/magazine/moodboard}
+  cors:
+    allowed-origin-patterns: ${MINE_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,https://minelover.com,https://www.minelover.com,https://api.minelover.com}
 
 springdoc:
   swagger-ui:
@@ -85,4 +88,3 @@ resilience4j:
     instances:
       runPod:
         timeoutDuration: 320s # 5분 20초 (RunPod 최대 대기 시간 고려 안전장치)
-

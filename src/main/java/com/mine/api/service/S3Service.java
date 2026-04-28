@@ -11,6 +11,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.UUID;
 
 @Service
@@ -70,6 +73,11 @@ public class S3Service {
         // 이미 내 S3에 있는 이미지는 재업로드 없이 그대로 리턴
         if (imageUrl.contains(".amazonaws.com") && imageUrl.contains(bucketName)) {
             return imageUrl;
+        }
+
+        if (!isAllowedExternalImageUrl(imageUrl)) {
+            log.warn("Rejected external image URL by SSRF guard: {}", imageUrl);
+            return null;
         }
 
         int maxRetries = 2;
@@ -155,6 +163,38 @@ public class S3Service {
             }
         }
         return null;
+    }
+
+    private boolean isAllowedExternalImageUrl(String imageUrl) {
+        try {
+            URI uri = URI.create(imageUrl);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+
+            if (scheme == null || host == null) {
+                return false;
+            }
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                return false;
+            }
+            if ("localhost".equalsIgnoreCase(host) || host.endsWith(".localhost")) {
+                return false;
+            }
+
+            InetAddress address = InetAddress.getByName(host);
+            return !isPrivateAddress(address);
+        } catch (IllegalArgumentException | UnknownHostException e) {
+            log.warn("Invalid external image URL: {}", imageUrl, e);
+            return false;
+        }
+    }
+
+    private boolean isPrivateAddress(InetAddress address) {
+        return address.isAnyLocalAddress()
+                || address.isLoopbackAddress()
+                || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress()
+                || address.isMulticastAddress();
     }
 
     /**

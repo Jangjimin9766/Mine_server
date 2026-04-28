@@ -42,8 +42,14 @@ public class AuthController {
     @Operation(summary = "👋 로그아웃 (Logout)", description = "안전하게 로그아웃하고 토큰을 무효화합니다.")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
-        authService.logout(userDetails.getUsername());
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        String accessToken = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            accessToken = authorizationHeader.substring(7);
+        }
+
+        authService.logout(userDetails.getUsername(), accessToken);
         return ResponseEntity.ok().build();
     }
 

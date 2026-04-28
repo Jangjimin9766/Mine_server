@@ -39,6 +39,9 @@ class UserControllerTest {
         @MockBean
         private UserService userService;
 
+        @MockBean
+        private com.mine.api.service.S3Service s3Service;
+
         @Autowired
         private ObjectMapper objectMapper;
 

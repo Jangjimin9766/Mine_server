@@ -143,7 +143,7 @@ public class MagazineService {
                 }
 
                 // 썸네일이 없으면 첫 번째 문단 이미지를 대신 사용 — 빈 썸네일 방지
-                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().startsWith("http")) {
+                if (section.getThumbnailUrl() == null || section.getThumbnailUrl().isBlank()) {
                     if (firstParaImageUrl != null) {
                         section.setThumbnailUrl(firstParaImageUrl);
                     }
@@ -491,13 +491,17 @@ public class MagazineService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchExploreMagazines(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
-        
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
-
         org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
                 pageable.getPageNumber(), pageable.getPageSize(), 
                 org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+
+        if (username == null || username.isBlank()) {
+            return magazineRepository.searchPublicExploreMagazines(keyword, nativePageable)
+                    .map(com.mine.api.dto.MagazineDto.ListItem::from);
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         // 개인화 필터링을 위한 키워드 추출
         java.util.List<String> top3Keywords = getTop3InterestKeywords(user);

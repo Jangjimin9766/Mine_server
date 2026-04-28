@@ -3,6 +3,7 @@ package com.mine.api.config;
 import com.mine.api.security.JwtAuthenticationFilter;
 import com.mine.api.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -24,6 +27,9 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
+
+    @Value("${mine.cors.allowed-origin-patterns:http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,https://minelover.com,https://www.minelover.com,https://api.minelover.com}")
+    private List<String> allowedOriginPatterns;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,6 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()                          // 로그인/회원가입은 인증 불필요
                         .requestMatchers("/api/internal/**").permitAll()                      // Python 서버 내부 API는 X-Internal-Key로 별도 인증
+                        .requestMatchers("/health").permitAll()
                         .requestMatchers("/api/magazines/feed/search").permitAll()            // 둘러보기 검색은 비로그인 허용
                         .requestMatchers("/api/magazines/share/**").permitAll()               // 공유 링크 비로그인 접근
                         .requestMatchers("/api/interests").permitAll()                        // 회원가입 화면에서 관심사 목록 조회 필요
@@ -61,10 +68,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 모든 출처 허용 — 프론트엔드 도메인이 확정되면 구체적 origin으로 좁힐 것
-        configuration.addAllowedOriginPattern("*");
+        for (String allowedOriginPattern : allowedOriginPatterns) {
+            configuration.addAllowedOriginPattern(allowedOriginPattern);
+        }
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
-        // withCredentials:true 요청 (쿠키/토큰)을 허용하려면 필수
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

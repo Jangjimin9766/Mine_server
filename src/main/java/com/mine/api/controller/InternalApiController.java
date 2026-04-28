@@ -19,7 +19,7 @@ public class InternalApiController {
     private final MagazineService magazineService;
     private final com.mine.api.service.S3Service s3Service;
 
-    @org.springframework.beans.factory.annotation.Value("${mine.internal.secret-key:mine-admin-1234}")
+    @org.springframework.beans.factory.annotation.Value("${mine.internal.secret-key:}")
     private String internalApiKey;
 
     public InternalApiController(MagazineService magazineService, com.mine.api.service.S3Service s3Service) {
@@ -33,7 +33,7 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
         // JWT 없이 X-Internal-Key 헤더로 인증 — Python AI 서버가 직접 호출할 때 사용
-        if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
+        if (!hasValidInternalApiKey(apiKey)) {
             log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
                     (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
                     (apiKey != null ? apiKey.trim().length() : "null"));
@@ -52,7 +52,7 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestParam String username,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
+        if (!hasValidInternalApiKey(apiKey)) {
             log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}", 
                     (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
                     (apiKey != null ? apiKey.trim().length() : "null"));
@@ -70,7 +70,7 @@ public class InternalApiController {
             @org.springframework.web.bind.annotation.RequestBody String base64Data,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
         
-        if (internalApiKey == null || !internalApiKey.trim().equals(apiKey.trim())) {
+        if (!hasValidInternalApiKey(apiKey)) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
@@ -85,5 +85,15 @@ public class InternalApiController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to initialize asset: " + e.getMessage());
         }
+    }
+
+    private boolean hasValidInternalApiKey(String apiKey) {
+        if (internalApiKey == null || internalApiKey.isBlank() || apiKey == null) {
+            return false;
+        }
+
+        byte[] expected = internalApiKey.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] provided = apiKey.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return java.security.MessageDigest.isEqual(expected, provided);
     }
 }

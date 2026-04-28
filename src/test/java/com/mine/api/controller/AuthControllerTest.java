@@ -12,7 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -64,5 +66,16 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("accessToken"));
+    }
+
+    @Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "testuser")
+    void logout() throws Exception {
+        doNothing().when(authService).logout(eq("testuser"), eq("access-token"));
+
+        mockMvc.perform(post("/api/auth/logout")
+                .with(csrf())
+                .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isOk());
     }
 }

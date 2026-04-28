@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Map;
 
@@ -24,6 +25,13 @@ public class RunPodService {
     // 5초 간격으로 최대 15분 폴링 — RunPod 콜드스타트 + AI 처리 시간 카버
     private static final int MAX_RETRIES = 180; // 5 seconds * 180 = 15 minutes
     private static final long RETRY_DELAY_MS = 5000;
+
+    @PostConstruct
+    void validateConfig() {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("python.api.key is missing (PYTHON_API_KEY).");
+        }
+    }
 
     /**
      * RunPod Serverless Async Request (POST /run -> Poll /status/{id})

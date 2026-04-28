@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(InternalApiController.class)
+@WebMvcTest(value = InternalApiController.class, properties = "mine.internal.secret-key=test-internal-key")
 class InternalApiControllerTest {
 
     @Autowired
@@ -28,6 +28,9 @@ class InternalApiControllerTest {
 
     @MockBean
     private MagazineService magazineService;
+
+    @MockBean
+    private com.mine.api.service.S3Service s3Service;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -46,7 +49,7 @@ class InternalApiControllerTest {
         // When & Then
         mockMvc.perform(post("/api/internal/magazine")
                 .with(csrf())
-                .header("X-Internal-Key", "mine-secret-key-1234")
+                .header("X-Internal-Key", "test-internal-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

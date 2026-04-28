@@ -3,10 +3,9 @@ package com.mine.api.service;
 import com.mine.api.domain.Moodboard;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MoodboardRequestDto;
-import com.mine.api.dto.MoodboardResponseDto;
 import com.mine.api.repository.MoodboardRepository;
+import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserRepository;
-import io.awspring.cloud.s3.S3Template;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,15 +14,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.InputStream;
 import java.util.Base64;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -40,16 +36,18 @@ class MoodboardServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private S3Template s3Template;
+    private MagazineRepository magazineRepository;
 
     @Mock
     private RunPodService runPodService;
+
+    @Mock
+    private S3Service s3Service;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(moodboardService, "moodboardApiUrl",
                 "http://localhost:8000/api/magazine/moodboard");
-        ReflectionTestUtils.setField(moodboardService, "bucketName", "test-bucket");
     }
 
     @Test
@@ -64,28 +62,21 @@ class MoodboardServiceTest {
                 .build();
 
         String base64Image = Base64.getEncoder().encodeToString("fake-image-content".getBytes());
-        MoodboardResponseDto aiResponse = new MoodboardResponseDto(base64Image, "A cozy test image");
 
         given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
 
-        // Mock WebClient chain -> RunPodService Mock
-        // 로컬 URL이므로 sendSyncRequest가 호출됨
         java.util.Map<String, Object> output = new java.util.HashMap<>();
         output.put("image_url", base64Image);
         output.put("description", "A cozy test image");
 
         given(runPodService.sendSyncRequest(anyString(), any(java.util.Map.class))).willReturn(output);
+        given(s3Service.uploadBase64ToS3(base64Image)).willReturn("https://test-bucket.s3.ap-southeast-2.amazonaws.com/moodboards/test.png");
 
-        // When
         String resultUrl = moodboardService.createMoodboard(username, requestDto);
 
-        // Then
         assertNotNull(resultUrl);
-        // Check if it starts with the expected bucket URL
-        String expectedPrefix = "https://test-bucket.s3.ap-southeast-2.amazonaws.com/";
-        assertEquals(expectedPrefix, resultUrl.substring(0, expectedPrefix.length()));
 
-        verify(s3Template).upload(eq("test-bucket"), anyString(), any(InputStream.class));
+        verify(s3Service).uploadBase64ToS3(base64Image);
         verify(moodboardRepository).save(any(Moodboard.class));
     }
 }

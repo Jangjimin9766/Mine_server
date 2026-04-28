@@ -20,10 +20,13 @@ public class MoodboardService {
     private final S3Service s3Service;
     private final RunPodService runPodService;
 
-    @Value("${python.api.moodboard-url}")
+    @Value("${python.api.moodboard-url:${mine.internal.moodboard-url:}}")
     private String moodboardApiUrl;
 
     public String createMoodboard(String username, MoodboardRequestDto requestDto) {
+        if (moodboardApiUrl == null || moodboardApiUrl.isBlank()) {
+            throw new IllegalStateException("python.api.moodboard-url is missing (PYTHON_MOODBOARD_URL).");
+        }
         // 0. Find User
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(ErrorMessages.USER_NOT_FOUND));

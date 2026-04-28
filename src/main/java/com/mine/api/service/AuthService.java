@@ -20,6 +20,8 @@ public class AuthService {
     private final InterestService interestService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     private final com.mine.api.repository.RefreshTokenRepository refreshTokenRepository;
+    private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
+    private final com.mine.api.security.JwtTokenProvider accessTokenProvider;
 
     @Transactional
     public Long signup(AuthDto.SignupRequest request) {
@@ -108,7 +110,7 @@ public class AuthService {
 
     // ⭐ Phase 7: 로그아웃 (Refresh Token 삭제)
     @Transactional
-    public void logout(String username) {
+    public void logout(String username, String accessToken) {
         // User 존재 여부 확인 (선택사항)
         if (!userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("User not found");
@@ -116,6 +118,8 @@ public class AuthService {
 
         java.util.List<com.mine.api.domain.RefreshToken> tokens = refreshTokenRepository.findByUsername(username);
         refreshTokenRepository.deleteAll(tokens);
+
+        blacklistAccessToken(accessToken);
     }
 
     // ⭐ Phase 7: 비밀번호 변경
@@ -136,5 +140,23 @@ public class AuthService {
         // 비밀번호 변경 후 모든 Refresh Token 삭제 — 탈취된 토큰 무력화 목적
         java.util.List<com.mine.api.domain.RefreshToken> tokens = refreshTokenRepository.findByUsername(username);
         refreshTokenRepository.deleteAll(tokens);
+    }
+
+    private void blacklistAccessToken(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return;
+        }
+
+        try {
+            long expiration = accessTokenProvider.getExpiration(accessToken);
+            if (expiration > 0) {
+                com.mine.api.domain.BlacklistedToken blacklistedToken = new com.mine.api.domain.BlacklistedToken(
+                        accessToken,
+                        java.time.LocalDateTime.now().plusNanos(expiration * 1_000_000));
+                blacklistedTokenRepository.save(blacklistedToken);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
     }
 }
