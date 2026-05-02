@@ -41,6 +41,7 @@ public class InternalApiController {
         }
 
         Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
+        magazineService.triggerMoodboardGeneration(magazineId, request.getUserEmail());
         return ResponseEntity.ok(magazineId);
     }
 

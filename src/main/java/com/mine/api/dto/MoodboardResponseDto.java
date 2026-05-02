@@ -19,4 +19,8 @@ public class MoodboardResponseDto {
     @Schema(description = "무드보드 설명", example = "따뜻하고 아늑한 겨울 분위기의 무드보드")
     @com.fasterxml.jackson.annotation.JsonProperty("description")
     private String description;
+
+    @Schema(description = "무드보드 생성 상태", example = "COMPLETED")
+    @com.fasterxml.jackson.annotation.JsonProperty("status")
+    private com.mine.api.domain.MoodboardStatus status;
 }

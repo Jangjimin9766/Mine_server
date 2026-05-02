@@ -3,6 +3,7 @@ package com.mine.api.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mine.api.domain.Magazine;
+import com.mine.api.domain.MoodboardStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -87,6 +88,12 @@ public class MagazineDto {
         @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
         private String moodboardImageUrl;
 
+        @Schema(description = "무드보드 설명")
+        private String moodboardDescription;
+
+        @Schema(description = "무드보드 생성 상태", example = "PENDING")
+        private MoodboardStatus moodboardStatus;
+
         @Schema(description = "좋아요 수", example = "42")
         private int likeCount;
 
@@ -121,6 +128,15 @@ public class MagazineDto {
         @Schema(description = "생성일시", example = "2024-12-23T10:30:00")
         private String createdAt;
 
+        @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
+        private String moodboardImageUrl;
+
+        @Schema(description = "무드보드 설명")
+        private String moodboardDescription;
+
+        @Schema(description = "무드보드 생성 상태", example = "PENDING")
+        private MoodboardStatus moodboardStatus;
+
         public static ListItem from(Magazine magazine) {
             return ListItem.builder()
                     .id(magazine.getId())
@@ -130,6 +146,9 @@ public class MagazineDto {
                     .likeCount(magazine.getLikes().size())
                     .commentCount(0)
                     .createdAt(magazine.getCreatedAt().toString())
+                    .moodboardImageUrl(magazine.getMoodboardImageUrl())
+                    .moodboardDescription(magazine.getMoodboardDescription())
+                    .moodboardStatus(magazine.getMoodboardStatus())
                     .build();
         }
     }
@@ -159,6 +178,15 @@ public class MagazineDto {
         @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
         private String moodboardImageUrl;
 
+        @Schema(description = "무드보드 설명")
+        private String moodboardDescription;
+
+        @Schema(description = "무드보드 생성 상태", example = "PENDING")
+        private MoodboardStatus moodboardStatus;
+
+        @Schema(description = "무드보드 정보. 생성 대기/실패 상태에서는 imageUrl이 null일 수 있습니다.")
+        private MoodboardItem moodboard;
+
         @Schema(description = "좋아요 수", example = "42")
         @JsonProperty("likeCount")
         private int likeCount;
@@ -175,6 +203,20 @@ public class MagazineDto {
 
         @Schema(description = "섹션 목록")
         private List<SectionItem> sections;
+
+        @Getter
+        @Builder
+        @AllArgsConstructor
+        public static class MoodboardItem {
+            @Schema(description = "무드보드 이미지 URL", example = "https://example.com/moodboard.jpg")
+            private String imageUrl;
+
+            @Schema(description = "무드보드 설명")
+            private String description;
+
+            @Schema(description = "무드보드 생성 상태", example = "PENDING")
+            private MoodboardStatus status;
+        }
 
         /**
          * 작성자 정보
@@ -259,6 +301,13 @@ public class MagazineDto {
                     .coverImageUrl(magazine.getCoverImageUrl())
                     .tags(magazine.getTags())
                     .moodboardImageUrl(magazine.getMoodboardImageUrl())
+                    .moodboardDescription(magazine.getMoodboardDescription())
+                    .moodboardStatus(magazine.getMoodboardStatus())
+                    .moodboard(MoodboardItem.builder()
+                            .imageUrl(magazine.getMoodboardImageUrl())
+                            .description(magazine.getMoodboardDescription())
+                            .status(magazine.getMoodboardStatus())
+                            .build())
                     .likeCount(magazine.getLikes().size()) // 좋아요 수 계산
                     .isLiked(isLiked)
                     .createdAt(magazine.getCreatedAt() != null ? magazine.getCreatedAt().toString() : null)

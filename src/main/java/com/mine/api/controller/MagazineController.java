@@ -248,6 +248,7 @@ public class MagazineController {
             com.mine.api.dto.MoodboardResponseDto response = com.mine.api.dto.MoodboardResponseDto.builder()
                     .image_url(imageUrl)
                     .description("Moodboard generated for magazine #" + id)
+                    .status(com.mine.api.domain.MoodboardStatus.COMPLETED)
                     .build();
 
             return ResponseEntity.ok(response);

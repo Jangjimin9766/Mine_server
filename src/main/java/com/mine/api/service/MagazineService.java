@@ -4,6 +4,7 @@ import com.mine.api.common.ErrorMessages;
 
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
+import com.mine.api.domain.MoodboardStatus;
 import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
@@ -47,10 +48,12 @@ public class MagazineService {
             tagsJson = String.join(",", request.getTags());
         }
 
-        // 2. 무드보드 정보 추출 (이미 있으면 S3 업로드)
+        // 2. 무드보드 정보 추출 (신규 AI 응답에서는 없을 수 있음)
         String moodboardImageUrl = null;
+        String moodboardDescription = null;
         if (request.getMoodboard() != null) {
             moodboardImageUrl = request.getMoodboard().getImage_url();
+            moodboardDescription = request.getMoodboard().getDescription();
 
             if (moodboardImageUrl != null
                     && (moodboardImageUrl.startsWith("data:image") || moodboardImageUrl.length() > 255)) {
@@ -100,13 +103,18 @@ public class MagazineService {
         }
 
         // 4. Magazine 엔티티 생성
-        String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : request.getCoverImageUrl();
+        String coverImageUrl = resolveCoverImageUrl(request);
+        MoodboardStatus moodboardStatus = moodboardImageUrl != null
+                ? MoodboardStatus.COMPLETED
+                : MoodboardStatus.PENDING;
 
         Magazine magazine = Magazine.builder()
                 .title(truncate(request.getTitle(), 490))
                 .coverImageUrl(truncate(coverImageUrl, 990))
                 .tags(tagsJson)
                 .moodboardImageUrl(truncate(moodboardImageUrl, 990))
+                .moodboardDescription(moodboardDescription)
+                .moodboardStatus(moodboardStatus)
                 .user(user)
                 .build();
 
@@ -174,7 +182,7 @@ public class MagazineService {
                     .userId(user.getId())
                     .magazineId(savedMagazine.getId())
                     .imageUrl(moodboardImageUrl)
-                    .prompt(request.getMoodboard().getDescription())
+                    .prompt(moodboardDescription)
                     .build();
             moodboardRepository.save(moodboard);
         }
@@ -185,6 +193,32 @@ public class MagazineService {
     private String truncate(String str, int length) {
         if (str == null) return null;
         return str.length() > length ? str.substring(0, length) : str;
+    }
+
+    private String resolveCoverImageUrl(MagazineCreateRequest request) {
+        if (request.getCoverImageUrl() != null && !request.getCoverImageUrl().isBlank()) {
+            return request.getCoverImageUrl();
+        }
+
+        if (request.getSections() == null) {
+            return null;
+        }
+
+        for (MagazineCreateRequest.SectionDto section : request.getSections()) {
+            if (section.getThumbnailUrl() != null && !section.getThumbnailUrl().isBlank()) {
+                return section.getThumbnailUrl();
+            }
+            if (section.getParagraphs() == null) {
+                continue;
+            }
+            for (MagazineCreateRequest.ParagraphDto paragraph : section.getParagraphs()) {
+                if (paragraph.getImageUrl() != null && !paragraph.getImageUrl().isBlank()) {
+                    return paragraph.getImageUrl();
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -311,18 +345,21 @@ public class MagazineService {
                 log.warn("Cleanup after magazine save failed: {}", e.getMessage());
             }
 
-        // 무드보드이 = 커버이미지 정책 — 매거진 생성 후 비동기로 덮어씀
-        try {
-            log.info("Triggering async moodboard generation for magazine: {}", magazineId);
-            moodboardService.createMoodboardForMagazineAsync(magazineId, username);
-        } catch (Exception e) {
-            log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
-        }
+            triggerMoodboardGeneration(magazineId, username);
 
             return magazineId;
         } catch (Exception e) {
             log.error("Error in generateAndSaveMagazine", e);
             throw new RuntimeException("Detailed error: " + e.getMessage(), e);
+        }
+    }
+
+    public void triggerMoodboardGeneration(Long magazineId, String username) {
+        try {
+            log.info("Triggering async moodboard generation for magazine: {}", magazineId);
+            moodboardService.createMoodboardForMagazineAsync(magazineId, username);
+        } catch (Exception e) {
+            log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
         }
     }
 
@@ -446,6 +483,9 @@ public class MagazineService {
                     .likeCount((int) magazineLikeRepository.countByMagazine(m))
                     .commentCount(0)
                     .createdAt(m.getCreatedAt().toString())
+                    .moodboardImageUrl(m.getMoodboardImageUrl())
+                    .moodboardDescription(m.getMoodboardDescription())
+                    .moodboardStatus(m.getMoodboardStatus())
                     .build());
         } else {
             // 전체 조회 시에는 EntityGraph가 적용된 쿼리를 사용하므로 기존 방식 유지

@@ -29,6 +29,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         org.springframework.data.domain.Page<Magazine> findAllByUserId(Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
+        java.util.Optional<Magazine> findByIdAndUserUsername(Long id, String username);
+
         // ⭐ 공개된 매거진 전체 조회
         @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "user", "sections" })
         @org.springframework.data.jpa.repository.Query("SELECT m FROM Magazine m WHERE m.user.isPublic = true")

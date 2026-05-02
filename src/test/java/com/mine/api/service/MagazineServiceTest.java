@@ -58,6 +58,18 @@ class MagazineServiceTest {
         @Mock
         private RunPodService runPodService;
 
+        @Mock
+        private MoodboardService moodboardService;
+
+        @Mock
+        private com.mine.api.repository.MoodboardRepository moodboardRepository;
+
+        @Mock
+        private S3Service s3Service;
+
+        @Mock
+        private SectionService sectionService;
+
         // 테스트용 Interest 엔티티 생성 헬퍼
         private Interest createInterest(Long id, String code, String name) {
                 Interest interest = Interest.builder()
@@ -141,7 +153,13 @@ class MagazineServiceTest {
 
                 verify(userRepository, times(2)).findByUsername(username);
                 verify(runPodService).sendSyncRequest(anyString(), any(Map.class));
-                verify(magazineRepository).save(any(Magazine.class));
+                verify(moodboardService).createMoodboardForMagazineAsync(1L, username);
+
+                org.mockito.ArgumentCaptor<Magazine> magazineCaptor = org.mockito.ArgumentCaptor.forClass(Magazine.class);
+                verify(magazineRepository).save(magazineCaptor.capture());
+                assertEquals(com.mine.api.domain.MoodboardStatus.PENDING,
+                                magazineCaptor.getValue().getMoodboardStatus());
+                assertNull(magazineCaptor.getValue().getMoodboardImageUrl());
         }
 
         /*

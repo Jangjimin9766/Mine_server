@@ -34,6 +34,13 @@ public class Magazine {
     @Column(name = "moodboard_image_url", length = 1000)
     private String moodboardImageUrl;
 
+    @Column(name = "moodboard_description", columnDefinition = "TEXT")
+    private String moodboardDescription;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moodboard_status", length = 20)
+    private MoodboardStatus moodboardStatus = MoodboardStatus.PENDING;
+
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -58,11 +65,16 @@ public class Magazine {
 
     @Builder
     public Magazine(String title, String coverImageUrl,
-            String tags, String moodboardImageUrl, User user) {
+            String tags, String moodboardImageUrl, String moodboardDescription,
+            MoodboardStatus moodboardStatus, User user) {
         this.title = title;
         this.coverImageUrl = coverImageUrl;
         this.tags = tags;
         this.moodboardImageUrl = moodboardImageUrl;
+        this.moodboardDescription = moodboardDescription;
+        this.moodboardStatus = moodboardStatus != null
+                ? moodboardStatus
+                : (moodboardImageUrl != null ? MoodboardStatus.COMPLETED : MoodboardStatus.PENDING);
         this.user = user;
         this.createdAt = LocalDateTime.now();
     }
@@ -87,6 +99,27 @@ public class Magazine {
     // ⭐ 무드보드 이미지 변경
     public void setMoodboardImageUrl(String moodboardImageUrl) {
         this.moodboardImageUrl = moodboardImageUrl;
+    }
+
+    public void markMoodboardPending() {
+        this.moodboardStatus = MoodboardStatus.PENDING;
+    }
+
+    public void completeMoodboard(String moodboardImageUrl, String moodboardDescription) {
+        this.moodboardImageUrl = moodboardImageUrl;
+        this.moodboardDescription = moodboardDescription;
+        this.moodboardStatus = MoodboardStatus.COMPLETED;
+    }
+
+    public void failMoodboard() {
+        this.moodboardStatus = MoodboardStatus.FAILED;
+    }
+
+    public MoodboardStatus getMoodboardStatus() {
+        if (this.moodboardStatus != null) {
+            return this.moodboardStatus;
+        }
+        return this.moodboardImageUrl != null ? MoodboardStatus.COMPLETED : MoodboardStatus.PENDING;
     }
 
     // ⭐ Phase 1: 소유자 확인 메서드
