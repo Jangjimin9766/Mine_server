@@ -21,9 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MoodboardService {
 
-    private static final int MAGAZINE_MOODBOARD_MAX_ATTEMPTS = 5;
-    private static final long MAGAZINE_MOODBOARD_INITIAL_DELAY_MS = 60_000L;
-    private static final long MAGAZINE_MOODBOARD_RETRY_DELAY_MS = 60_000L;
+    private static final int MAGAZINE_MOODBOARD_MAX_ATTEMPTS = 3;
+    private static final long MAGAZINE_MOODBOARD_RETRY_DELAY_MS = 10_000L;
 
     private final MoodboardRepository moodboardRepository;
     private final com.mine.api.repository.UserRepository userRepository;
@@ -104,7 +103,6 @@ public class MoodboardService {
     public void createMoodboardForMagazineAsync(Long magazineId, String username) {
         log.info("Async moodboard generation started for magazine: {}", magazineId);
         markMoodboardPending(magazineId);
-        sleepBeforeAttempt(magazineId, MAGAZINE_MOODBOARD_INITIAL_DELAY_MS);
 
         for (int attempt = 1; attempt <= MAGAZINE_MOODBOARD_MAX_ATTEMPTS; attempt++) {
             try {
@@ -278,12 +276,8 @@ public class MoodboardService {
     }
 
     private void sleepBeforeRetry(Long magazineId) {
-        sleepBeforeAttempt(magazineId, MAGAZINE_MOODBOARD_RETRY_DELAY_MS);
-    }
-
-    private void sleepBeforeAttempt(Long magazineId, long delayMs) {
         try {
-            Thread.sleep(delayMs);
+            Thread.sleep(MAGAZINE_MOODBOARD_RETRY_DELAY_MS);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             markMoodboardFailed(magazineId);

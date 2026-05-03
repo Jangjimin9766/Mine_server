@@ -134,6 +134,9 @@ class MagazineServiceTest {
                 Map<String, Object> outputMap = new HashMap<>();
                 outputMap.put("title", "Generated Magazine");
                 outputMap.put("cover_image_url", "http://image.url");
+                outputMap.put("moodboard", Map.of(
+                                "image_url", "https://example.com/moodboard.png",
+                                "description", "Generated moodboard"));
                 outputMap.put("sections", List.of(Map.of(
                                 "heading", "Section 1",
                                 "paragraphs", List.of(Map.of(
@@ -153,13 +156,14 @@ class MagazineServiceTest {
 
                 verify(userRepository, times(2)).findByUsername(username);
                 verify(runPodService).sendSyncRequest(anyString(), any(Map.class));
-                verify(moodboardService).createMoodboardForMagazineAsync(1L, username);
+                verify(moodboardService, never()).createMoodboardForMagazineAsync(anyLong(), anyString());
 
                 org.mockito.ArgumentCaptor<Magazine> magazineCaptor = org.mockito.ArgumentCaptor.forClass(Magazine.class);
                 verify(magazineRepository).save(magazineCaptor.capture());
-                assertEquals(com.mine.api.domain.MoodboardStatus.PENDING,
+                assertEquals(com.mine.api.domain.MoodboardStatus.COMPLETED,
                                 magazineCaptor.getValue().getMoodboardStatus());
-                assertNull(magazineCaptor.getValue().getMoodboardImageUrl());
+                assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getMoodboardImageUrl());
+                assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getCoverImageUrl());
         }
 
         /*

@@ -103,7 +103,7 @@ public class MagazineService {
         }
 
         // 4. Magazine 엔티티 생성
-        String coverImageUrl = resolveCoverImageUrl(request);
+        String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : resolveCoverImageUrl(request);
         MoodboardStatus moodboardStatus = moodboardImageUrl != null
                 ? MoodboardStatus.COMPLETED
                 : MoodboardStatus.PENDING;
@@ -345,21 +345,10 @@ public class MagazineService {
                 log.warn("Cleanup after magazine save failed: {}", e.getMessage());
             }
 
-            triggerMoodboardGeneration(magazineId, username);
-
             return magazineId;
         } catch (Exception e) {
             log.error("Error in generateAndSaveMagazine", e);
             throw new RuntimeException("Detailed error: " + e.getMessage(), e);
-        }
-    }
-
-    public void triggerMoodboardGeneration(Long magazineId, String username) {
-        try {
-            log.info("Triggering async moodboard generation for magazine: {}", magazineId);
-            moodboardService.createMoodboardForMagazineAsync(magazineId, username);
-        } catch (Exception e) {
-            log.error("Failed to trigger async moodboard generation for magazine {}: {}", magazineId, e.getMessage());
         }
     }
 
