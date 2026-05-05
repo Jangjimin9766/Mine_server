@@ -8,6 +8,7 @@ import com.mine.api.domain.MoodboardStatus;
 import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
+import com.mine.api.exception.AiServerUnavailableException;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserRepository;
 import com.mine.api.repository.MagazineLikeRepository;
@@ -284,7 +285,7 @@ public class MagazineService {
             if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
                 // Local FastAPI 호출 (직접 전송, 동기식)
                 data.put("action", "create_magazine"); // 로컬에서도 action 필수
-                responseBody = runPodService.sendSyncRequest(pythonApiUrl, data);
+                responseBody = runPodService.sendMagazineCreateSyncRequest(pythonApiUrl, data);
             } else {
                 // RunPod Serverless 호출 (input 래핑, 비동기 폴링)
                 // { "input": { "action": "create_magazine", "data": { ... } } } 형태로 전송
@@ -293,7 +294,7 @@ public class MagazineService {
                 inputData.put("data", data);
 
                 // 응답은 { "status": "COMPLETED", "output": { ... } } 형태
-                responseBody = runPodService.sendRequest(pythonApiUrl, inputData);
+                responseBody = runPodService.sendMagazineCreateRequest(pythonApiUrl, inputData);
             }
 
             // 4. 결과 파싱 (RunPod는 output 안에, 로컬은 body 자체가 결과일 수 있음)
@@ -346,6 +347,8 @@ public class MagazineService {
             }
 
             return magazineId;
+        } catch (AiServerUnavailableException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error in generateAndSaveMagazine", e);
             throw new RuntimeException("Detailed error: " + e.getMessage(), e);

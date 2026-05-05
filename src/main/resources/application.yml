@@ -71,12 +71,12 @@ resilience4j:
     instances:
       runPod:
         registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 20s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 80
         eventConsumerBufferSize: 10
         recordExceptions:
           - java.io.IOException

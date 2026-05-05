@@ -1,5 +1,7 @@
 package com.mine.api.service;
 
+import com.mine.api.exception.AiServerUnavailableException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +40,19 @@ public class RunPodService {
      */
     @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendRequest(String url, Map<String, Object> inputData) {
+        return doSendRequest(url, inputData);
+    }
+
+    /**
+     * create_magazine is user-facing and long-running. Do not gate it behind the
+     * shared RunPod circuit breaker; temporary failures in other AI actions should
+     * not instantly block capstone/demo magazine creation requests.
+     */
+    public Map<String, Object> sendMagazineCreateRequest(String url, Map<String, Object> inputData) {
+        return doSendRequest(url, inputData);
+    }
+
+    private Map<String, Object> doSendRequest(String url, Map<String, Object> inputData) {
         // RunPod Serverless는 POST /run 요청 후 작업 ID를 받아 폴링하는 비동기 구조
         String runUrl = url.replace("/runsync", "/run");
         if (!runUrl.contains("/run")) {
@@ -126,6 +141,14 @@ public class RunPodService {
     // 로컴 FastAPI 서버 전용 동기 방식 — RunPod와 달리 input 래핑 및 폴링 불필요
     @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "runPod", fallbackMethod = "fallback")
     public Map<String, Object> sendSyncRequest(String url, Map<String, Object> requestBody) {
+        return doSendSyncRequest(url, requestBody);
+    }
+
+    public Map<String, Object> sendMagazineCreateSyncRequest(String url, Map<String, Object> requestBody) {
+        return doSendSyncRequest(url, requestBody);
+    }
+
+    private Map<String, Object> doSendSyncRequest(String url, Map<String, Object> requestBody) {
         log.info("Sending Sync request to: {}", url);
 
         ExchangeStrategies strategies = ExchangeStrategies.builder()
@@ -149,16 +172,37 @@ public class RunPodService {
         if (errorMessage == null) {
             errorMessage = t.getClass().getSimpleName() + " (No detailed message)";
         }
-        
-        log.error("Circuit Breaker Open! AI Server is unreachable. URL: {}, Error: {}", url, errorMessage);
-        log.error("Detailed Exception in RunPodService:", t);
+        String action = extractAction(inputData);
+        String exceptionClass = t.getClass().getName();
 
-        // Return a default failure response that Service can understand
-        if (t instanceof io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
-            throw new RuntimeException("AI Server is currently unavailable (Circuit Open). Please try again later.", t);
+        if (t instanceof CallNotPermittedException) {
+            log.warn(
+                    "RunPod circuit breaker blocked request action={}, url={}, circuitState=OPEN, exceptionClass={}, message={}",
+                    action, url, exceptionClass, errorMessage);
+            throw new AiServerUnavailableException("AI 생성 서버가 잠시 준비 중입니다. 잠시 후 다시 시도해주세요.", t);
         }
 
-        // For other exceptions, rethrow or return default
+        log.error(
+                "RunPod request failed action={}, url={}, circuitState=UNKNOWN, exceptionClass={}, message={}",
+                action, url, exceptionClass, errorMessage, t);
         throw new RuntimeException("AI Server connection failed: " + errorMessage, t);
+    }
+
+    private String extractAction(Map<String, Object> inputData) {
+        if (inputData == null) {
+            return "unknown";
+        }
+        Object action = inputData.get("action");
+        if (action instanceof String actionString && !actionString.isBlank()) {
+            return actionString;
+        }
+        Object nestedInput = inputData.get("input");
+        if (nestedInput instanceof Map<?, ?> nestedMap) {
+            Object nestedAction = nestedMap.get("action");
+            if (nestedAction instanceof String nestedActionString && !nestedActionString.isBlank()) {
+                return nestedActionString;
+            }
+        }
+        return "unknown";
     }
 }

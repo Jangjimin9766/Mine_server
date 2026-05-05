@@ -6,6 +6,7 @@ import com.mine.api.domain.UserInterest;
 import com.mine.api.domain.Interest;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.dto.MagazineGenerationRequest;
+import com.mine.api.exception.AiServerUnavailableException;
 import com.mine.api.repository.MagazineLikeRepository;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserInterestRepository;
@@ -143,8 +144,8 @@ class MagazineServiceTest {
                                                 "subtitle", "Intro",
                                                 "text", "Generated text")))));
 
-                // 로컬 URL이므로 sendSyncRequest가 호출됨
-                when(runPodService.sendSyncRequest(anyString(), any(Map.class))).thenReturn(outputMap);
+                // 로컬 URL이므로 create_magazine 전용 sync 호출이 사용됨
+                when(runPodService.sendMagazineCreateSyncRequest(anyString(), any(Map.class))).thenReturn(outputMap);
                 when(magazineRepository.save(any(Magazine.class))).thenReturn(savedMagazine);
 
                 // When
@@ -155,7 +156,8 @@ class MagazineServiceTest {
                 assertEquals(1L, magazineId);
 
                 verify(userRepository, times(2)).findByUsername(username);
-                verify(runPodService).sendSyncRequest(anyString(), any(Map.class));
+                verify(runPodService).sendMagazineCreateSyncRequest(anyString(), any(Map.class));
+                verify(runPodService, never()).sendSyncRequest(anyString(), any(Map.class));
                 verify(moodboardService, never()).createMoodboardForMagazineAsync(anyLong(), anyString());
 
                 org.mockito.ArgumentCaptor<Magazine> magazineCaptor = org.mockito.ArgumentCaptor.forClass(Magazine.class);
@@ -164,6 +166,74 @@ class MagazineServiceTest {
                                 magazineCaptor.getValue().getMoodboardStatus());
                 assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getMoodboardImageUrl());
                 assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getCoverImageUrl());
+        }
+
+        @Test
+        @DisplayName("RunPod create_magazine 경로는 공용 circuit breaker 메서드를 사용하지 않는다")
+        void generateAndSaveMagazine_RunPodCreate_UsesDedicatedCreateMethod() {
+                String username = "testuser";
+                MagazineGenerationRequest request = new MagazineGenerationRequest();
+                request.setTopic("Travel");
+
+                User user = User.builder()
+                                .username(username)
+                                .email("test@example.com")
+                                .password("password")
+                                .nickname("Tester")
+                                .build();
+                Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
+                UserInterest interest = UserInterest.builder().user(user).interest(travelInterest).build();
+                ReflectionTestUtils.setField(magazineService, "pythonApiUrl",
+                                "https://api.runpod.ai/v2/test/runsync");
+
+                Map<String, Object> outputMap = new HashMap<>();
+                outputMap.put("output", Map.of(
+                                "title", "Generated Magazine",
+                                "cover_image_url", "http://image.url",
+                                "moodboard", Map.of(
+                                                "image_url", "https://example.com/moodboard.png",
+                                                "description", "Generated moodboard"),
+                                "sections", List.of(Map.of(
+                                                "heading", "Section 1",
+                                                "paragraphs", List.of(Map.of(
+                                                                "subtitle", "Intro",
+                                                                "text", "Generated text"))))));
+
+                Magazine savedMagazine = Magazine.builder().user(user).title("Generated Magazine").build();
+                ReflectionTestUtils.setField(savedMagazine, "id", 1L);
+
+                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+                when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
+                when(runPodService.sendMagazineCreateRequest(anyString(), any(Map.class))).thenReturn(outputMap);
+                when(magazineRepository.save(any(Magazine.class))).thenReturn(savedMagazine);
+
+                Long magazineId = magazineService.generateAndSaveMagazine(request, username);
+
+                assertEquals(1L, magazineId);
+                verify(runPodService).sendMagazineCreateRequest(anyString(), any(Map.class));
+                verify(runPodService, never()).sendRequest(anyString(), any(Map.class));
+        }
+
+        @Test
+        @DisplayName("AI 서버 준비 중 예외는 500 래핑 없이 전파된다")
+        void generateAndSaveMagazine_AiServerUnavailable_Propagates() {
+                String username = "testuser";
+                MagazineGenerationRequest request = new MagazineGenerationRequest();
+                request.setTopic("Travel");
+
+                User user = User.builder().username(username).build();
+                Interest travelInterest = createInterest(1L, "TRAVEL", "여행");
+                UserInterest interest = UserInterest.builder().user(user).interest(travelInterest).build();
+
+                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+                when(userInterestRepository.findByUser(user)).thenReturn(List.of(interest));
+                when(runPodService.sendMagazineCreateSyncRequest(anyString(), any(Map.class)))
+                                .thenThrow(new AiServerUnavailableException("AI 생성 서버가 잠시 준비 중입니다. 잠시 후 다시 시도해주세요."));
+
+                AiServerUnavailableException exception = assertThrows(
+                                AiServerUnavailableException.class,
+                                () -> magazineService.generateAndSaveMagazine(request, username));
+                assertEquals("AI 생성 서버가 잠시 준비 중입니다. 잠시 후 다시 시도해주세요.", exception.getMessage());
         }
 
         /*
