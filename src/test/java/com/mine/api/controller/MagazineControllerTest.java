@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,6 +86,11 @@ class MagazineControllerTest {
                 MagazineDto.DetailResponse detailResponse = MagazineDto.DetailResponse.builder()
                                 .id(1L)
                                 .title("Test Magazine")
+                                .moodboard(MagazineDto.MoodboardItem.builder()
+                                                .imageUrl("https://example.com/moodboard.png")
+                                                .description("A clean editorial moodboard")
+                                                .status(com.mine.api.domain.MoodboardStatus.COMPLETED)
+                                                .build())
                                 .user(MagazineDto.DetailResponse.SimpleUser.builder()
                                                 .id(1L)
                                                 .username("testuser")
@@ -96,7 +102,73 @@ class MagazineControllerTest {
 
                 mockMvc.perform(get("/api/magazines/1"))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.title").value("Test Magazine"));
+                                .andExpect(jsonPath("$.title").value("Test Magazine"))
+                                .andExpect(jsonPath("$.moodboard.imageUrl").value("https://example.com/moodboard.png"))
+                                .andExpect(jsonPath("$.moodboard.description").value("A clean editorial moodboard"))
+                                .andExpect(jsonPath("$.moodboard.status").value("COMPLETED"))
+                                .andExpect(jsonPath("$.moodboardImageUrl").doesNotExist())
+                                .andExpect(jsonPath("$.moodboardDescription").doesNotExist())
+                                .andExpect(jsonPath("$.moodboardStatus").doesNotExist());
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void getMagazineDetail_NotFound_Returns404() throws Exception {
+                given(magazineService.getMagazineDetail(999L, "testuser"))
+                                .willThrow(new jakarta.persistence.EntityNotFoundException("Magazine not found"));
+
+                mockMvc.perform(get("/api/magazines/999"))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.status").value(404))
+                                .andExpect(jsonPath("$.message").value("Magazine not found"));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void searchLikedMagazines() throws Exception {
+                Page<MagazineDto.ListItem> page = new PageImpl<>(
+                                List.of(MagazineDto.ListItem.builder()
+                                                .id(1L)
+                                                .title("Search Result")
+                                                .moodboard(MagazineDto.MoodboardItem.builder()
+                                                                .imageUrl("https://example.com/moodboard.png")
+                                                                .description("Mood")
+                                                                .status(com.mine.api.domain.MoodboardStatus.COMPLETED)
+                                                                .build())
+                                                .build()),
+                                org.springframework.data.domain.PageRequest.of(0, 10), 1);
+
+                given(magazineService.searchLikedMagazines(eq("테스트"), eq("testuser"), any(Pageable.class)))
+                                .willReturn(page);
+
+                mockMvc.perform(get("/api/magazines/liked/search")
+                                .param("keyword", "테스트"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content[0].title").value("Search Result"))
+                                .andExpect(jsonPath("$.content[0].moodboard.imageUrl").value("https://example.com/moodboard.png"))
+                                .andExpect(jsonPath("$.content[0].moodboardImageUrl").doesNotExist());
+
+                verify(magazineService).searchLikedMagazines(eq("테스트"), eq("testuser"), any(Pageable.class));
+        }
+
+        @Test
+        void searchExploreMagazines_AllowsAnonymous() throws Exception {
+                Page<MagazineDto.ListItem> page = new PageImpl<>(
+                                List.of(MagazineDto.ListItem.builder()
+                                                .id(1L)
+                                                .title("Explore Result")
+                                                .build()),
+                                org.springframework.data.domain.PageRequest.of(0, 10), 1);
+
+                given(magazineService.searchExploreMagazines(eq("인테리어"), eq(null), any(Pageable.class)))
+                                .willReturn(page);
+
+                mockMvc.perform(get("/api/magazines/feed/search")
+                                .param("keyword", "인테리어"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content[0].title").value("Explore Result"));
+
+                verify(magazineService).searchExploreMagazines(eq("인테리어"), eq(null), any(Pageable.class));
         }
 
         @Test

@@ -233,7 +233,7 @@ public class MagazineService {
     @Transactional(readOnly = true)
     public com.mine.api.dto.MagazineDto.DetailResponse getMagazineDetail(Long id, String username) {
         Magazine magazine = magazineRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 본인 매거진이 아니고 비공개 계정이면 접근 불가
         boolean isOwner = username != null && magazine.getUser().getUsername().equals(username);
@@ -475,9 +475,7 @@ public class MagazineService {
                     .likeCount((int) magazineLikeRepository.countByMagazine(m))
                     .commentCount(0)
                     .createdAt(m.getCreatedAt().toString())
-                    .moodboardImageUrl(m.getMoodboardImageUrl())
-                    .moodboardDescription(m.getMoodboardDescription())
-                    .moodboardStatus(m.getMoodboardStatus())
+                    .moodboard(com.mine.api.dto.MagazineDto.MoodboardItem.from(m))
                     .build());
         } else {
             // 전체 조회 시에는 EntityGraph가 적용된 쿼리를 사용하므로 기존 방식 유지
@@ -505,15 +503,15 @@ public class MagazineService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchLikedMagazines(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+        String normalizedKeyword = normalizeSearchKeyword(keyword);
         
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
-                pageable.getPageNumber(), pageable.getPageSize(), 
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+                pageable.getPageNumber(), pageable.getPageSize());
 
-        return magazineRepository.searchLikedMagazines(keyword, user.getId(), nativePageable)
+        return magazineRepository.searchLikedMagazines(normalizedKeyword, user.getId(), nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
@@ -523,12 +521,12 @@ public class MagazineService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchExploreMagazines(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
+        String normalizedKeyword = normalizeSearchKeyword(keyword);
         org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
-                pageable.getPageNumber(), pageable.getPageSize(), 
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "created_at"));
+                pageable.getPageNumber(), pageable.getPageSize());
 
         if (username == null || username.isBlank()) {
-            return magazineRepository.searchPublicExploreMagazines(keyword, nativePageable)
+            return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, nativePageable)
                     .map(com.mine.api.dto.MagazineDto.ListItem::from);
         }
 
@@ -541,8 +539,21 @@ public class MagazineService {
         String kw2 = top3Keywords.size() > 1 ? top3Keywords.get(1) : "";
         String kw3 = top3Keywords.size() > 2 ? top3Keywords.get(2) : "";
 
-        return magazineRepository.searchPersonalizedExploreMagazines(keyword, kw1, kw2, kw3, user.getId(), nativePageable)
+        org.springframework.data.domain.Page<Magazine> personalizedResults = magazineRepository
+                .searchPersonalizedExploreMagazines(normalizedKeyword, kw1, kw2, kw3, user.getId(), nativePageable);
+        if (personalizedResults.hasContent()) {
+            return personalizedResults.map(com.mine.api.dto.MagazineDto.ListItem::from);
+        }
+
+        return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
+    }
+
+    private String normalizeSearchKeyword(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("검색어를 입력해주세요");
+        }
+        return keyword.trim();
     }
 
     /**

@@ -72,15 +72,20 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "ORDER BY m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
@@ -96,15 +101,20 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))",
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "ORDER BY m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))",
@@ -146,17 +156,22 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
                         "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
-                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))", 
+                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%')) " +
+                        "ORDER BY m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
+                        "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
