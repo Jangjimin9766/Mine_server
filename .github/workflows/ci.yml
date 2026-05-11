@@ -49,6 +49,15 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Run core API tests
+      run: ./gradlew coreApiTest
+      env:
+        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/mine_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: "1234"
+        SPRING_DATA_REDIS_HOST: localhost
+        SPRING_DATA_REDIS_PORT: 6379
+
     - name: Build with Gradle Wrapper
       run: ./gradlew build
       env:
