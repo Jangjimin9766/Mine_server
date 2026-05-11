@@ -2,7 +2,7 @@ name: Discord Notifications
 
 on:
   push:
-    branches: [ "main", "master", "develop" ]
+    branches: [ "main", "develop" ]
   pull_request:
     types: [opened, closed, reopened]
 
@@ -11,66 +11,54 @@ permissions:
   pull-requests: read
 
 jobs:
-  push-notify:
-    if: github.event_name == 'push'
+  notify:
     runs-on: ubuntu-latest
     steps:
-    - name: Push Notification
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        nocontext: true
-        title: "📤 Push to `${{ github.ref_name }}`"
-        description: |
-          **커밋 메시지**: ${{ github.event.head_commit.message }}
-          **커밋**: `${{ github.sha }}`
-          **작성자**: ${{ github.actor }}
-        color: 0x7289DA
+    - name: Send Discord notification
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        EVENT_NAME: ${{ github.event_name }}
+        EVENT_ACTION: ${{ github.event.action }}
+        REF_NAME: ${{ github.ref_name }}
+        SHA: ${{ github.sha }}
+        ACTOR: ${{ github.actor }}
+        HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        HEAD_REF: ${{ github.head_ref }}
+        BASE_REF: ${{ github.base_ref }}
+        PR_MERGED: ${{ github.event.pull_request.merged }}
+      run: |
+        if [ -z "$DISCORD_WEBHOOK" ]; then
+          echo "DISCORD_WEBHOOK is not set. Skipping notification."
+          exit 0
+        fi
 
-  pr-opened:
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
-    runs-on: ubuntu-latest
-    steps:
-    - name: PR Opened Notification
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        nocontext: true
-        title: "🔔 새 PR 생성"
-        description: |
-          **제목**: ${{ github.event.pull_request.title }}
-          **작성자**: ${{ github.event.pull_request.user.login }}
-          **브랜치**: `${{ github.head_ref }}` → `${{ github.base_ref }}`
-          **링크**: ${{ github.event.pull_request.html_url }}
-        color: 0xFFA500
+        if [ "$EVENT_NAME" = "push" ]; then
+          TITLE="Push to \`$REF_NAME\`"
+          DESCRIPTION="**커밋 메시지**: $HEAD_COMMIT_MESSAGE\n**커밋**: \`$SHA\`\n**작성자**: $ACTOR"
+          COLOR=7506394
+        elif [ "$EVENT_ACTION" = "opened" ]; then
+          TITLE="새 PR 생성"
+          DESCRIPTION="**제목**: $PR_TITLE\n**작성자**: $PR_AUTHOR\n**브랜치**: \`$HEAD_REF\` -> \`$BASE_REF\`\n**링크**: $PR_URL"
+          COLOR=16753920
+        elif [ "$EVENT_ACTION" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
+          TITLE="PR 머지 완료"
+          DESCRIPTION="**제목**: $PR_TITLE\n**작성자**: $PR_AUTHOR\n**브랜치**: \`$HEAD_REF\` -> \`$BASE_REF\`"
+          COLOR=65280
+        elif [ "$EVENT_ACTION" = "closed" ]; then
+          TITLE="PR 닫힘 (머지 안됨)"
+          DESCRIPTION="**제목**: $PR_TITLE\n**작성자**: $PR_AUTHOR"
+          COLOR=16711680
+        else
+          echo "No matching notification rule."
+          exit 0
+        fi
 
-  pr-merged:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    steps:
-    - name: PR Merged Notification
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        nocontext: true
-        title: "🎉 PR 머지 완료!"
-        description: |
-          **제목**: ${{ github.event.pull_request.title }}
-          **작성자**: ${{ github.event.pull_request.user.login }}
-          **브랜치**: `${{ github.head_ref }}` → `${{ github.base_ref }}`
-        color: 0x00FF00
-
-  pr-closed:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == false
-    runs-on: ubuntu-latest
-    steps:
-    - name: PR Closed Notification
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        nocontext: true
-        title: "🚫 PR 닫힘 (머지 안됨)"
-        description: |
-          **제목**: ${{ github.event.pull_request.title }}
-          **작성자**: ${{ github.event.pull_request.user.login }}
-        color: 0xFF0000
+        jq -n \
+          --arg title "$TITLE" \
+          --arg description "$DESCRIPTION" \
+          --argjson color "$COLOR" \
+          '{embeds: [{title: $title, description: $description, color: $color}]}' \
+          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"

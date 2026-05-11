@@ -11,10 +11,10 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up JDK 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
@@ -26,7 +26,7 @@ jobs:
       run: ./gradlew clean build -x test
 
     - name: Copy JAR to EC2
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v1.0.0
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
@@ -36,7 +36,7 @@ jobs:
         strip_components: 2
 
     - name: Deploy to EC2
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.2.5
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
@@ -48,7 +48,7 @@ jobs:
           sudo systemctl status mine
 
     - name: Setup SSL and Nginx
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.2.5
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
@@ -91,14 +91,29 @@ jobs:
           fi
 
     - name: Discord Notification
-      uses: sarisia/actions-status-discord@v1
       if: always()
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        title: "🚀 배포 ${{ job.status == 'success' && '완료!' || '실패 ❌' }}"
-        description: |
-          **환경**: Production (EC2)
-          **브랜치**: `${{ github.ref_name }}`
-          **커밋**: `${{ github.sha }}`
-          **실행자**: ${{ github.actor }}
-        color: ${{ job.status == 'success' && '0x00FF00' || 'FF0000' }}
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        JOB_STATUS: ${{ job.status }}
+      run: |
+        if [ -z "$DISCORD_WEBHOOK" ]; then
+          echo "DISCORD_WEBHOOK is not set. Skipping notification."
+          exit 0
+        fi
+
+        if [ "$JOB_STATUS" = "success" ]; then
+          TITLE="배포 완료"
+          COLOR=65280
+        else
+          TITLE="배포 실패"
+          COLOR=16711680
+        fi
+
+        jq -n \
+          --arg title "$TITLE" \
+          --arg branch "${{ github.ref_name }}" \
+          --arg commit "${{ github.sha }}" \
+          --arg actor "${{ github.actor }}" \
+          --argjson color "$COLOR" \
+          '{embeds: [{title: $title, description: ("**환경**: Production (EC2)\n**브랜치**: `" + $branch + "`\n**커밋**: `" + $commit + "`\n**실행자**: " + $actor), color: $color}]}' \
+          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
