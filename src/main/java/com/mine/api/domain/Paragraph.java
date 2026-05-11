@@ -73,6 +73,10 @@ public class Paragraph {
         this.displayOrder = displayOrder;
     }
 
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public void update(String subtitle, String text, String imageUrl, String sourceUrl) {
         this.subtitle = subtitle;
         this.text = text;

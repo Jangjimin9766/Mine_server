@@ -70,3 +70,20 @@ tasks.named('test') {
         showStandardStreams = true
     }
 }
+
+tasks.register('coreApiTest', Test) {
+    description = 'Runs core API controller tests and critical service tests before push.'
+    group = 'verification'
+    useJUnitPlatform()
+
+    include 'com/mine/api/controller/**/*Test.class'
+    include 'com/mine/api/service/AuthServiceTest.class'
+    include 'com/mine/api/service/MagazineServiceTest.class'
+    include 'com/mine/api/service/MoodboardServiceTest.class'
+    include 'com/mine/api/service/RunPodServiceTest.class'
+
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showStandardStreams = true
+    }
+}

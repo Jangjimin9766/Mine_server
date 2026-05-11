@@ -31,6 +31,7 @@ public class MagazineService {
     private final com.mine.api.repository.MoodboardRepository moodboardRepository;
     private final S3Service s3Service;
     private final SectionService sectionService;
+    private final MagazineImageUploadService magazineImageUploadService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -62,48 +63,7 @@ public class MagazineService {
             }
         }
 
-        // 3. 섹션 썸네일/문단 이미지를 CompletableFuture로 병렬 S3 업로드 — 순차 업로드 대비 속도 대폭 개선
-        java.util.List<java.util.concurrent.CompletableFuture<Void>> uploadTasks = new java.util.ArrayList<>();
-
-        if (request.getSections() != null) {
-            for (MagazineCreateRequest.SectionDto sectionDto : request.getSections()) {
-                String originalUrl = sectionDto.getThumbnailUrl();
-                if (originalUrl != null && !originalUrl.isBlank()) {
-                    uploadTasks.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
-                        String uploadedUrl = s3Service.uploadImageFromUrl(originalUrl);
-                        if (uploadedUrl != null) {
-                            sectionDto.setThumbnailUrl(uploadedUrl);
-                        }
-                    }));
-                }
-
-                if (sectionDto.getParagraphs() != null) {
-                    for (MagazineCreateRequest.ParagraphDto paraDto : sectionDto.getParagraphs()) {
-                        String pUrl = paraDto.getImageUrl();
-                        if (pUrl != null && !pUrl.isBlank()) {
-                            uploadTasks.add(java.util.concurrent.CompletableFuture.runAsync(() -> {
-                                String uploadedUrl = s3Service.uploadImageFromUrl(pUrl);
-                                if (uploadedUrl != null) {
-                                    paraDto.setImageUrl(uploadedUrl);
-                                }
-                            }));
-                        }
-                    }
-                }
-            }
-        }
-
-        // 업로드 실패는 경고만 남기고 진행 — 이미지 없이 저장하는 게 저장 실패보다 낫다
-        if (!uploadTasks.isEmpty()) {
-            try {
-                java.util.concurrent.CompletableFuture.allOf(uploadTasks.toArray(new java.util.concurrent.CompletableFuture[0]))
-                        .get(30, java.util.concurrent.TimeUnit.SECONDS);
-            } catch (Exception e) {
-                log.warn("Some image uploads timed out or failed, proceeding with available URLs", e);
-            }
-        }
-
-        // 4. Magazine 엔티티 생성
+        // 3. Magazine 엔티티 생성
         String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : resolveCoverImageUrl(request);
         MoodboardStatus moodboardStatus = moodboardImageUrl != null
                 ? MoodboardStatus.COMPLETED
@@ -119,7 +79,7 @@ public class MagazineService {
                 .user(user)
                 .build();
 
-        // 5. Section/Paragraph 엔티티 생성 및 저장
+        // 4. Section/Paragraph 엔티티 생성 및 저장
         if (request.getSections() != null) {
             for (int i = 0; i < request.getSections().size(); i++) {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
@@ -188,7 +148,58 @@ public class MagazineService {
             moodboardRepository.save(moodboard);
         }
 
+        scheduleAsyncImageUploads(savedMagazine);
+
         return savedMagazine.getId();
+    }
+
+    private void scheduleAsyncImageUploads(Magazine magazine) {
+        java.util.List<MagazineImageUploadService.SectionImageUpload> sectionImages = new java.util.ArrayList<>();
+        java.util.List<MagazineImageUploadService.ParagraphImageUpload> paragraphImages = new java.util.ArrayList<>();
+
+        for (MagazineSection section : magazine.getSections()) {
+            String thumbnailUrl = section.getThumbnailUrl();
+            if (shouldUploadExternalImage(thumbnailUrl)) {
+                sectionImages.add(new MagazineImageUploadService.SectionImageUpload(section.getId(), thumbnailUrl));
+            }
+
+            for (Paragraph paragraph : section.getParagraphs()) {
+                String imageUrl = paragraph.getImageUrl();
+                if (shouldUploadExternalImage(imageUrl)) {
+                    paragraphImages.add(new MagazineImageUploadService.ParagraphImageUpload(paragraph.getId(), imageUrl));
+                }
+            }
+        }
+
+        if (sectionImages.isEmpty() && paragraphImages.isEmpty()) {
+            return;
+        }
+
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            magazineImageUploadService.uploadMagazineImagesAsync(
+                                    magazine.getId(),
+                                    sectionImages,
+                                    paragraphImages);
+                        }
+                    });
+            return;
+        }
+
+        magazineImageUploadService.uploadMagazineImagesAsync(magazine.getId(), sectionImages, paragraphImages);
+    }
+
+    private boolean shouldUploadExternalImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return false;
+        }
+        if (!imageUrl.startsWith("http")) {
+            return false;
+        }
+        return !imageUrl.contains("mine-moodboard-bucket.s3.");
     }
 
     private String truncate(String str, int length) {
