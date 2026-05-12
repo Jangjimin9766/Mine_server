@@ -70,10 +70,10 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "INNER JOIN (SELECT m.id, MIN(CASE " +
                         "WHEN m.title = :keyword THEN 0 " +
                         "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
-                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) THEN 2 " +
                         "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
-                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
-                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%') THEN 5 " +
                         "ELSE 6 END) AS relevance " +
                         "FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
@@ -81,11 +81,12 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%'))) " +
                         "GROUP BY m.id) matched ON matched.id = m.id " +
                         "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
@@ -94,14 +95,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%')))", 
                         nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchLikedMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("tagKeyword") String tagKeyword,
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
@@ -109,10 +112,10 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "INNER JOIN (SELECT m.id, MIN(CASE " +
                         "WHEN m.title = :keyword THEN 0 " +
                         "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
-                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) THEN 2 " +
                         "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
-                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
-                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%') THEN 5 " +
                         "ELSE 6 END) AS relevance " +
                         "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
@@ -120,11 +123,12 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%'))) " +
                         "GROUP BY m.id) matched ON matched.id = m.id " +
                         "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
@@ -133,14 +137,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))",
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%')))",
                         nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchPublicExploreMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("tagKeyword") String tagKeyword,
                         org.springframework.data.domain.Pageable pageable);
 
         // ⭐ 둘러보기 검색 (Explore Search - Global)
@@ -174,10 +180,10 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "INNER JOIN (SELECT m.id, MIN(CASE " +
                         "WHEN m.title = :keyword THEN 0 " +
                         "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
-                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) THEN 2 " +
                         "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
-                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
-                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%') THEN 5 " +
                         "ELSE 6 END) AS relevance " +
                         "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
@@ -185,11 +191,12 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%'))) " +
                         "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
                         "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%')) " +
                         "GROUP BY m.id) matched ON matched.id = m.id " +
@@ -200,16 +207,18 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "LEFT JOIN users u ON m.user_id = u.id " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "OR m.introduction LIKE CONCAT('%', :keyword, '%') " +
                         "OR m.tags LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (:tagKeyword IS NOT NULL AND m.tags LIKE CONCAT('%', :tagKeyword, '%')) " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR p.subtitle LIKE CONCAT('%', :keyword, '%') " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND m.introduction LIKE CONCAT('%', :keyword, '%')) " +
+                        "OR (CHAR_LENGTH(:keyword) >= 3 AND p.text LIKE CONCAT('%', :keyword, '%'))) " +
                         "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
                         "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))", 
                         nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchPersonalizedExploreMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
+                        @org.springframework.data.repository.query.Param("tagKeyword") String tagKeyword,
                         @org.springframework.data.repository.query.Param("kw1") String kw1,
                         @org.springframework.data.repository.query.Param("kw2") String kw2,
                         @org.springframework.data.repository.query.Param("kw3") String kw3,

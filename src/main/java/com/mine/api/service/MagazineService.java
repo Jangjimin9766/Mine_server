@@ -523,6 +523,7 @@ public class MagazineService {
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchLikedMagazines(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
         String normalizedKeyword = normalizeSearchKeyword(keyword);
+        String tagKeyword = resolveTagKeyword(normalizedKeyword);
         
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
@@ -530,7 +531,7 @@ public class MagazineService {
         org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
                 pageable.getPageNumber(), pageable.getPageSize());
 
-        return magazineRepository.searchLikedMagazines(normalizedKeyword, user.getId(), nativePageable)
+        return magazineRepository.searchLikedMagazines(normalizedKeyword, tagKeyword, user.getId(), nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
@@ -541,11 +542,12 @@ public class MagazineService {
     public org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> searchExploreMagazines(
             String keyword, String username, org.springframework.data.domain.Pageable pageable) {
         String normalizedKeyword = normalizeSearchKeyword(keyword);
+        String tagKeyword = resolveTagKeyword(normalizedKeyword);
         org.springframework.data.domain.Pageable nativePageable = org.springframework.data.domain.PageRequest.of(
                 pageable.getPageNumber(), pageable.getPageSize());
 
         if (username == null || username.isBlank()) {
-            return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, nativePageable)
+            return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, tagKeyword, nativePageable)
                     .map(com.mine.api.dto.MagazineDto.ListItem::from);
         }
 
@@ -559,12 +561,12 @@ public class MagazineService {
         String kw3 = top3Keywords.size() > 2 ? top3Keywords.get(2) : "";
 
         org.springframework.data.domain.Page<Magazine> personalizedResults = magazineRepository
-                .searchPersonalizedExploreMagazines(normalizedKeyword, kw1, kw2, kw3, user.getId(), nativePageable);
+                .searchPersonalizedExploreMagazines(normalizedKeyword, tagKeyword, kw1, kw2, kw3, user.getId(), nativePageable);
         if (personalizedResults.hasContent()) {
             return personalizedResults.map(com.mine.api.dto.MagazineDto.ListItem::from);
         }
 
-        return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, nativePageable)
+        return magazineRepository.searchPublicExploreMagazines(normalizedKeyword, tagKeyword, nativePageable)
                 .map(com.mine.api.dto.MagazineDto.ListItem::from);
     }
 
@@ -573,6 +575,22 @@ public class MagazineService {
             throw new IllegalArgumentException("검색어를 입력해주세요");
         }
         return keyword.trim();
+    }
+
+    private String resolveTagKeyword(String keyword) {
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (normalized) {
+            case "영화", "무비", "movie", "movies", "cinema", "시네마" -> "MOVIE";
+            case "여행", "travel", "trip" -> "TRAVEL";
+            case "패션", "fashion" -> "FASHION";
+            case "음악", "music" -> "MUSIC";
+            case "디자인", "design" -> "DESIGN";
+            case "음식", "푸드", "맛집", "food" -> "FOOD";
+            case "운동", "스포츠", "sports" -> "SPORTS";
+            case "건강", "health" -> "HEALTH";
+            case "테크", "기술", "tech", "it" -> "TECH";
+            default -> null;
+        };
     }
 
     /**
