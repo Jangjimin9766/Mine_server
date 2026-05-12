@@ -66,7 +66,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         //                 org.springframework.data.domain.Pageable pageable);
 
         // ⭐ 찜한 매거진 검색 (Saved Search)
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m.* FROM magazines m " +
+                        "INNER JOIN (SELECT m.id, MIN(CASE " +
+                        "WHEN m.title = :keyword THEN 0 " +
+                        "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
+                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "ELSE 6 END) AS relevance " +
+                        "FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
@@ -77,7 +86,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
-                        "ORDER BY m.created_at DESC, m.id DESC",
+                        "GROUP BY m.id) matched ON matched.id = m.id " +
+                        "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
@@ -95,7 +105,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         @org.springframework.data.repository.query.Param("userId") Long userId,
                         org.springframework.data.domain.Pageable pageable);
 
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m.* FROM magazines m " +
+                        "INNER JOIN (SELECT m.id, MIN(CASE " +
+                        "WHEN m.title = :keyword THEN 0 " +
+                        "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
+                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "ELSE 6 END) AS relevance " +
+                        "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "LEFT JOIN users u ON m.user_id = u.id " +
@@ -106,7 +125,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.text LIKE CONCAT('%', :keyword, '%') " +
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
-                        "ORDER BY m.created_at DESC, m.id DESC",
+                        "GROUP BY m.id) matched ON matched.id = m.id " +
+                        "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
@@ -150,7 +170,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         // ⭐ 개인화된 둘러보기 검색 (Personalized Explore Search)
         // [필터] 1. 검색어 일치 (제목/섹션/본문) 2. 추천 피드 대상 (사용자 관심사/좋아요 태그 매칭)
-        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+        @org.springframework.data.jpa.repository.Query(value = "SELECT m.* FROM magazines m " +
+                        "INNER JOIN (SELECT m.id, MIN(CASE " +
+                        "WHEN m.title = :keyword THEN 0 " +
+                        "WHEN m.title LIKE CONCAT('%', :keyword, '%') THEN 1 " +
+                        "WHEN m.tags LIKE CONCAT('%', :keyword, '%') THEN 2 " +
+                        "WHEN s.heading LIKE CONCAT('%', :keyword, '%') THEN 3 " +
+                        "WHEN m.introduction LIKE CONCAT('%', :keyword, '%') THEN 4 " +
+                        "WHEN p.subtitle LIKE CONCAT('%', :keyword, '%') THEN 5 " +
+                        "ELSE 6 END) AS relevance " +
+                        "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "LEFT JOIN users u ON m.user_id = u.id " +
@@ -163,7 +192,8 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
                         "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
                         "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%')) " +
-                        "ORDER BY m.created_at DESC, m.id DESC",
+                        "GROUP BY m.id) matched ON matched.id = m.id " +
+                        "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +

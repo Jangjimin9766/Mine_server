@@ -64,7 +64,7 @@ public class MagazineController {
             magazineService.deleteMagazine(id, userDetails.getUsername());
             return ResponseEntity.noContent().build(); // 204 No Content
 
-        } catch (IllegalArgumentException e) {
+        } catch (jakarta.persistence.EntityNotFoundException | IllegalArgumentException e) {
             return ResponseEntity.notFound().build(); // 404 Not Found
 
         } catch (SecurityException e) {
@@ -89,6 +89,9 @@ public class MagazineController {
         try {
             magazineService.updateMagazine(id, request, userDetails.getUsername());
             return ResponseEntity.ok(java.util.Map.of("message", "수정되었습니다")); // 200 OK
+
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -253,7 +256,7 @@ public class MagazineController {
 
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException e) {
+        } catch (jakarta.persistence.EntityNotFoundException | IllegalArgumentException e) {
             return ResponseEntity.notFound().build(); // 404 Not Found
 
         } catch (SecurityException e) {
@@ -290,7 +293,7 @@ public class MagazineController {
 
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException e) {
+        } catch (jakarta.persistence.EntityNotFoundException | IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
 
         } catch (SecurityException e) {

@@ -34,6 +34,7 @@ public class SectionService {
     private final RunPodService runPodService;
     private final SectionViewHistoryService sectionViewHistoryService;
     private final S3Service s3Service;
+    private final ContentSafetyService contentSafetyService;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -44,7 +45,7 @@ public class SectionService {
     @Transactional
     public SectionDto.Response getSection(Long magazineId, Long sectionId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 소유자가 아니더라도 공개 매거진이면 열람 허용
         boolean isOwner = username != null && magazine.getUser().getUsername().equals(username);
@@ -191,6 +192,8 @@ public class SectionService {
     @Transactional
     public SectionDto.InteractResponse interact(Long magazineId, Long sectionId,
             String message, String username) {
+        contentSafetyService.validateText(message);
+
         Magazine magazine = getMagazineWithOwnerCheck(magazineId, username);
         MagazineSection section = getSectionFromMagazine(magazine, sectionId);
 
@@ -200,6 +203,10 @@ public class SectionService {
         data.put("section_id", sectionId);
         data.put("section_data", convertSectionToMap(section));
         data.put("message", message);
+        data.put("editing_rules", List.of(
+                "실존 여부를 검증할 수 없는 인물, 유튜버, 장소, 상품 이름은 만들지 않는다.",
+                "검증 가능한 후보가 없으면 구체명 대신 선정 기준과 확인 방법을 작성한다.",
+                "기존 섹션 주제와 직접 관련된 내용만 반영한다."));
 
         log.info("Sending edit_section request: magazineId={}, sectionId={}, message={}",
                 magazineId, sectionId, message);
@@ -345,7 +352,7 @@ public class SectionService {
 
     private Magazine getMagazineWithOwnerCheck(Long magazineId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         if (!magazine.getUser().getUsername().equals(username)) {
             throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);

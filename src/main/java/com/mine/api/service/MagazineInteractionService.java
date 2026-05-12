@@ -28,6 +28,7 @@ public class MagazineInteractionService {
     private final RunPodService runPodService;
     private final S3Service s3Service;
     private final SectionService sectionService;
+    private final ContentSafetyService contentSafetyService;
 
     @Value("${python.api.url}")
     private String pythonApiUrl;
@@ -35,9 +36,11 @@ public class MagazineInteractionService {
     @Transactional
     public InteractionDto.InteractResponse interact(Long magazineId, String username,
             InteractionDto.InteractRequest request) {
+        contentSafetyService.validateText(request != null ? request.getMessage() : null);
+
         // 1. 매거진 조회 및 권한 확인
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Magazine not found"));
 
         if (!magazine.getUser().getUsername().equals(username)) {
             throw new IllegalArgumentException("You don't have permission to modify this magazine");
@@ -49,6 +52,10 @@ public class MagazineInteractionService {
         data.put("magazine_id", magazineId);
         data.put("magazine_data", convertMagazineToMap(magazine));
         data.put("message", request.getMessage());
+        data.put("editing_rules", List.of(
+                "사용자가 추천 추가를 요청해도 실존 여부를 검증할 수 없는 인물, 유튜버, 장소, 상품 이름은 만들지 않는다.",
+                "검증 가능한 후보가 없으면 구체명 대신 선정 기준과 확인 방법을 작성한다.",
+                "기존 매거진 주제와 직접 관련된 내용만 추가한다."));
 
         log.info("Sending edit_magazine request: magazineId={}, message={}", magazineId,
                 request.getMessage());
@@ -122,7 +129,7 @@ public class MagazineInteractionService {
 
     public List<InteractionDto.InteractionHistory> getInteractionHistory(Long magazineId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException("Magazine not found"));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Magazine not found"));
 
         if (!magazine.getUser().getUsername().equals(username)) {
             throw new IllegalArgumentException("You don't have permission to view this magazine");

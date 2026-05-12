@@ -32,6 +32,7 @@ public class MagazineService {
     private final S3Service s3Service;
     private final SectionService sectionService;
     private final MagazineImageUploadService magazineImageUploadService;
+    private final ContentSafetyService contentSafetyService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -275,6 +276,9 @@ public class MagazineService {
 
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
         try {
+            contentSafetyService.validateText(request != null ? request.getTopic() : null);
+            contentSafetyService.validateText(request != null ? request.getUserMood() : null);
+
             // 1. 사용자 관심사 조회
             com.mine.api.domain.User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -289,6 +293,10 @@ public class MagazineService {
             data.put(com.mine.api.common.AppConstants.KEY_USER_MOOD, request.getUserMood());
             data.put(com.mine.api.common.AppConstants.KEY_USER_EMAIL, username);
             data.put("user_interests", userInterests);
+            data.put("generation_rules", java.util.List.of(
+                    "주제와 직접 관련된 내용만 생성한다.",
+                    "실존 인물, 유튜버, 장소, 상품 추천은 검증 가능한 경우에만 포함한다.",
+                    "검증할 수 없는 추천 대상은 만들어내지 말고 일반적인 선택 기준으로 대체한다."));
 
             java.util.Map<String, Object> responseBody;
 
@@ -370,7 +378,7 @@ public class MagazineService {
     @Transactional
     public void deleteMagazine(Long magazineId, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
@@ -398,7 +406,7 @@ public class MagazineService {
         }
 
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
@@ -422,7 +430,7 @@ public class MagazineService {
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         java.util.Optional<com.mine.api.domain.MagazineLike> like = magazineLikeRepository.findByUserAndMagazine(user,
                 magazine);
@@ -603,7 +611,7 @@ public class MagazineService {
     // ⭐ 공개 계정의 매거진 조회 (인증 불필요) - 사용자 공개 AND 매거진 공개
     public Magazine getPublicMagazine(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         // 계정이 비공개면 접근 불가 (매거진 개별 공개 여부는 없음)
         if (!magazine.getUser().getIsPublic()) {
@@ -624,7 +632,7 @@ public class MagazineService {
     @org.springframework.transaction.annotation.Transactional
     public void updateCover(Long magazineId, String newCoverUrl, String username) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         if (!magazine.getUser().getUsername().equals(username)) {
             throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);

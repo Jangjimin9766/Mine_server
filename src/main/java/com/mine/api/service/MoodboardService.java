@@ -30,12 +30,14 @@ public class MoodboardService {
     private final com.mine.api.repository.UserInterestRepository userInterestRepository;
     private final S3Service s3Service;
     private final RunPodService runPodService;
+    private final ContentSafetyService contentSafetyService;
 
     @Value("${python.api.moodboard-url:${mine.internal.moodboard-url:}}")
     private String moodboardApiUrl;
 
     public String createMoodboard(String username, MoodboardRequestDto requestDto) {
         validateMoodboardApiUrl();
+        validateMoodboardRequest(requestDto);
 
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(ErrorMessages.USER_NOT_FOUND));
@@ -46,12 +48,14 @@ public class MoodboardService {
         data.put("user_interests", requestDto.getUser_interests());
         data.put("magazine_tags", requestDto.getMagazine_tags());
         data.put("magazine_titles", requestDto.getMagazine_titles());
+        data.put("moodboard_rules", moodboardRules());
 
         Map<String, Object> output = callMoodboardApi(data);
 
         Boolean success = booleanValue(output.get("success"));
         if (success != null && !success) {
             log.warn("Moodboard generation returned success=false. error_type={}", stringValue(output.get("error_type")));
+            throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
         }
 
         String imagePayload = firstNonBlank(stringValue(output.get("image_url")), stringValue(output.get("fallback_url")));
@@ -133,7 +137,7 @@ public class MoodboardService {
         Magazine magazine = magazineRepository.findByIdAndUserUsername(magazineId, username)
                 .orElseThrow(() -> magazineRepository.existsById(magazineId)
                         ? new SecurityException("무드보드 히스토리 조회 권한이 없습니다")
-                        : new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                        : new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         return moodboardRepository.findByMagazineIdOrderByCreatedAtDesc(magazine.getId());
     }
@@ -149,6 +153,7 @@ public class MoodboardService {
         data.put("user_interests", context.userInterests());
         data.put("magazine_tags", context.magazineTags());
         data.put("magazine_titles", context.magazineTitles());
+        data.put("moodboard_rules", moodboardRules());
 
         Map<String, Object> output = callMoodboardApi(data);
 
@@ -179,7 +184,7 @@ public class MoodboardService {
         Magazine magazine = magazineRepository.findByIdAndUserUsername(magazineId, username)
                 .orElseThrow(() -> magazineRepository.existsById(magazineId)
                         ? new SecurityException(ErrorMessages.NOT_AUTHORIZED)
-                        : new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                        : new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         List<String> userInterests = userInterestRepository.findByUser(user).stream()
                 .map(userInterest -> userInterest.getInterest().getCode())
@@ -235,7 +240,7 @@ public class MoodboardService {
 
     private void completeMoodboard(Long magazineId, MoodboardGenerationResult result) {
         Magazine magazine = magazineRepository.findById(magazineId)
-                .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.MAGAZINE_NOT_FOUND));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(ErrorMessages.MAGAZINE_NOT_FOUND));
 
         magazine.completeMoodboard(result.imageUrl(), result.description());
         magazineRepository.save(magazine);
@@ -304,6 +309,24 @@ public class MoodboardService {
         if (moodboardApiUrl == null || moodboardApiUrl.isBlank()) {
             throw new IllegalStateException("python.api.moodboard-url is missing (PYTHON_MOODBOARD_URL).");
         }
+    }
+
+    private void validateMoodboardRequest(MoodboardRequestDto requestDto) {
+        if (requestDto == null) {
+            throw new IllegalArgumentException("무드보드 요청 본문이 필요합니다.");
+        }
+        contentSafetyService.validateText(requestDto.getTopic());
+        contentSafetyService.validateText(requestDto.getUser_mood());
+        contentSafetyService.validateTexts(requestDto.getUser_interests());
+        contentSafetyService.validateTexts(requestDto.getMagazine_tags());
+        contentSafetyService.validateTexts(requestDto.getMagazine_titles());
+    }
+
+    private List<String> moodboardRules() {
+        return List.of(
+                "topic, magazine_titles, magazine_tags와 직접 관련된 시각 요소만 사용한다.",
+                "주제와 무관한 스포츠 장비, 골프공, 일반 소품 이미지는 사용하지 않는다.",
+                "관련 이미지를 만들 수 없으면 무작위 대체 이미지를 반환하지 말고 실패로 응답한다.");
     }
 
     private boolean isLocalMoodboardApi() {

@@ -54,6 +54,9 @@ class MoodboardServiceTest {
     @Mock
     private S3Service s3Service;
 
+    @Mock
+    private ContentSafetyService contentSafetyService;
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(moodboardService, "moodboardApiUrl",
@@ -88,6 +91,28 @@ class MoodboardServiceTest {
 
         verify(s3Service).uploadBase64ToS3(base64Image);
         verify(moodboardRepository).save(any(Moodboard.class));
+    }
+
+    @Test
+    void createMoodboard_SuccessFalse_DoesNotUseFallbackImage() {
+        String username = "testUser";
+        User user = org.mockito.Mockito.mock(User.class);
+        MoodboardRequestDto requestDto = MoodboardRequestDto.builder()
+                .topic("Test Topic")
+                .build();
+
+        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+
+        java.util.Map<String, Object> output = new java.util.HashMap<>();
+        output.put("success", false);
+        output.put("error_type", "SAFETY_BLOCKED");
+        output.put("fallback_url", "fallback-image");
+
+        given(runPodService.sendSyncRequest(anyString(), any(java.util.Map.class))).willReturn(output);
+
+        assertThrows(RuntimeException.class, () -> moodboardService.createMoodboard(username, requestDto));
+        org.mockito.Mockito.verify(s3Service, org.mockito.Mockito.never()).uploadBase64ToS3(anyString());
+        org.mockito.Mockito.verify(moodboardRepository, org.mockito.Mockito.never()).save(any(Moodboard.class));
     }
 
     @Test

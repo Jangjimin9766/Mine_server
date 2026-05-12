@@ -71,6 +71,9 @@ class MagazineServiceTest {
         @Mock
         private SectionService sectionService;
 
+        @Mock
+        private ContentSafetyService contentSafetyService;
+
         // 테스트용 Interest 엔티티 생성 헬퍼
         private Interest createInterest(Long id, String code, String name) {
                 Interest interest = Interest.builder()
