@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Send Discord notification
+      continue-on-error: true
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         EVENT_NAME: ${{ github.event_name }}
@@ -61,4 +62,5 @@ jobs:
           --arg description "$DESCRIPTION" \
           --argjson color "$COLOR" \
           '{embeds: [{title: $title, description: $description, color: $color}]}' \
-          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK" \
+          || echo "Discord notification failed. Ignoring notification failure."

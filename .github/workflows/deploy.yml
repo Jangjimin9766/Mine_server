@@ -92,6 +92,7 @@ jobs:
 
     - name: Discord Notification
       if: always()
+      continue-on-error: true
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         JOB_STATUS: ${{ job.status }}
@@ -116,4 +117,5 @@ jobs:
           --arg actor "${{ github.actor }}" \
           --argjson color "$COLOR" \
           '{embeds: [{title: $title, description: ("**환경**: Production (EC2)\n**브랜치**: `" + $branch + "`\n**커밋**: `" + $commit + "`\n**실행자**: " + $actor), color: $color}]}' \
-          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+          | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK" \
+          || echo "Discord notification failed. Ignoring notification failure."
