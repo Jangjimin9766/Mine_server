@@ -75,6 +75,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "ELSE 6 END) AS relevance " +
                         "FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
@@ -85,6 +86,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "INNER JOIN magazine_likes ml ON m.id = ml.magazine_id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
                         "WHERE ml.user_id = :userId " +
@@ -107,7 +109,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
-                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
@@ -117,7 +119,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
-                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
@@ -164,7 +166,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
-                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
@@ -176,7 +178,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
                         "LEFT JOIN paragraph p ON s.id = p.section_id " +
-                        "LEFT JOIN users u ON m.user_id = u.id " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
                         "OR s.heading LIKE CONCAT('%', :keyword, '%') " +

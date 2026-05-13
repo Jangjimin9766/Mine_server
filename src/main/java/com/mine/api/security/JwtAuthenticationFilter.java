@@ -35,6 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"error\": \"Token Expired\"}");
             return;
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+            SecurityContextHolder.clearContext();
         }
         filterChain.doFilter(request, response);
     }
