@@ -364,7 +364,7 @@ public class SectionService {
         return magazine.getSections().stream()
                 .filter(s -> s.getId().equals(sectionId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Section not found: " + sectionId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Section not found: " + sectionId));
     }
 
     private void reorderAfterDelete(Magazine magazine) {

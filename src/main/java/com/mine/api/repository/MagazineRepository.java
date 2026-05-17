@@ -37,35 +37,7 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         org.springframework.data.domain.Page<Magazine> findByUserIsPublicTrue(
                         org.springframework.data.domain.Pageable pageable);
 
-        // ⭐ 키워드 검색 (제목 + 소개 + 태그 + 섹션 제목/본문)
-        // 본인 매거진 또는 공개 계정의 매거진만 검색됨
-        // ⭐ Phase 2: 검색 (보류 처리)
-        // [PERFORMANCE] Full-Text Index 사용을 위해 Native Query로 변경
-        // @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
-        //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
-        //                 "LEFT JOIN paragraph p ON s.id = p.section_id " + // Paragraph 테이블 조인 추가
-        //                 "LEFT JOIN users u ON m.user_id = u.id " +
-        //                 "WHERE (MATCH(m.title, m.introduction, m.tags) AGAINST(:keyword IN BOOLEAN MODE) " +
-        //                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR p.text LIKE CONCAT('%', :keyword, '%') " + // Paragraph text 검색으로 변경
-        //                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " + // Paragraph subtitle 검색 추가
-        //                 "AND (u.is_public = true OR u.username = :username)", countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m "
-        //                                 +
-        //                                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
-        //                                 "LEFT JOIN paragraph p ON s.id = p.section_id " +
-        //                                 "LEFT JOIN users u ON m.user_id = u.id " +
-        //                                 "WHERE (MATCH(m.title, m.introduction, m.tags) AGAINST(:keyword IN BOOLEAN MODE) "
-        //                                 +
-        //                                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-        //                                 "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-        //                                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%')) " +
-        //                                 "AND (u.is_public = true OR u.username = :username)", nativeQuery = true)
-        // org.springframework.data.domain.Page<Magazine> searchByKeyword(
-        //                 @org.springframework.data.repository.query.Param("keyword") String keyword,
-        //                 @org.springframework.data.repository.query.Param("username") String username,
-        //                 org.springframework.data.domain.Pageable pageable);
-
-        // ⭐ 찜한 매거진 검색 (Saved Search)
+        // ⭐ 찜한 매거진 검색 (Saved Search) - 제목만 검색
         @org.springframework.data.jpa.repository.Query(value = "SELECT m.* FROM magazines m " +
                         "INNER JOIN (SELECT m.id, MIN(CASE " +
                         "WHEN m.title = :keyword THEN 0 " +
@@ -108,31 +80,6 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         org.springframework.data.domain.Page<Magazine> searchPublicExploreMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
                         org.springframework.data.domain.Pageable pageable);
-
-        // ⭐ 둘러보기 검색 (Explore Search - Global)
-        // @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
-        //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
-        //                 "LEFT JOIN paragraph p ON s.id = p.section_id " +
-        //                 "LEFT JOIN users u ON m.user_id = u.id " +
-        //                 "WHERE u.is_public = true AND u.id != :userId " +
-        //                 "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
-        //                 countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
-        //                 "LEFT JOIN magazine_sections s ON m.id = s.magazine_id " +
-        //                 "LEFT JOIN paragraph p ON s.id = p.section_id " +
-        //                 "LEFT JOIN users u ON m.user_id = u.id " +
-        //                 "WHERE u.is_public = true AND u.id != :userId " +
-        //                 "AND (m.title LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR s.heading LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR p.text LIKE CONCAT('%', :keyword, '%') " +
-        //                 "OR p.subtitle LIKE CONCAT('%', :keyword, '%'))", 
-        //                 nativeQuery = true)
-        // org.springframework.data.domain.Page<Magazine> searchExploreMagazines(
-        //                 @org.springframework.data.repository.query.Param("keyword") String keyword,
-        //                 @org.springframework.data.repository.query.Param("userId") Long userId,
-        //                 org.springframework.data.domain.Pageable pageable);
 
         // ⭐ 개인화된 둘러보기 검색 (Personalized Explore Search)
         // [필터] 1. 검색어 제목 일치 2. 추천 피드 대상 (사용자 관심사/좋아요 태그 매칭)
