@@ -21,6 +21,9 @@ import java.util.UUID;
 @lombok.extern.slf4j.Slf4j
 public class S3Service {
 
+    private static final String DEFAULT_PLACEHOLDER_URL =
+            "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
+
     private final S3Client s3Client;
 
     @Value("${spring.cloud.aws.s3.bucket}")
@@ -67,7 +70,7 @@ public class S3Service {
      */
     public String uploadImageFromUrl(String imageUrl) {
         if (imageUrl == null || imageUrl.isBlank()) {
-            return "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png";
+            return DEFAULT_PLACEHOLDER_URL;
         }
 
         // 이미 내 S3에 있는 이미지는 재업로드 없이 그대로 리턴
@@ -77,7 +80,7 @@ public class S3Service {
 
         if (!isAllowedExternalImageUrl(imageUrl)) {
             log.warn("Rejected external image URL by SSRF guard: {}", imageUrl);
-            return null;
+            return DEFAULT_PLACEHOLDER_URL;
         }
 
         int maxRetries = 2;
@@ -110,7 +113,7 @@ public class S3Service {
                 // Content-Type이 image/로 시작하지 않으면 HTML 등 가짜 이미지 — 저장 차단
                 if (contentType == null || !contentType.startsWith("image/")) {
                     log.warn("Target URL is not a valid image. Content-Type: {}, URL: {}", contentType, imageUrl);
-                    return null; // 가짜 이미지(HTML 등) 저장 방지
+                    return DEFAULT_PLACEHOLDER_URL; // 가짜 이미지(HTML 등) 저장 방지
                 }
 
                 try (InputStream inputStream = connection.getInputStream()) {
@@ -123,7 +126,7 @@ public class S3Service {
                     long contentLength = connection.getContentLengthLong();
                     if (contentLength > 10 * 1024 * 1024) {
                         log.warn("Image from URL exceeds 10MB limit: {}", imageUrl);
-                        return imageUrl;
+                        return DEFAULT_PLACEHOLDER_URL;
                     }
 
                     if (contentLength > 0) {
@@ -140,7 +143,7 @@ public class S3Service {
                             if (totalBytes > 10 * 1024 * 1024) {
                                 log.warn("Streamed image exceeds 10MB limit: {}", imageUrl);
                                 buffer.close();
-                                return imageUrl;
+                                return DEFAULT_PLACEHOLDER_URL;
                             }
                         }
                         byte[] imageBytes = buffer.toByteArray();
@@ -162,7 +165,7 @@ public class S3Service {
                 }
             }
         }
-        return null;
+        return DEFAULT_PLACEHOLDER_URL;
     }
 
     private boolean isAllowedExternalImageUrl(String imageUrl) {
