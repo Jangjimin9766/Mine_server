@@ -3,6 +3,7 @@ package com.mine.api.controller;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.service.MagazineService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "99. 내부 API (Internal) 🛠️", description = "Python 서버와의 통신을 위한 내부 API")
+@Tag(name = "99. Internal API", description = "Internal API for communication with the Python AI server")
 @RestController
 @RequestMapping("/api/internal")
 @Slf4j
@@ -29,13 +30,12 @@ public class InternalApiController {
 
     @PostMapping("/magazine")
     public ResponseEntity<?> createMagazine(
-            @RequestBody MagazineCreateRequest request,
+            @Valid @RequestBody MagazineCreateRequest request,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        // JWT 없이 X-Internal-Key 헤더로 인증 — Python AI 서버가 직접 호출할 때 사용
         if (!hasValidInternalApiKey(apiKey)) {
-            log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
+            log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}",
+                    (internalApiKey != null ? internalApiKey.trim().length() : "null"),
                     (apiKey != null ? apiKey.trim().length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
@@ -44,32 +44,28 @@ public class InternalApiController {
         return ResponseEntity.ok(magazineId);
     }
 
-    /**
-     * [복구용] 특정 유저의 초기 매거진 생성을 강제로 트리거
-     */
     @PostMapping("/trigger-initial")
     public ResponseEntity<?> triggerInitial(
             @org.springframework.web.bind.annotation.RequestParam String username,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
         if (!hasValidInternalApiKey(apiKey)) {
-            log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
+            log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}",
+                    (internalApiKey != null ? internalApiKey.trim().length() : "null"),
                     (apiKey != null ? apiKey.trim().length() : "null"));
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }
 
-        // 비동기로 실행 — username만 넘겨서 Lazy loading/Detached entity 문제 방지
         magazineService.generateInitialMagazinesAsync(username);
-
         return ResponseEntity.ok("Async generation triggered for user: " + username);
     }
+
     @org.springframework.web.bind.annotation.PostMapping("/init-assets")
     public ResponseEntity<String> initAssets(
             @org.springframework.web.bind.annotation.RequestParam String fileName,
             @org.springframework.web.bind.annotation.RequestBody String base64Data,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
-        
+
         if (!hasValidInternalApiKey(apiKey)) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
         }

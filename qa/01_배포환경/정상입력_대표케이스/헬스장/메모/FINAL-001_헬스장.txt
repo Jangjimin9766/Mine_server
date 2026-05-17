@@ -1,0 +1,6 @@
+[FINAL-001] 헬스장
+
+POST https://api.minelover.com/api/magazines
+500 Internal Server Error
+응답 메시지: 서버 내부 오류가 발생했습니다
+배포 API에서 재현됨

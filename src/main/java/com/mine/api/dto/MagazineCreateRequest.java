@@ -2,80 +2,106 @@ package com.mine.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
-import lombok.Setter;
-
-@Schema(description = "매거진 생성/저장 요청 (AI 서버에서 전달)")
+@Schema(description = "Magazine create/save request")
 @Getter
 @Setter
 @NoArgsConstructor
 public class MagazineCreateRequest {
 
-    @Schema(description = "매거진 제목", example = "겨울철 패션 트렌드", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Magazine title", example = "Winter fashion trend", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "title is required")
+    @Size(max = 150, message = "title must be 150 characters or fewer")
     private String title;
 
-    @Schema(description = "커버 이미지 URL", example = "https://example.com/cover.jpg")
+    @Schema(description = "Magazine subtitle", example = "Warm and stylish at once")
+    @Size(max = 150, message = "subtitle must be 150 characters or fewer")
+    private String subtitle;
+
+    @Schema(description = "Magazine introduction", example = "A styling guide for staying warm and stylish this winter.")
+    @NotBlank(message = "introduction is required")
+    @Size(max = 3000, message = "introduction must be 3000 characters or fewer")
+    private String introduction;
+
+    @Schema(description = "Cover image URL", example = "https://example.com/cover.jpg")
     @JsonProperty("cover_image_url")
+    @Size(max = 2048, message = "cover_image_url must be 2048 characters or fewer")
     private String coverImageUrl;
 
-    @Schema(description = "사용자 이메일 (내부 API에서 사용)", example = "user@example.com")
+    @Schema(description = "User email for internal API", example = "user@example.com")
     @JsonProperty("user_email")
     private String userEmail;
 
-    @Schema(description = "태그 목록", example = "[\"패션\", \"겨울\", \"스타일\"]")
+    @Schema(description = "Tag list")
     private List<String> tags;
 
-    @Schema(description = "매거진 전용 무드보드 이미지")
+    @Schema(description = "Moodboard data for the magazine")
     private MoodboardResponseDto moodboard;
 
-    @Schema(description = "매거진 섹션 목록")
+    @Schema(description = "Section list")
     private List<SectionDto> sections;
 
-    /**
-     * 문단 DTO (AI 서버에서 전달)
-     */
-    @Schema(description = "문단 정보")
     @Getter
     @Setter
     @NoArgsConstructor
     public static class ParagraphDto {
-        @Schema(description = "문단 소제목", example = "국밥의 성지, 서면")
+        @Schema(description = "Paragraph subtitle", example = "Looks for the commute")
         private String subtitle;
 
-        @Schema(description = "문단 본문 (150-300자)", example = "돼지국밥은 부산의 대표 음식으로...")
+        @Schema(description = "Paragraph text", example = "This season, commuting outfits focus on layering...")
         private String text;
 
-        @Schema(description = "문단 이미지 URL", example = "https://example.com/pork_soup.jpg")
+        @Schema(description = "Paragraph image URL", example = "https://example.com/look.jpg")
         @JsonProperty("image_url")
+        @Size(max = 2048, message = "paragraph image_url must be 2048 characters or fewer")
         private String imageUrl;
 
-        @Schema(description = "문단 콘텐츠의 원본 소스 URL", example = "https://example.com/source-article")
+        @Schema(description = "Source URL for the paragraph content", example = "https://example.com/source-article")
         @JsonProperty("source_url")
         private String sourceUrl;
     }
 
-    @Schema(description = "매거진 섹션")
     @Getter
     @Setter
     @NoArgsConstructor
     public static class SectionDto {
-        @Schema(description = "섹션 제목", example = "코트 스타일링")
+        @Schema(description = "Section heading", example = "Coat styling")
         private String heading;
 
-        // ===== 새로 추가된 필드 =====
-        @Schema(description = "섹션 썸네일 이미지 URL (cover type인 경우 배경)", example = "https://example.com/thumbnail.jpg")
+        @Schema(description = "Section thumbnail image URL", example = "https://example.com/thumbnail.jpg")
         @JsonProperty("thumbnail_url")
+        @Size(max = 2048, message = "section thumbnail_url must be 2048 characters or fewer")
         private String thumbnailUrl;
 
-        @Schema(description = "문단 배열 (지그재그 레이아웃용)")
+        @Schema(description = "Paragraph list")
+        @NotEmpty(message = "section paragraphs must not be empty")
+        @Size(max = 20, message = "section paragraphs must contain 20 items or fewer")
+        @Valid
         private List<ParagraphDto> paragraphs;
 
-        @Schema(description = "섹션 콘텐츠 생성에 사용된 원본 웹 소스 URL", example = "https://example.com/source-article")
+        @Schema(description = "Source URL used to generate the section", example = "https://example.com/source-article")
         @JsonProperty("source_url")
         private String sourceUrl;
+
+        @Schema(description = "Layout hint", example = "image_left")
+        @JsonProperty("layout_hint")
+        @Size(max = 50, message = "layout_hint must be 50 characters or fewer")
+        private String layoutHint;
+
+        @Schema(description = "Layout type", example = "hero", allowableValues = { "hero", "quote", "split_left",
+                "split_right", "basic" })
+        @JsonProperty("layout_type")
+        @Pattern(regexp = "^(hero|quote|split_left|split_right|basic)?$", message = "layout_type is invalid")
+        private String layoutType;
     }
 }

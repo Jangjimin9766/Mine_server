@@ -1,6 +1,20 @@
 package com.mine.api.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,14 +37,18 @@ public class Magazine {
     @Column(length = 500)
     private String title;
 
+    @Column(length = 500)
+    private String subtitle;
+
+    @Column(columnDefinition = "TEXT")
+    private String introduction;
+
     @Column(name = "cover_image_url", length = 1000)
     private String coverImageUrl;
 
-    // [NEW] 태그 목록 (JSON 형태로 저장)
     @Column(columnDefinition = "TEXT")
     private String tags;
 
-    // [NEW] 무드보드 이미지 URL
     @Column(name = "moodboard_image_url", length = 1000)
     private String moodboardImageUrl;
 
@@ -54,7 +72,6 @@ public class Magazine {
     @OrderBy("displayOrder ASC")
     private List<MagazineSection> sections = new ArrayList<>();
 
-    // ⭐ MagazineInteraction과의 관계 (CASCADE 추가)
     @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MagazineInteraction> interactions = new ArrayList<>();
@@ -63,11 +80,16 @@ public class Magazine {
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MagazineLike> likes = new ArrayList<>();
 
+    @Version
+    private Long version;
+
     @Builder
-    public Magazine(String title, String coverImageUrl,
+    public Magazine(String title, String subtitle, String introduction, String coverImageUrl,
             String tags, String moodboardImageUrl, String moodboardDescription,
             MoodboardStatus moodboardStatus, User user) {
         this.title = title;
+        this.subtitle = subtitle;
+        this.introduction = introduction;
         this.coverImageUrl = coverImageUrl;
         this.tags = tags;
         this.moodboardImageUrl = moodboardImageUrl;
@@ -84,21 +106,25 @@ public class Magazine {
         section.setMagazine(this);
     }
 
-    // ⭐ Phase 1: 수정 메서드
-    public void updateInfo(String title) {
+    public void updateInfo(String title, String introduction) {
         if (title != null && !title.trim().isEmpty()) {
             this.title = title;
         }
+        if (introduction != null && !introduction.trim().isEmpty()) {
+            this.introduction = introduction;
+        }
     }
 
-    // ⭐ 커버 이미지 변경
     public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
     }
 
-    // ⭐ 무드보드 이미지 변경
     public void setMoodboardImageUrl(String moodboardImageUrl) {
         this.moodboardImageUrl = moodboardImageUrl;
+    }
+
+    public void setMoodboardDescription(String moodboardDescription) {
+        this.moodboardDescription = moodboardDescription;
     }
 
     public void markMoodboardPending() {
@@ -122,12 +148,35 @@ public class Magazine {
         return this.moodboardImageUrl != null ? MoodboardStatus.COMPLETED : MoodboardStatus.PENDING;
     }
 
-    // ⭐ Phase 1: 소유자 확인 메서드
+    public String getRepresentativeImageUrl() {
+        if (hasText(coverImageUrl)) {
+            return coverImageUrl;
+        }
+
+        for (MagazineSection section : sections) {
+            if (section == null) {
+                continue;
+            }
+
+            if (hasText(section.getThumbnailUrl())) {
+                return section.getThumbnailUrl();
+            }
+
+            for (Paragraph paragraph : section.getParagraphs()) {
+                if (paragraph != null && hasText(paragraph.getImageUrl())) {
+                    return paragraph.getImageUrl();
+                }
+            }
+        }
+
+        return hasText(moodboardImageUrl) ? moodboardImageUrl : null;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
     public boolean isOwnedBy(User user) {
         return this.user.getId().equals(user.getId());
     }
-
-    // ⭐ 낙관적 락 (동시 수정 방지)
-    @jakarta.persistence.Version
-    private Long version;
 }

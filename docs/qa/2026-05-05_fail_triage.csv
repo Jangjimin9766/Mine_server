@@ -1,0 +1,8 @@
+priority,group,count,test_ids,symptom,evidence,next_action,spec_status
+P0,Stored harmful or risky content,4,"HK-1|HK-2|HC-1|HC-2","Harmful keyword or risky narrative accepted with 200","52-case result file + saved data evidence","Define blocking/filtering policy and rerun with DB save check","Policy not fixed"
+P0,Section integrity broken,4,"AN-1|AN-5|AN-6|AN-8","Missing title or invalid section structure still accepted with 200","Detailed result table","Add required-field validation and request schema checks","Should be fixed as validation rule"
+P0,Server error on wrong types,2,"AN-2|AN-7","Wrong type causes 500 instead of controlled validation failure","Detailed result table","Convert parser/runtime failure into 4xx validation response","Should be fixed as validation rule"
+P1,Field semantics mismatch,1,"AN-4","Field named user_email rejects actual email with 400 User not found","Detailed result table","Confirm field meaning and rename or align request contract","Spec unclear"
+P1,Length and format validation gaps,3,"WI-3|WI-6|WI-7","Very long text and invalid URL format accepted with 200","Detailed result table + saved data evidence","Decide max lengths and URL validation policy","Spec unclear"
+P1,Synthetic harmful stress cases,30,"AUTO-1~AUTO-30","Repeated harmful stress inputs consistently accepted with 200","3 repeated runs, all stable","Collapse into reusable abuse-case pack after policy fix","Policy not fixed"
+P2,Pass cases worth keeping,8,"SETUP-1|BASE-1|AN-3|SEC-1|WI-1|WI-2|WI-4|WI-5","Baseline and some defensive behavior already working","Detailed result table","Keep as regression baseline","Usable as current regression set"

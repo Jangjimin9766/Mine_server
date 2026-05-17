@@ -3,6 +3,7 @@ package com.mine.api.controller;
 import com.mine.api.service.MagazineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,7 +47,7 @@ public class MagazineController {
     @Operation(summary = "✨ AI 매거진 만들기", description = "주제와 기분을 입력하면 AI가 제목, 소개, 그리고 내용(섹션)까지 자동으로 만들어줍니다. (로컬 생성 시 1~2분 이상 소요될 수 있습니다)")
     @org.springframework.web.bind.annotation.PostMapping
     public ResponseEntity<Long> createMagazine(
-            @org.springframework.web.bind.annotation.RequestBody com.mine.api.dto.MagazineGenerationRequest request,
+            @Valid @org.springframework.web.bind.annotation.RequestBody com.mine.api.dto.MagazineGenerationRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long magazineId = magazineService.generateAndSaveMagazine(request, userDetails.getUsername());
         return ResponseEntity.ok(magazineId);

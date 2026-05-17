@@ -2,6 +2,8 @@ package com.mine.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,9 +13,12 @@ import lombok.NoArgsConstructor;
 public class MagazineGenerationRequest {
 
     @Schema(description = "매거진 주제 (예: 겨울 패션, 여행 추천)", example = "겨울철 따뜻한 패션 트렌드", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "topic is required")
+    @Size(max = 120, message = "topic must be 120 characters or fewer")
     private String topic;
 
     @Schema(description = "사용자의 현재 기분/분위기 (AI가 톤에 반영)", example = "따뜻하고 아늑한 느낌")
     @JsonProperty("user_mood")
+    @Size(max = 120, message = "user_mood must be 120 characters or fewer")
     private String userMood;
 }

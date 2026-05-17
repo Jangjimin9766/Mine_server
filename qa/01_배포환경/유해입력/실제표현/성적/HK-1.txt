@@ -1,0 +1,9 @@
+[HK-1]
+
+입력값: 남성나체
+환경: 배포
+응답코드: 500 Internal Server Error
+화면결과: 매거진 생성 실패
+Request URL: https://api.minelover.com/api/magazines
+판정: 판정보류
+비고: 유해 키워드 차단 여부 확인 전, 배포 생성 플로우에서 서버 내부 오류 발생

@@ -3,7 +3,10 @@ package com.mine.api.exception;
 import com.mine.api.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -22,6 +25,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(java.util.stream.Collectors.joining(", "));
+
+        ErrorResponse response = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), errorMessage);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ErrorResponse> handleSecurityException(SecurityException ex) {
         ErrorResponse response = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
@@ -30,7 +43,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
-        ErrorResponse response = new ErrorResponse(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다.");
+        ErrorResponse response = new ErrorResponse(HttpStatus.FORBIDDEN.value(), "Access denied.");
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
@@ -40,15 +53,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // ⭐ 낙관적 락 충돌 처리 (동시 수정 시 409 반환)
     @ExceptionHandler({
             jakarta.persistence.OptimisticLockException.class,
             org.springframework.orm.ObjectOptimisticLockingFailureException.class
     })
     public ResponseEntity<ErrorResponse> handleOptimisticLockException(Exception ex) {
         ErrorResponse response = new ErrorResponse(HttpStatus.CONFLICT.value(),
-                "다른 사용자가 동시에 수정 중입니다. 잠시 후 다시 시도해주세요.");
+                "Another user is modifying this resource. Please try again shortly.");
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        ErrorResponse response = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
+                "Request body is malformed or contains an invalid field type");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
@@ -56,7 +75,8 @@ public class GlobalExceptionHandler {
         System.err.println("Internal Server Error: " + ex.getMessage());
         ex.printStackTrace();
 
-        ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 내부 오류가 발생했습니다.");
+        ErrorResponse response = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "An internal server error occurred.");
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

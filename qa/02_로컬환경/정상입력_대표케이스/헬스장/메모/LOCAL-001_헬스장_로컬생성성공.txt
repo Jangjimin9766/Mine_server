@@ -1,0 +1,8 @@
+[LOCAL-001] 헬스장
+
+로컬 환경에서 매거진 생성 성공 확인
+POST /api/magazines 응답 200
+magazines 저장 확인: id 1
+sections 저장 확인: 2개
+paragraph 저장 확인: 6개
+비고: 제목/섹션 heading 일부 한글이 ???로 저장되어 인코딩 이슈 의심

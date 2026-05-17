@@ -22,21 +22,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String token = jwtTokenProvider.resolveToken(request);
-            if (token != null && jwtTokenProvider.validateToken(token)) {
+            if (token != null) {
+                boolean isValid = jwtTokenProvider.validateToken(token);
+                System.out.println("JWT token found. Is valid? " + isValid);
+                if (!isValid) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 if (blacklistedTokenRepository.existsByToken(token)) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
-                Authentication auth = jwtTokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(auth);
+
+                try {
+                    Authentication auth = jwtTokenProvider.getAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                    SecurityContextHolder.clearContext();
+                } catch (Exception e) {
+                    System.out.println("JWT auth failed: " + e.getMessage());
+                }
             }
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"error\": \"Token Expired\"}");
             return;
-        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
-            SecurityContextHolder.clearContext();
         }
         filterChain.doFilter(request, response);
     }

@@ -74,6 +74,9 @@ class MagazineServiceTest {
         @Mock
         private ContentSafetyService contentSafetyService;
 
+        @Mock
+        private MagazineInputPolicyService magazineInputPolicyService;
+
         // 테스트용 Interest 엔티티 생성 헬퍼
         private Interest createInterest(Long id, String code, String name) {
                 Interest interest = Interest.builder()
@@ -115,6 +118,8 @@ class MagazineServiceTest {
 
                 MagazineCreateRequest generatedData = new MagazineCreateRequest();
                 generatedData.setTitle("Generated Magazine");
+                generatedData.setSubtitle("Generated Subtitle");
+                generatedData.setIntroduction("Generated introduction");
                 generatedData.setCoverImageUrl("http://image.url");
                 MagazineCreateRequest.ParagraphDto paragraphDto = new MagazineCreateRequest.ParagraphDto();
                 paragraphDto.setSubtitle("Intro");
@@ -169,6 +174,8 @@ class MagazineServiceTest {
                                 magazineCaptor.getValue().getMoodboardStatus());
                 assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getMoodboardImageUrl());
                 assertEquals("https://example.com/moodboard.png", magazineCaptor.getValue().getCoverImageUrl());
+                verify(magazineInputPolicyService).validateGenerationRequest(request);
+                verify(magazineInputPolicyService).validateCreateRequest(any(MagazineCreateRequest.class));
         }
 
         @Test
@@ -215,6 +222,23 @@ class MagazineServiceTest {
                 assertEquals(1L, magazineId);
                 verify(runPodService).sendMagazineCreateRequest(anyString(), any(Map.class));
                 verify(runPodService, never()).sendRequest(anyString(), any(Map.class));
+        }
+
+        @Test
+        @DisplayName("유해 입력은 AI 호출 전에 차단")
+        void generateAndSaveMagazine_BlockedRequest() {
+                String username = "testuser";
+                MagazineGenerationRequest request = new MagazineGenerationRequest();
+                request.setTopic("생화학 테러");
+
+                doThrow(new IllegalArgumentException("topic contains blocked violence content"))
+                                .when(magazineInputPolicyService).validateGenerationRequest(request);
+
+                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                () -> magazineService.generateAndSaveMagazine(request, username));
+
+                assertEquals("topic contains blocked violence content", exception.getMessage());
+                verifyNoInteractions(userRepository, runPodService, magazineRepository);
         }
 
         @Test

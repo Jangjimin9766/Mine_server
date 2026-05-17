@@ -151,7 +151,7 @@ public class MagazineDto {
             return ListItem.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
-                    .coverImageUrl(magazine.getCoverImageUrl())
+                    .coverImageUrl(magazine.getRepresentativeImageUrl())
                     .username(magazine.getUser().getUsername())
                     .likeCount(magazine.getLikes().size())
                     .commentCount(0)

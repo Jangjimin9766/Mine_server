@@ -38,3 +38,9 @@ out/
 
 ### Secrets ###
 src/main/resources/application-secret.yml
+
+### Local logs / generated artifacts ###
+*.log
+*.pid
+outputs/
+tmp_spreadsheet/node_modules/

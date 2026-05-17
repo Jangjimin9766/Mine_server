@@ -33,6 +33,7 @@ public class MagazineService {
     private final SectionService sectionService;
     private final MagazineImageUploadService magazineImageUploadService;
     private final ContentSafetyService contentSafetyService;
+    private final MagazineInputPolicyService magazineInputPolicyService;
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -42,6 +43,7 @@ public class MagazineService {
 
     @Transactional
     public Long saveMagazine(MagazineCreateRequest request, String username) {
+        magazineInputPolicyService.validateCreateRequest(request);
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
 
@@ -72,6 +74,8 @@ public class MagazineService {
 
         Magazine magazine = Magazine.builder()
                 .title(truncate(request.getTitle(), 490))
+                .subtitle(truncate(request.getSubtitle(), 490))
+                .introduction(truncate(request.getIntroduction(), 2990))
                 .coverImageUrl(truncate(coverImageUrl, 990))
                 .tags(tagsJson)
                 .moodboardImageUrl(truncate(moodboardImageUrl, 990))
@@ -276,6 +280,7 @@ public class MagazineService {
 
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
         try {
+            magazineInputPolicyService.validateGenerationRequest(request);
             contentSafetyService.validateText(request != null ? request.getTopic() : null);
             contentSafetyService.validateText(request != null ? request.getUserMood() : null);
 
@@ -301,7 +306,8 @@ public class MagazineService {
             java.util.Map<String, Object> responseBody;
 
             // 3. 호출 방식 분기 (Local vs RunPod)
-            if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")) {
+            if (pythonApiUrl.contains("localhost") || pythonApiUrl.contains("127.0.0.1")
+                    || pythonApiUrl.contains("ngrok-free")) {
                 // Local FastAPI 호출 (직접 전송, 동기식)
                 data.put("action", "create_magazine"); // 로컬에서도 action 필수
                 responseBody = runPodService.sendMagazineCreateSyncRequest(pythonApiUrl, data);
@@ -366,6 +372,9 @@ public class MagazineService {
             }
 
             return magazineId;
+        } catch (IllegalArgumentException e) {
+            log.warn("Blocked invalid magazine generation request: {}", e.getMessage());
+            throw e;
         } catch (AiServerUnavailableException e) {
             throw e;
         } catch (Exception e) {
@@ -415,7 +424,7 @@ public class MagazineService {
             throw new SecurityException(ErrorMessages.NOT_AUTHORIZED);
         }
 
-        magazine.updateInfo(request.getTitle()); 
+        magazine.updateInfo(request.getTitle(), request.getIntroduction());
         magazineRepository.save(magazine);
 
         log.info("Magazine updated successfully: magazineId={}, username={}", magazineId, username);
