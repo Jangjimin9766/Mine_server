@@ -92,16 +92,18 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
                         "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
-                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%')) " +
+                        "AND ((:kw1 <> '' AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw1, '%'))) " +
+                        "OR (:kw2 <> '' AND (m.tags LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw2, '%'))) " +
+                        "OR (:kw3 <> '' AND (m.tags LIKE CONCAT('%', :kw3, '%') OR m.title LIKE CONCAT('%', :kw3, '%')))) " +
                         "GROUP BY m.id) matched ON matched.id = m.id " +
                         "ORDER BY matched.relevance ASC, m.created_at DESC, m.id DESC",
                         countQuery = "SELECT COUNT(DISTINCT m.id) FROM magazines m " +
                         "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
                         "WHERE u.is_public = true AND u.id != :userId " +
                         "AND m.title LIKE CONCAT('%', :keyword, '%') " +
-                        "AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.tags LIKE CONCAT('%', :kw2, '%') OR m.tags LIKE CONCAT('%', :kw3, '%') " +
-                        "OR m.title LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))", 
+                        "AND ((:kw1 <> '' AND (m.tags LIKE CONCAT('%', :kw1, '%') OR m.title LIKE CONCAT('%', :kw1, '%'))) " +
+                        "OR (:kw2 <> '' AND (m.tags LIKE CONCAT('%', :kw2, '%') OR m.title LIKE CONCAT('%', :kw2, '%'))) " +
+                        "OR (:kw3 <> '' AND (m.tags LIKE CONCAT('%', :kw3, '%') OR m.title LIKE CONCAT('%', :kw3, '%'))))",
                         nativeQuery = true)
         org.springframework.data.domain.Page<Magazine> searchPersonalizedExploreMagazines(
                         @org.springframework.data.repository.query.Param("keyword") String keyword,
@@ -142,8 +144,9 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
         @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
                         "LEFT JOIN FETCH m.user " +
                         "LEFT JOIN FETCH m.sections " +
-                        "WHERE (m.tags LIKE %:keyword1% OR m.tags LIKE %:keyword2% OR m.tags LIKE %:keyword3% " +
-                        "OR m.title LIKE %:keyword1% OR m.title LIKE %:keyword2% OR m.title LIKE %:keyword3%) " +
+                        "WHERE ((:keyword1 <> '' AND (m.tags LIKE %:keyword1% OR m.title LIKE %:keyword1%)) " +
+                        "OR (:keyword2 <> '' AND (m.tags LIKE %:keyword2% OR m.title LIKE %:keyword2%)) " +
+                        "OR (:keyword3 <> '' AND (m.tags LIKE %:keyword3% OR m.title LIKE %:keyword3%))) " +
                         "AND m.user.isPublic = true " +
                         "AND m.user.id != :userId " + // 본인 매거진 제외
                         "AND (:lastId IS NULL OR m.id < :lastId) " +

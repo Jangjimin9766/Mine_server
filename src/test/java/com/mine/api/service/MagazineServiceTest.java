@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -431,8 +432,56 @@ class MagazineServiceTest {
                 magazineService.getPersonalizedFeedCursor(username, null, 10, false);
 
                 // Then
+                ArgumentCaptor<String> keyword1 = ArgumentCaptor.forClass(String.class);
+                ArgumentCaptor<String> keyword2 = ArgumentCaptor.forClass(String.class);
+                ArgumentCaptor<String> keyword3 = ArgumentCaptor.forClass(String.class);
                 verify(magazineRepository).findRecommendedFeedCursor(
-                                anyString(), anyString(), anyString(),
+                                keyword1.capture(), keyword2.capture(), keyword3.capture(),
                                 eq(100L), isNull(), any(Pageable.class));
+                assertEquals("여행", keyword1.getValue());
+                assertEquals("패션", keyword2.getValue());
+                assertEquals("", keyword3.getValue());
+        }
+
+        @Test
+        @DisplayName("개인화 피드 - 관심사 3개가 있으면 좋아요 태그보다 관심사를 우선한다")
+        void getPersonalizedFeedCursor_PrioritizesInterestsOverLikedTags() {
+                // Given
+                String username = "feed_tester";
+                User user = User.builder().username(username).build();
+                ReflectionTestUtils.setField(user, "id", 100L);
+
+                Interest travelInterest = Interest.builder().code("TRAVEL").name("여행").build();
+                Interest fashionInterest = Interest.builder().code("FASHION").name("패션").build();
+                Interest foodInterest = Interest.builder().code("FOOD").name("푸드").build();
+                UserInterest ui1 = UserInterest.builder().user(user).interest(travelInterest).build();
+                UserInterest ui2 = UserInterest.builder().user(user).interest(fashionInterest).build();
+                UserInterest ui3 = UserInterest.builder().user(user).interest(foodInterest).build();
+
+                User otherUser = User.builder().username("other").build();
+                otherUser.setPublic(true);
+                Magazine likedTechMagazine = Magazine.builder()
+                                .title("최신 기술")
+                                .tags("IT,테크")
+                                .user(otherUser)
+                                .build();
+
+                when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+                when(userInterestRepository.findByUser(user)).thenReturn(List.of(ui1, ui2, ui3));
+                when(magazineLikeRepository.findAllLikedMagazinesByUser(user)).thenReturn(List.of(likedTechMagazine));
+
+                // When
+                magazineService.getPersonalizedFeedCursor(username, null, 10, false);
+
+                // Then
+                ArgumentCaptor<String> keyword1 = ArgumentCaptor.forClass(String.class);
+                ArgumentCaptor<String> keyword2 = ArgumentCaptor.forClass(String.class);
+                ArgumentCaptor<String> keyword3 = ArgumentCaptor.forClass(String.class);
+                verify(magazineRepository).findRecommendedFeedCursor(
+                                keyword1.capture(), keyword2.capture(), keyword3.capture(),
+                                eq(100L), isNull(), any(Pageable.class));
+                assertEquals("여행", keyword1.getValue());
+                assertEquals("패션", keyword2.getValue());
+                assertEquals("푸드", keyword3.getValue());
         }
 }

@@ -586,23 +586,25 @@ public class MagazineService {
 
         // 2. 좋아요한 매거진의 태그
         java.util.List<Magazine> likedMagazines = magazineLikeRepository.findAllLikedMagazinesByUser(user);
-        java.util.Set<String> likedTags = new java.util.HashSet<>();
+        java.util.Set<String> likedTags = new java.util.LinkedHashSet<>();
         for (Magazine m : likedMagazines) {
             if (m.getTags() != null && !m.getTags().isEmpty()) {
                 String[] tags = m.getTags().split(",");
                 for (String tag : tags) {
-                    likedTags.add(tag.trim());
+                    String normalizedTag = tag.trim();
+                    if (!normalizedTag.isEmpty()) {
+                        likedTags.add(normalizedTag);
+                    }
                 }
             }
         }
 
-        // 3. 중복 제거 및 정렬
+        // 3. 사용자가 명시적으로 고른 관심사를 우선하고, 좋아요 태그는 빈자리에만 보강한다.
         java.util.List<String> allKeywords = new java.util.ArrayList<>();
         allKeywords.addAll(interestKeywords);
         allKeywords.addAll(likedTags);
 
         java.util.List<String> uniqueKeywords = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(allKeywords));
-        java.util.Collections.sort(uniqueKeywords);
 
         // 상위 3개만 반환
         return uniqueKeywords.stream().limit(3).collect(java.util.stream.Collectors.toList());
