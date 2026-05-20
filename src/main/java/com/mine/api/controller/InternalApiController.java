@@ -4,7 +4,9 @@ import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.service.MagazineService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,17 +30,11 @@ public class InternalApiController {
     }
 
     @PostMapping("/magazine")
-    public ResponseEntity<?> createMagazine(
+    public ResponseEntity<Long> createMagazine(
             @RequestBody MagazineCreateRequest request,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        // JWT 없이 X-Internal-Key 헤더로 인증 — Python AI 서버가 직접 호출할 때 사용
-        if (!hasValidInternalApiKey(apiKey)) {
-            log.warn("Invalid API Key for /magazine. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
-                    (apiKey != null ? apiKey.trim().length() : "null"));
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
-        }
+        validateInternalApiKey(apiKey, "/magazine");
 
         Long magazineId = magazineService.saveMagazine(request, request.getUserEmail());
         return ResponseEntity.ok(magazineId);
@@ -48,31 +44,24 @@ public class InternalApiController {
      * [복구용] 특정 유저의 초기 매거진 생성을 강제로 트리거
      */
     @PostMapping("/trigger-initial")
-    public ResponseEntity<?> triggerInitial(
+    public ResponseEntity<String> triggerInitial(
             @org.springframework.web.bind.annotation.RequestParam String username,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
 
-        if (!hasValidInternalApiKey(apiKey)) {
-            log.warn("Invalid API Key for /trigger-initial. Expected length: {}, Provided length: {}", 
-                    (internalApiKey != null ? internalApiKey.trim().length() : "null"), 
-                    (apiKey != null ? apiKey.trim().length() : "null"));
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
-        }
+        validateInternalApiKey(apiKey, "/trigger-initial");
 
-        // 비동기로 실행 — username만 넘겨서 Lazy loading/Detached entity 문제 방지
         magazineService.generateInitialMagazinesAsync(username);
 
         return ResponseEntity.ok("Async generation triggered for user: " + username);
     }
+
     @org.springframework.web.bind.annotation.PostMapping("/init-assets")
     public ResponseEntity<String> initAssets(
             @org.springframework.web.bind.annotation.RequestParam String fileName,
             @org.springframework.web.bind.annotation.RequestBody String base64Data,
             @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Key") String apiKey) {
         
-        if (!hasValidInternalApiKey(apiKey)) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Invalid API Key");
-        }
+        validateInternalApiKey(apiKey, "/init-assets");
 
         try {
             if (base64Data.contains(",")) {
@@ -87,6 +76,21 @@ public class InternalApiController {
         }
     }
 
+    @ExceptionHandler(InvalidInternalApiKeyException.class)
+    public ResponseEntity<String> handleInvalidInternalApiKey() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid API Key");
+    }
+
+    private void validateInternalApiKey(String apiKey, String endpoint) {
+        if (!hasValidInternalApiKey(apiKey)) {
+            log.warn("Invalid API Key for {}. Expected length: {}, Provided length: {}",
+                    endpoint,
+                    (internalApiKey != null ? internalApiKey.trim().length() : "null"),
+                    (apiKey != null ? apiKey.trim().length() : "null"));
+            throw new InvalidInternalApiKeyException();
+        }
+    }
+
     private boolean hasValidInternalApiKey(String apiKey) {
         if (internalApiKey == null || internalApiKey.isBlank() || apiKey == null) {
             return false;
@@ -95,5 +99,8 @@ public class InternalApiController {
         byte[] expected = internalApiKey.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         byte[] provided = apiKey.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return java.security.MessageDigest.isEqual(expected, provided);
+    }
+
+    private static class InvalidInternalApiKeyException extends RuntimeException {
     }
 }

@@ -29,7 +29,7 @@ public class MagazineInteractionController {
         return ResponseEntity.ok(interactionService.interact(magazineId, userDetails.getUsername(), request));
     }
 
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "3. 매거진 AI 편집 (전체/구조) 🤖")
     @Operation(summary = "📜 AI 대화 이력", description = "이 매거진에서 AI와 나눴던 대화 목록을 봅니다.")
     @GetMapping
     public ResponseEntity<List<InteractionDto.InteractionHistory>> getHistory(

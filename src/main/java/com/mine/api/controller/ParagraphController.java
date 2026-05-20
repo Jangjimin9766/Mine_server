@@ -44,7 +44,7 @@ public class ParagraphController {
 
     @Operation(summary = "🗑️ 문단 삭제", description = "특정 문단을 삭제합니다.")
     @DeleteMapping("/{paragraphId}")
-    public ResponseEntity<?> deleteParagraph(
+    public ResponseEntity<Void> deleteParagraph(
             @PathVariable Long magazineId,
             @PathVariable Long sectionId,
             @PathVariable Long paragraphId,

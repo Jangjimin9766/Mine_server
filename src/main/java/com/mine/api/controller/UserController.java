@@ -124,8 +124,7 @@ public class UserController {
                 java.util.Map.of("isPublic", isPublic, "message", isPublic ? "계정이 공개로 설정되었습니다" : "계정이 비공개로 설정되었습니다"));
     }
 
-    // ⭐ Phase 4: 팔로우
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "팔로우", description = "특정 사용자를 팔로우합니다.")
     @PostMapping("/{userId}/follow")
     public ResponseEntity<UserDto.FollowResponse> followUser(
@@ -135,8 +134,7 @@ public class UserController {
         return ResponseEntity.ok(userService.followUser(userId, userDetails.getUsername()));
     }
 
-    // ⭐ Phase 4: 언팔로우
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "언팔로우", description = "특정 사용자를 언팔로우합니다.")
     @DeleteMapping("/{userId}/follow")
     public ResponseEntity<UserDto.FollowResponse> unfollowUser(
@@ -146,8 +144,7 @@ public class UserController {
         return ResponseEntity.ok(userService.unfollowUser(userId, userDetails.getUsername()));
     }
 
-    // ⭐ Phase 4: 팔로워 목록
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "팔로워 목록", description = "특정 사용자를 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/followers")
     public ResponseEntity<com.mine.api.dto.PageResponse<UserDto.SimpleProfileResponse>> getFollowers(
@@ -159,8 +156,7 @@ public class UserController {
         return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(userService.getFollowers(userId, currentUsername, pageable)));
     }
 
-    // ⭐ Phase 4: 팔로잉 목록
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "5. 사용자 (User) 👤")
     @Operation(summary = "팔로잉 목록", description = "특정 사용자가 팔로우하는 사람들의 목록을 조회합니다.")
     @GetMapping("/{userId}/following")
     public ResponseEntity<com.mine.api.dto.PageResponse<UserDto.SimpleProfileResponse>> getFollowing(

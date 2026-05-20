@@ -10,7 +10,7 @@
 flowchart LR
     A["1️⃣ 매거진 생성"] --> B["2️⃣ 섹션 편집"]
     B --> C["3️⃣ AI 대화로 수정"]
-    C --> D["4️⃣ 공개/공유"]
+    C --> D["4️⃣ 피드/좋아요"]
 ```
 
 | 단계 | 설명 | 주요 API |
@@ -18,7 +18,7 @@ flowchart LR
 | 1️⃣ 생성 | 주제만 입력하면 AI가 매거진 자동 생성 | `POST /api/magazines` |
 | 2️⃣ 편집 | 각 섹션(카드)을 직접 수정 | `PATCH /api/magazines/{id}/sections/{sectionId}` |
 | 3️⃣ AI 대화 | "더 감성적으로 바꿔줘" 같은 명령 | `POST .../interact` |
-| 4️⃣ 공유 | 공개 설정 후 링크로 공유 | `PATCH /api/magazines/{id}/visibility` |
+| 4️⃣ 피드/좋아요 | 공개 계정 매거진 탐색, 좋아요, 추천 피드 | `GET /api/magazines/feed` |
 
 ---
 
@@ -85,15 +85,18 @@ async function createMagazine(topic, mood) {
 {
   "id": 1,
   "title": "겨울철 패션 트렌드",
-  "subtitle": "따뜻함과 스타일을 동시에",
-  "introduction": "올 겨울 핫한 스타일링 가이드",
   "coverImageUrl": "https://s3.../cover.jpg",
   "tags": "패션,겨울,스타일",
-  "moodboardImageUrl": "https://s3.../moodboard.jpg",
-  "moodboardDescription": "따뜻한 겨울 분위기",
-  "username": "john_doe",
-  "isPublic": false,
-  "shareToken": "abc123xyz",
+  "moodboard": {
+    "imageUrl": "https://s3.../moodboard.jpg",
+    "description": "따뜻한 겨울 분위기",
+    "status": "COMPLETED"
+  },
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "nickname": "John"
+  },
   "createdAt": "2024-12-23T10:30:00",
   "sections": [ ... ]
 }
@@ -103,15 +106,10 @@ async function createMagazine(topic, mood) {
 |------|------|------|----------------|
 | `id` | Long | 매거진 고유 ID | URL 라우팅, API 호출 시 사용 |
 | `title` | String | 매거진 제목 | 상단 헤더에 표시, 수정 가능 |
-| `subtitle` | String | 부제목 | 제목 아래 작게 표시 |
-| `introduction` | String | 소개글 | 매거진 상단 또는 공유 시 미리보기 |
 | `coverImageUrl` | String | 커버 이미지 URL | 목록/상세 대표 이미지로 사용 |
 | `tags` | String | 태그 (콤마 구분) | `split(',')` 후 태그 칩으로 표시 |
-| `moodboardImageUrl` | String | 무드보드 이미지 | 사이드바나 하단에 무드 이미지로 표시 |
-| `moodboardDescription` | String | 무드보드 설명 | 무드보드 이미지 위 자막 |
-| `username` | String | 작성자 아이디 | 프로필 링크, 작성자 표시 |
-| `isPublic` | Boolean | 공개 여부 | 공개/비공개 토글 UI 상태 |
-| `shareToken` | String | 공유용 토큰 | 공유 링크 생성: `/share/${shareToken}` |
+| `moodboard` | Object | 무드보드 이미지, 설명, 상태 | 생성 대기/실패 상태 표시 |
+| `user` | Object | 작성자 정보 | 프로필 링크, 작성자 표시 |
 | `createdAt` | String | 생성일시 (ISO 8601) | 날짜 포맷팅 후 표시 |
 | `sections` | Array | 섹션(카드) 배열 | 아래 섹션 구조 참고 |
 
@@ -127,7 +125,6 @@ async function loadMagazine(id) {
   
   // 헤더 영역
   setTitle(magazine.title);
-  setSubtitle(magazine.subtitle);
   setCoverImage(magazine.coverImageUrl);
   
   // 태그 파싱
@@ -577,11 +574,11 @@ async function loadChatHistory(magazineId) {
 
 ---
 
-## 🔓 공개/공유 API
+## 🔓 공개 계정/피드 API
 
-### `PATCH /api/magazines/{id}/visibility`
+### `PATCH /api/users/me/visibility`
 
-매거진 공개/비공개 설정
+계정 공개/비공개 설정. 현재 구현은 매거진 단위 공개가 아니라 사용자 계정 공개 여부를 기준으로 매거진 노출 범위를 제어합니다.
 
 #### 📤 Request Body
 
@@ -600,18 +597,20 @@ async function loadChatHistory(magazineId) {
 ```json
 {
   "isPublic": true,
-  "shareUrl": "http://localhost:3000/share/abc123xyz"
+  "message": "계정이 공개로 설정되었습니다"
 }
 ```
 
 | 필드 | 타입 | 설명 | 프론트엔드 활용 |
 |------|------|------|----------------|
 | `isPublic` | Boolean | 현재 공개 상태 | 토글 UI 상태 업데이트 |
-| `shareUrl` | String | 공유 링크 (공개 시만) | 클립보드 복사 버튼 |
+| `message` | String | 처리 결과 메시지 | 토스트/알림 표시 |
 
-### `GET /api/magazines/share/{shareToken}`
+### `GET /api/magazines/public`
 
-**🔓 인증 불필요!** 누구나 공유 링크로 매거진을 볼 수 있습니다.
+공개 계정의 매거진 목록을 조회합니다. 선택적으로 `userId`를 전달해 특정 공개 계정의 매거진만 조회할 수 있습니다.
+
+> 현재 코드 기준으로 공유 토큰 기반 `GET /api/magazines/share/{shareToken}`와 매거진 단위 `PATCH /api/magazines/{id}/visibility`는 활성 구현이 확인되지 않습니다.
 
 ---
 
@@ -619,17 +618,17 @@ async function loadChatHistory(magazineId) {
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| `GET` | `/api/magazines/me` | 내 매거진 목록 |
+| `GET` | `/api/magazines` | 내 매거진 목록 |
 | `GET` | `/api/magazines/{id}` | 매거진 상세 |
 | `POST` | `/api/magazines` | 매거진 생성 (AI) |
 | `DELETE` | `/api/magazines/{id}` | 매거진 삭제 |
 | `PATCH` | `/api/magazines/{id}` | 매거진 기본정보 수정 |
 | `PATCH` | `/api/magazines/{id}/cover` | 커버 이미지 변경 |
-| `PATCH` | `/api/magazines/{id}/visibility` | 공개/비공개 설정 |
-| `GET` | `/api/magazines/share/{token}` | 공유 링크 조회 |
-| `POST` | `/api/magazines/{id}/like` | 좋아요 토글 |
+| `GET` | `/api/magazines/public` | 공개 계정 매거진 목록 |
+| `POST` | `/api/magazines/{id}/likes` | 좋아요 토글 |
 | `GET` | `/api/magazines/liked` | 좋아요한 목록 |
-| `GET` | `/api/magazines/search?keyword=` | 검색 |
+| `GET` | `/api/magazines/liked/search?keyword=` | 좋아요한 매거진 검색 |
+| `GET` | `/api/magazines/feed/search?keyword=` | 둘러보기 매거진 검색 |
 | `GET` | `/api/magazines/feed` | 개인화 피드 |
 | `GET` | `/api/magazines/{id}/sections/{sectionId}` | 섹션 상세 |
 | `PATCH` | `/api/magazines/{id}/sections/{sectionId}` | 섹션 수정 |

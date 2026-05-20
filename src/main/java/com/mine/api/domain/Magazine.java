@@ -26,11 +26,9 @@ public class Magazine {
     @Column(name = "cover_image_url", length = 1000)
     private String coverImageUrl;
 
-    // [NEW] 태그 목록 (JSON 형태로 저장)
     @Column(columnDefinition = "TEXT")
     private String tags;
 
-    // [NEW] 무드보드 이미지 URL
     @Column(name = "moodboard_image_url", length = 1000)
     private String moodboardImageUrl;
 
@@ -54,7 +52,6 @@ public class Magazine {
     @OrderBy("displayOrder ASC")
     private List<MagazineSection> sections = new ArrayList<>();
 
-    // ⭐ MagazineInteraction과의 관계 (CASCADE 추가)
     @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "magazine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MagazineInteraction> interactions = new ArrayList<>();
@@ -84,19 +81,16 @@ public class Magazine {
         section.setMagazine(this);
     }
 
-    // ⭐ Phase 1: 수정 메서드
     public void updateInfo(String title) {
         if (title != null && !title.trim().isEmpty()) {
             this.title = title;
         }
     }
 
-    // ⭐ 커버 이미지 변경
     public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
     }
 
-    // ⭐ 무드보드 이미지 변경
     public void setMoodboardImageUrl(String moodboardImageUrl) {
         this.moodboardImageUrl = moodboardImageUrl;
     }
@@ -122,12 +116,10 @@ public class Magazine {
         return this.moodboardImageUrl != null ? MoodboardStatus.COMPLETED : MoodboardStatus.PENDING;
     }
 
-    // ⭐ Phase 1: 소유자 확인 메서드
     public boolean isOwnedBy(User user) {
         return this.user.getId().equals(user.getId());
     }
 
-    // ⭐ 낙관적 락 (동시 수정 방지)
     @jakarta.persistence.Version
     private Long version;
 }

@@ -38,3 +38,20 @@ out/
 
 ### Secrets ###
 src/main/resources/application-secret.yml
+
+### Python ###
+__pycache__/
+*.py[cod]
+.venv*/
+.env*
+
+### Local run/test artifacts ###
+*.log
+*.pid
+token*.json
+res_*.json
+*_res.json
+
+### Evaluation workspace (kept out of deploy/main branch) ###
+evaluation/
+docs/SUMMARY_QUALITY_EVALUATION.md

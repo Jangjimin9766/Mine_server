@@ -56,7 +56,7 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🗑️ 매거진 삭제", description = "매거진을 완전히 삭제합니다. 되돌릴 수 없습니다.")
     @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMagazine(
+    public ResponseEntity<Object> deleteMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -81,7 +81,7 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "✏️ 제목/소개 수정", description = "매거진의 이름이나 소개글만 살짝 고칩니다. (내용 수정은 섹션 API 사용)")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}")
-    public ResponseEntity<?> updateMagazine(
+    public ResponseEntity<Object> updateMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "수정할 제목/소개", required = true, content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.mine.api.dto.MagazineDto.UpdateRequest.class))) @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.mine.api.dto.MagazineDto.UpdateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -134,7 +134,7 @@ public class MagazineController {
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🖼️ 커버 이미지 변경", description = "매거진 커버 이미지를 변경합니다. 무드보드 이미지 URL을 사용하세요.")
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/cover")
-    public ResponseEntity<?> updateCover(
+    public ResponseEntity<Object> updateCover(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "새 커버 이미지 URL", required = true, content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(example = "{\"coverImageUrl\": \"https://your-bucket.s3.amazonaws.com/moodboard.png\"}"))) @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -170,31 +170,6 @@ public class MagazineController {
             @org.springframework.data.web.SortDefault(sort = "id", direction = org.springframework.data.domain.Sort.Direction.ASC) org.springframework.data.domain.Pageable pageable) {
         return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(magazineService.getPublicMagazines(userId, pageable)));
     }
-
-    // ⭐ Phase 2: 검색 (키워드) - 기존 기능 봉인
-    // @Tag(name = "99. 기타 (보류) 💤")
-    // @Operation(summary = "🔍 매거진 검색", description = "키워드로 원하는 매거진을 찾습니다.")
-    // @GetMapping("/search")
-    // public ResponseEntity<?> search(
-    //         @org.springframework.web.bind.annotation.RequestParam String keyword,
-    //         @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
-    //         @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size,
-    //         @AuthenticationPrincipal UserDetails userDetails) {
-    // 
-    //     if (keyword == null || keyword.trim().isEmpty()) {
-    //         return ResponseEntity.badRequest()
-    //                 .body(java.util.Map.of("error", "검색어를 입력해주세요"));
-    //     }
-    // 
-    //     org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
-    //             page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
-    // 
-    //     String username = userDetails != null ? userDetails.getUsername() : "";
-    //     org.springframework.data.domain.Page<com.mine.api.dto.MagazineDto.ListItem> result = magazineService
-    //             .searchByKeyword(keyword, username, pageable);
-    // 
-    //     return ResponseEntity.ok(com.mine.api.dto.PageResponse.from(result));
-    // }
 
     @Tag(name = "1. 매거진 (Magazine) 📘")
     @Operation(summary = "🔍 찜한 매거진 검색", description = "내가 좋아요(찜)한 매거진들 중에서 키워드로 검색합니다.")
@@ -237,11 +212,10 @@ public class MagazineController {
         return ResponseEntity.ok(magazineService.getPersonalizedFeedCursor(userDetails.getUsername(), cursorId, limit, isTest));
     }
 
-    // ⭐ 매거진 기반 무드보드 생성
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "4. 무드보드 (Moodboard)")
     @Operation(summary = "🎨 매거진 무드보드 생성", description = "매거진 정보를 기반으로 AI 무드보드를 생성합니다. 매거진 제목과 태그가 자동으로 사용됩니다.")
     @org.springframework.web.bind.annotation.PostMapping("/{id}/moodboards")
-    public ResponseEntity<?> createMoodboardForMagazine(
+    public ResponseEntity<Object> createMoodboardForMagazine(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -270,11 +244,10 @@ public class MagazineController {
         }
     }
 
-    // ⭐ 무드보드 히스토리 조회
-    @Tag(name = "99. 기타 (보류) 💤")
+    @Tag(name = "4. 무드보드 (Moodboard)")
     @Operation(summary = "📜 무드보드 히스토리", description = "매거진에서 생성한 무드보드 목록을 최신순으로 조회합니다.")
     @GetMapping("/{id}/moodboards/history")
-    public ResponseEntity<?> getMoodboardHistory(
+    public ResponseEntity<Object> getMoodboardHistory(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -282,7 +255,6 @@ public class MagazineController {
             java.util.List<com.mine.api.domain.Moodboard> history = moodboardService.getMoodboardHistory(id,
                     userDetails.getUsername());
 
-            // 간단한 응답 형태로 변환 (id, imageUrl, createdAt)
             java.util.List<java.util.Map<String, Object>> response = history.stream()
                     .map(m -> java.util.Map.<String, Object>of(
                             "id", m.getId(),

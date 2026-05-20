@@ -234,19 +234,13 @@ public class SectionService {
             throw new RuntimeException("Failed to get response from AI server");
         }
 
-        // [DEBUG] Python 응답 전체 로깅
-        log.info("[DEBUG] Full Python response: {}", output);
-
         String actionType = (String) output.get("intent");
-        log.info("[DEBUG] Parsed intent: {}", actionType);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> updatedSection = (Map<String, Object>) output.get("updated_section");
-        log.info("[DEBUG] updated_section: {}", updatedSection);
 
         // 섹션 업데이트
         if (updatedSection != null) {
-            // [NEW] 이미지 S3 변환 (thumbnail)
             String thumbUrl = (String) updatedSection.get("thumbnail_url");
             if (thumbUrl == null) {
                 thumbUrl = (String) updatedSection.get("image_url");
@@ -309,7 +303,6 @@ public class SectionService {
                 // 형식 2: Python AI 서버가 content (HTML 문자열)로 반환한 경우
                 String content = (String) updatedSection.get("content");
                 if (content != null && !content.isBlank()) {
-                    log.info("[DEBUG] Updating paragraphs from content HTML (length={})", content.length());
                     List<com.mine.api.domain.Paragraph> existingParagraphs = section.getParagraphs();
                     if (!existingParagraphs.isEmpty()) {
                         // 기존 첫 번째 paragraph의 text를 AI 응답 content로 교체

@@ -235,14 +235,13 @@ class UserControllerTest {
 | `GET /api/users/me` | 프로필 조회 성공, 토큰 없으면 401 |
 | `PATCH /api/users/me` | 닉네임 수정 성공, 잘못된 닉네임 실패 |
 | `GET /api/magazines/feed` | 추천 피드 조회, `hasNext`/`nextCursor` 포함 확인 |
-| `GET /api/magazines/public/{id}` | 공개 매거진 조회 성공 |
+| `GET /api/magazines/public` | 공개 계정 매거진 목록 조회 성공 |
 
 ### 권장 (Should Have) 🟡
 
 | API | 테스트 시나리오 |
 |-----|----------------|
 | `PATCH /api/users/me/visibility` | 계정 공개/비공개 전환 성공 |
-| `GET /api/magazines/share/{id}` | 공유 매거진 링크로 조회 |
 | `GET /api/magazines/{id}` | 내 매거진 조회, 다른 사람 매거진 403 |
 
 ### 선택 (Nice to Have) 🟢

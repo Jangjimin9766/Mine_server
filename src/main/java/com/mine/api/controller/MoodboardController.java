@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/moodboards")
 @RequiredArgsConstructor
-@Tag(name = "99. 기타 (보류) 💤", description = "무드보드(AI 배경화면), 검색, 팔로우 등 지금 당장 쓰지 않는 기능들입니다.")
+@Tag(name = "4. 무드보드 (Moodboard)", description = "AI 기반 무드보드 생성 API")
 public class MoodboardController {
 
     private final MoodboardService moodboardService;
@@ -27,22 +27,6 @@ public class MoodboardController {
     public ResponseEntity<MoodboardResponseDto> createMoodboard(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody MoodboardRequestDto requestDto) {
-
-        // UserDetails에서 userId를 가져오는 로직이 필요하지만, 현재 UserDetails는 Spring Security User일 수
-        // 있음.
-        // 여기서는 username으로 User를 조회하거나, CustomUserDetails를 사용한다고 가정.
-        // MVP 구현을 위해 Service에서 username을 받아 처리하도록 수정하거나,
-        // 현재 구조상 UserDetails.getUsername()을 넘기는 것이 안전함.
-        // 하지만 Service는 userId를 받고 있음.
-        // -> Service를 수정하여 username을 받도록 변경하거나, Controller에서 User를 조회해야 함.
-        // 효율성을 위해 Service에서 username으로 조회하도록 변경하는 것이 좋음.
-        // 일단 여기서는 Service의 시그니처를 변경하지 않고, 추후 리팩토링 고려.
-        // 임시로 UserDetails가 CustomUserDetails라고 가정하고 ID를 꺼내거나,
-        // Service에 username을 넘기는 방식으로 수정 필요.
-        // Service 코드를 방금 작성했으므로, Service를 수정하는 것이 빠름.
-
-        // *REVISION*: Service를 username을 받도록 수정하겠습니다.
-        // 하지만 지금은 Controller 작성이므로, 일단 컴파일 되도록 작성하고 Service를 수정합니다.
 
         String username = userDetails.getUsername();
         String s3Url = moodboardService.createMoodboard(username, requestDto);

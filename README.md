@@ -47,13 +47,13 @@
 본 프로젝트는 대규모 데이터 처리와 외부 AI 서비스 연동 시 발생할 수 있는 기술적 난제들을 해결하기 위해 다음과 같은 엔지니어링 전략을 도입했습니다.
 
 ### 1. Performance Optimization
-- **Full-Text Search Optimization**: 기존 `LIKE` 쿼리의 성능 한계(3.2s)를 극복하기 위해 **MySQL Full-Text Index (N-gram Parser)** 및 Native Query를 도입하여 검색 성능을 **0.017s (약 180배)**로 획기적으로 개선했습니다.
+- **Search Optimization Experiment**: 대용량 데이터에서 `LIKE` 검색이 병목이 될 수 있음을 확인하고, 100만 건 더미 데이터와 MySQL Full-Text Index 적용 실험을 진행했습니다. 현재 활성 API 검색은 제목 중심 `LIKE` 기반이며, Full-Text 적용은 성능 개선 후보로 관리합니다.
 - **Efficient Pagination**: 데이터 증가에 따른 성능 저하를 방지하기 위해 **No-Offset (Cursor-based)** 페이징을 적용하여 일관된 조회 성능을 보장했습니다.
 - **Query Optimization**: `Fetch Join`과 `@EntityGraph`를 적재적소에 활용하여 N+1 문제를 해결하고, JPA `@Formula`를 통해 통계 데이터를 효율적으로 조회했습니다.
 
 ### 2. Resilience & Stability
-- **Circuit Breaker Pattern**: 외부 AI 서비스(RunPod)의 장애가 전체 시스템으로 전파되는 것을 차단하기 위해 **Resilience4j**를 도입했습니다. 50% 이상의 실패율 감지 시 즉시 Fallback 처리하여 시스템 생존성을 확보했습니다.
-- **Safe Timeout Strategy**: AI 모델의 긴 생성 시간(Long-running Task)을 고려하여 정교한 TimeLimiter 전략을 수립, 불필요한 타임아웃 오류를 방지했습니다.
+- **Circuit Breaker Pattern**: 외부 AI 서비스(RunPod)의 장애가 전체 시스템으로 전파되는 것을 차단하기 위해 **Resilience4j**를 도입했습니다. 반복 실패 시 Fallback 처리하여 시스템 생존성을 확보했습니다.
+- **Safe Timeout Strategy**: AI 모델의 긴 생성 시간(Long-running Task)을 고려하여 RunPod 상태 폴링 제한과 WebClient 요청 타임아웃을 분리했습니다.
 
 ### 3. Asynchronous Architecture
 - **Event-Driven AI Processing**: **Serverless GPU (RunPod)**와 **Spring WebClient**를 활용한 비동기 폴링(Async Polling) 구조를 설계하여, 고비용 GPU 리소스를 효율적으로 사용하고 비용을 **90% 이상 절감**했습니다.
@@ -151,7 +151,7 @@ graph TB
     end
     
     subgraph Data_Storage ["💾 Data & Storage"]
-        MySQL[("MySQL 8.0<br/>Full-Text Index")]
+        MySQL[("MySQL 8.0<br/>Main DB")]
         Redis[("Redis<br/>Auth/Session")]
         S3["AWS S3<br/>Image Storage"]
     end
@@ -320,10 +320,10 @@ http://localhost:8080/swagger-ui.html
 | GET | `/api/magazines/{id}` | 매거진 상세 조회 | ✅ |
 | PATCH | `/api/magazines/{id}` | 제목/소개 수정 | ✅ |
 | DELETE | `/api/magazines/{id}` | 매거진 삭제 | ✅ |
-| PATCH | `/api/magazines/{id}/visibility` | 공개/비공개 설정 | ✅ |
 | PATCH | `/api/magazines/{id}/cover` | 커버 이미지 변경 | ✅ |
-| GET | `/api/magazines/share/{shareToken}` | 공유 링크로 조회 | ❌ |
-| GET | `/api/magazines/search` | 키워드 검색 | ❌ |
+| GET | `/api/magazines/public` | 공개 계정 매거진 목록 | ❌ |
+| GET | `/api/magazines/liked/search` | 좋아요한 매거진 검색 | ✅ |
+| GET | `/api/magazines/feed/search` | 둘러보기 매거진 검색 | 선택 |
 | POST | `/api/magazines/{id}/likes` | 좋아요 토글 | ✅ |
 | GET | `/api/magazines/liked` | 좋아요한 매거진 목록 | ✅ |
 | GET | `/api/magazines/feed` | 개인화 피드 | ✅ |
@@ -406,14 +406,11 @@ magazines
 ├── id (PK)
 ├── user_id (FK → users)
 ├── title
-├── subtitle                -- [NEW] 부제
-├── introduction (TEXT)
 ├── cover_image_url
 ├── tags (TEXT)             -- [NEW] 콤마로 구분된 태그
 ├── moodboard_image_url     -- [NEW] 무드보드 이미지 URL
 ├── moodboard_description   -- [NEW] 무드보드 설명
-├── is_public (BOOLEAN)
-├── share_token (UNIQUE, 12자)
+├── moodboard_status
 ├── version (낙관적 락)
 └── created_at
 ```
@@ -485,14 +482,11 @@ erDiagram
         bigint id PK
         bigint user_id FK
         string title
-        string subtitle
-        text introduction
         string cover_image_url
         text tags
         string moodboard_image_url
         text moodboard_description
-        boolean is_public
-        string share_token UK
+        string moodboard_status
         bigint version
         timestamp created_at
     }
@@ -697,8 +691,6 @@ Python FastAPI 서버와의 통합 가이드는 [FASTAPI_GUIDE.md](FASTAPI_GUIDE
 ```json
 {
   "title": "겨울철 패션 트렌드",
-  "subtitle": "따뜻함과 스타일을 동시에 잡는 법",
-  "introduction": "...",
   "cover_image_url": "...",
   "tags": ["패션", "겨울", "스타일"],
   "moodboard": {
@@ -708,10 +700,16 @@ Python FastAPI 서버와의 통합 가이드는 [FASTAPI_GUIDE.md](FASTAPI_GUIDE
   "sections": [
     {
       "heading": "코트 스타일링",
-      "content": "...",
-      "image_url": "...",
-      "layout_type": "hero",
-      "caption": "2024FW 트렌드"
+      "thumbnail_url": "...",
+      "source_url": "...",
+      "paragraphs": [
+        {
+          "subtitle": "코트 스타일링",
+          "text": "...",
+          "image_url": "...",
+          "source_url": "..."
+        }
+      ]
     }
   ]
 }
@@ -721,11 +719,10 @@ Python FastAPI 서버와의 통합 가이드는 [FASTAPI_GUIDE.md](FASTAPI_GUIDE
 
 | 필드 | 설명 |
 |------|------|
-| `subtitle` | 매거진 부제 |
 | `tags` | 매거진 태그 목록 |
 | `moodboard` | 매거진 전용 무드보드 (image_url, description) |
-| `layout_type` | 섹션 레이아웃 타입 (hero, quote, split_left, split_right, basic) |
-| `caption` | 이미지 캡션 (Optional) |
+| `sections[].thumbnail_url` | 섹션 썸네일 이미지 |
+| `sections[].paragraphs` | 섹션 문단 목록 |
 
 ## 📈 성능 최적화
 
@@ -868,4 +865,3 @@ brew services restart redis
     </td>
   </tr>
 </table>
-
