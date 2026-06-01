@@ -141,16 +141,16 @@ public interface MagazineRepository extends JpaRepository<Magazine, Long> {
 
         // ⭐ 좋아요 + 관심사 기반 피드 (커서 기반) - 사용자 공개 여부만 체크
         // keywords: 사용자 관심사 + 좋아요한 매거진의 태그
-        @org.springframework.data.jpa.repository.Query("SELECT DISTINCT m FROM Magazine m " +
-                        "LEFT JOIN FETCH m.user " +
-                        "LEFT JOIN FETCH m.sections " +
-                        "WHERE ((:keyword1 <> '' AND (m.tags LIKE %:keyword1% OR m.title LIKE %:keyword1%)) " +
-                        "OR (:keyword2 <> '' AND (m.tags LIKE %:keyword2% OR m.title LIKE %:keyword2%)) " +
-                        "OR (:keyword3 <> '' AND (m.tags LIKE %:keyword3% OR m.title LIKE %:keyword3%))) " +
-                        "AND m.user.isPublic = true " +
-                        "AND m.user.id != :userId " + // 본인 매거진 제외
+        @org.springframework.data.jpa.repository.Query(value = "SELECT DISTINCT m.* FROM magazines m " +
+                        "INNER JOIN users u ON m.user_id = u.id AND u.deleted = false " +
+                        "WHERE ((:keyword1 <> '' AND (m.tags COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword1 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%') OR m.title COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword1 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%'))) " +
+                        "OR (:keyword2 <> '' AND (m.tags COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword2 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%') OR m.title COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword2 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%'))) " +
+                        "OR (:keyword3 <> '' AND (m.tags COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword3 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%') OR m.title COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', CAST(:keyword3 AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci, '%')))) " +
+                        "AND u.is_public = true " +
+                        "AND u.id != :userId " +
                         "AND (:lastId IS NULL OR m.id < :lastId) " +
-                        "ORDER BY m.id DESC")
+                        "ORDER BY m.id DESC",
+                        nativeQuery = true)
         java.util.List<Magazine> findRecommendedFeedCursor(
                         @org.springframework.data.repository.query.Param("keyword1") String keyword1,
                         @org.springframework.data.repository.query.Param("keyword2") String keyword2,

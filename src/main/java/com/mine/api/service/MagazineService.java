@@ -567,7 +567,7 @@ public class MagazineService {
     private java.util.List<String> getTop3InterestKeywords(User user) {
         // 1. 관심사 키워드
         java.util.List<String> interestKeywords = userInterestRepository.findByUser(user).stream()
-                .map(ui -> ui.getInterest().getName())
+                .map(ui -> ui.getInterest().getCode())
                 .collect(java.util.stream.Collectors.toList());
 
         // 2. 좋아요한 매거진의 태그
@@ -637,6 +637,7 @@ public class MagazineService {
     }
 
     // ⭐ Phase 4: 개인화 피드 (커서 기반) - 좋아요 + 관심사 기반
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getPersonalizedFeedCursor(
             String username, Long cursorId, int limit, boolean isTest) {
         
@@ -681,6 +682,7 @@ public class MagazineService {
     /**
      * 프론트엔드 무한 스크롤 테스트용 피드 (모든 공개 매거진 최신순)
      */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public com.mine.api.dto.CursorResponse<com.mine.api.dto.MagazineDto.ListItem> getTestFeedCursor(Long cursorId, int limit) {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit + 1);
         

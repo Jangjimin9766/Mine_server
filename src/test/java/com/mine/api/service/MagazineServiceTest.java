@@ -381,7 +381,7 @@ class MagazineServiceTest {
                 User user = User.builder().username(username).build();
                 ReflectionTestUtils.setField(user, "id", 100L); // ID 설정
 
-                // 1. 사용자 관심사 설정 (여행, 패션)
+                // 1. 사용자 관심사 설정 (태그 컬럼과 매칭되는 코드 사용)
                 Interest travelInterest = Interest.builder().code("TRAVEL").name("여행").build();
                 Interest fashionInterest = Interest.builder().code("FASHION").name("패션").build();
                 UserInterest ui1 = UserInterest.builder().user(user).interest(travelInterest).build();
@@ -438,8 +438,8 @@ class MagazineServiceTest {
                 verify(magazineRepository).findRecommendedFeedCursor(
                                 keyword1.capture(), keyword2.capture(), keyword3.capture(),
                                 eq(100L), isNull(), any(Pageable.class));
-                assertEquals("여행", keyword1.getValue());
-                assertEquals("패션", keyword2.getValue());
+                assertEquals("TRAVEL", keyword1.getValue());
+                assertEquals("FASHION", keyword2.getValue());
                 assertEquals("", keyword3.getValue());
         }
 
@@ -480,8 +480,8 @@ class MagazineServiceTest {
                 verify(magazineRepository).findRecommendedFeedCursor(
                                 keyword1.capture(), keyword2.capture(), keyword3.capture(),
                                 eq(100L), isNull(), any(Pageable.class));
-                assertEquals("여행", keyword1.getValue());
-                assertEquals("패션", keyword2.getValue());
-                assertEquals("푸드", keyword3.getValue());
+                assertEquals("TRAVEL", keyword1.getValue());
+                assertEquals("FASHION", keyword2.getValue());
+                assertEquals("FOOD", keyword3.getValue());
         }
 }
