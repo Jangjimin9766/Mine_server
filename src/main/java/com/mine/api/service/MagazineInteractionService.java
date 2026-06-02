@@ -4,6 +4,7 @@ import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineInteraction;
 import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.Paragraph;
+import com.mine.api.common.ImageUrlSanitizer;
 import com.mine.api.dto.InteractionDto;
 import com.mine.api.repository.MagazineInteractionRepository;
 import com.mine.api.repository.MagazineRepository;
@@ -320,8 +321,8 @@ public class MagazineInteractionService {
                 (String) map.get("heading"));
 
         // Update thumbnail
-        if (map.get("thumbnail_url") != null) {
-            section.setThumbnailUrl((String) map.get("thumbnail_url"));
+        if (map.containsKey("thumbnail_url")) {
+            section.setThumbnailUrl(ImageUrlSanitizer.nullIfDefault((String) map.get("thumbnail_url")));
         }
 
         // Update source URL (원본 웹 소스 추적)
@@ -341,7 +342,7 @@ public class MagazineInteractionService {
 
         MagazineSection section = MagazineSection.builder()
                 .heading((String) map.get("heading"))
-                .thumbnailUrl(thumbUrl)
+                .thumbnailUrl(ImageUrlSanitizer.nullIfDefault(thumbUrl))
                 .displayOrder(displayOrder)
                 .sourceUrl((String) map.get("source_url")) // 원본 웹 소스 URL 저장
                 .build();
@@ -371,7 +372,7 @@ public class MagazineInteractionService {
                 Paragraph p = Paragraph.builder()
                         .subtitle(subtitle)
                         .text(text)
-                        .imageUrl((String) pMap.get("image_url"))
+                        .imageUrl(ImageUrlSanitizer.nullIfDefault((String) pMap.get("image_url")))
                         .sourceUrl((String) pMap.get("source_url"))
                         .displayOrder(i)
                         .build();
@@ -392,7 +393,7 @@ public class MagazineInteractionService {
 
                 Paragraph p = Paragraph.builder()
                         .text(content)
-                        .imageUrl((String) map.get("image_url"))
+                        .imageUrl(ImageUrlSanitizer.nullIfDefault((String) map.get("image_url")))
                         .subtitle(subtitle)
                         .displayOrder(0)
                         .build();

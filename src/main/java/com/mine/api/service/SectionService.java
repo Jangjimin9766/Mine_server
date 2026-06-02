@@ -1,6 +1,7 @@
 package com.mine.api.service;
 
 import com.mine.api.common.ErrorMessages;
+import com.mine.api.common.ImageUrlSanitizer;
 
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
@@ -250,10 +251,10 @@ public class SectionService {
                 if (uploadedThumb != null) {
                     thumbUrl = uploadedThumb;
                 } else {
-                    thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png";
+                    thumbUrl = null;
                 }
             } else {
-                thumbUrl = "https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-thumbnail.png";
+                thumbUrl = null;
             }
             
             section.setThumbnailUrl(thumbUrl);
@@ -395,7 +396,7 @@ public class SectionService {
                         .id(p.getId())
                         .subtitle(p.getSubtitle())
                         .text(p.getText())
-                        .imageUrl(p.getImageUrl())
+                        .imageUrl(ImageUrlSanitizer.nullIfDefault(p.getImageUrl()))
                         .sourceUrl(p.getSourceUrl())
                         .build())
                 .collect(Collectors.toList());
@@ -403,7 +404,7 @@ public class SectionService {
         return SectionDto.Response.builder()
                 .id(section.getId())
                 .heading(section.getHeading())
-                .thumbnailUrl(section.getThumbnailUrl())
+                .thumbnailUrl(ImageUrlSanitizer.nullIfDefault(section.getThumbnailUrl()))
                 .paragraphs(paragraphsList)
                 .displayOrder(section.getDisplayOrder())
                 .sourceUrl(section.getSourceUrl()) // 원본 웹 소스 URL
