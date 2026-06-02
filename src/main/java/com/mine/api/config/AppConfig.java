@@ -17,8 +17,8 @@ public class AppConfig {
         // 연결 타임아웃: 10초 (서버 연결 시도 시간)
         factory.setConnectTimeout(10000);
 
-        // 읽기 타임아웃: 180초 — RunPod 콜드스타트(~30초) + SDXL 이미지 생성(~60초) 커버
-        factory.setReadTimeout(180000);
+        // 읽기 타임아웃: 5분 — AI 생성 및 이미지 처리 지연을 커버
+        factory.setReadTimeout(300000);
 
         RestTemplate restTemplate = new RestTemplate(factory);
         return restTemplate;
