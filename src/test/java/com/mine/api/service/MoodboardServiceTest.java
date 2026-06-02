@@ -2,7 +2,9 @@ package com.mine.api.service;
 
 import com.mine.api.domain.Moodboard;
 import com.mine.api.domain.Magazine;
+import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.MoodboardStatus;
+import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
 import com.mine.api.domain.Interest;
 import com.mine.api.domain.UserInterest;
@@ -128,6 +130,16 @@ class MoodboardServiceTest {
                 .user(user)
                 .build();
         ReflectionTestUtils.setField(magazine, "id", 10L);
+        MagazineSection section = MagazineSection.builder()
+                .heading("집중을 돕는 조명과 책상 구성")
+                .displayOrder(0)
+                .build();
+        section.addParagraph(Paragraph.builder()
+                .subtitle("업무 루틴")
+                .text("작은 책상과 따뜻한 조명이 생산성 있는 홈 오피스 분위기를 만든다.")
+                .displayOrder(0)
+                .build());
+        magazine.addSection(section);
 
         Interest interest = Interest.builder().code("TECH").name("테크").build();
         UserInterest userInterest = UserInterest.builder().user(user).interest(interest).build();
@@ -155,6 +167,80 @@ class MoodboardServiceTest {
 
         verify(runPodService).sendSyncRequest(eq("http://localhost:8000/api/magazine/moodboard"), any(java.util.Map.class));
         verify(moodboardRepository).save(any(Moodboard.class));
+    }
+
+    @Test
+    void createMoodboardForMagazine_SendsSectionContext() {
+        String username = "testUser";
+        User user = User.builder().username(username).build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+
+        Magazine magazine = Magazine.builder()
+                .title("영국 드라마 추천")
+                .tags("BRITISH_DRAMA,OTT")
+                .user(user)
+                .build();
+        ReflectionTestUtils.setField(magazine, "id", 10L);
+        MagazineSection section = MagazineSection.builder()
+                .heading("절제된 미스터리의 매력")
+                .displayOrder(0)
+                .build();
+        section.addParagraph(Paragraph.builder()
+                .subtitle("느린 호흡의 수사극")
+                .text("영국 드라마는 차분한 색감, 미묘한 표정, 촘촘한 대사로 긴장감을 쌓아 간다.")
+                .displayOrder(0)
+                .build());
+        magazine.addSection(section);
+
+        String base64Image = Base64.getEncoder().encodeToString("fake-magazine-image".getBytes());
+        java.util.Map<String, Object> output = new java.util.HashMap<>();
+        output.put("success", true);
+        output.put("image_url", base64Image);
+
+        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+        given(magazineRepository.findById(10L)).willReturn(Optional.of(magazine));
+        given(magazineRepository.findByIdAndUserUsername(10L, username)).willReturn(Optional.of(magazine));
+        given(userInterestRepository.findByUser(user)).willReturn(java.util.List.of());
+        given(runPodService.sendSyncRequest(anyString(), any(java.util.Map.class))).willReturn(output);
+        given(s3Service.uploadBase64ToS3(base64Image)).willReturn("https://test-bucket/moodboards/magazine.png");
+
+        moodboardService.createMoodboardForMagazine(10L, username);
+
+        org.mockito.ArgumentCaptor<java.util.Map<String, Object>> requestCaptor =
+                org.mockito.ArgumentCaptor.forClass(java.util.Map.class);
+        verify(runPodService).sendSyncRequest(anyString(), requestCaptor.capture());
+        java.util.Map<String, Object> request = requestCaptor.getValue();
+
+        assertEquals(java.util.List.of("절제된 미스터리의 매력"), request.get("section_headings"));
+        org.junit.jupiter.api.Assertions.assertTrue(request.get("content_keywords").toString().contains("느린 호흡의 수사극"));
+        org.junit.jupiter.api.Assertions.assertTrue(request.get("content_keywords").toString().contains("영국 드라마"));
+    }
+
+    @Test
+    void createMoodboardForMagazine_FallbackOnlyMarksFailed() {
+        String username = "testUser";
+        User user = User.builder().username(username).build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+
+        Magazine magazine = Magazine.builder()
+                .title("영국 드라마 추천")
+                .user(user)
+                .build();
+        ReflectionTestUtils.setField(magazine, "id", 10L);
+
+        java.util.Map<String, Object> output = new java.util.HashMap<>();
+        output.put("success", true);
+        output.put("fallback_url", "https://example.com/generic-fallback.jpg");
+
+        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+        given(magazineRepository.findById(10L)).willReturn(Optional.of(magazine));
+        given(magazineRepository.findByIdAndUserUsername(10L, username)).willReturn(Optional.of(magazine));
+        given(userInterestRepository.findByUser(user)).willReturn(java.util.List.of());
+        given(runPodService.sendSyncRequest(anyString(), any(java.util.Map.class))).willReturn(output);
+
+        assertThrows(RuntimeException.class, () -> moodboardService.createMoodboardForMagazine(10L, username));
+        assertEquals(MoodboardStatus.FAILED, magazine.getMoodboardStatus());
+        org.mockito.Mockito.verify(s3Service, org.mockito.Mockito.never()).uploadBase64ToS3(anyString());
     }
 
     @Test

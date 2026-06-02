@@ -2,7 +2,9 @@ package com.mine.api.service;
 
 import com.mine.api.common.ErrorMessages;
 import com.mine.api.domain.Magazine;
+import com.mine.api.domain.MagazineSection;
 import com.mine.api.domain.Moodboard;
+import com.mine.api.domain.Paragraph;
 import com.mine.api.dto.MoodboardRequestDto;
 import com.mine.api.repository.MoodboardRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +60,7 @@ public class MoodboardService {
             throw new RuntimeException(ErrorMessages.FAILED_TO_GENERATE_MOODBOARD);
         }
 
-        String imagePayload = firstNonBlank(stringValue(output.get("image_url")), stringValue(output.get("fallback_url")));
+        String imagePayload = stringValue(output.get("image_url"));
         String description = stringValue(output.get("description"));
 
         if (imagePayload == null) {
@@ -153,6 +155,8 @@ public class MoodboardService {
         data.put("user_interests", context.userInterests());
         data.put("magazine_tags", context.magazineTags());
         data.put("magazine_titles", context.magazineTitles());
+        data.put("section_headings", context.sectionHeadings());
+        data.put("content_keywords", context.contentKeywords());
         data.put("moodboard_rules", moodboardRules());
 
         Map<String, Object> output = callMoodboardApi(data);
@@ -162,7 +166,7 @@ public class MoodboardService {
             throw new RuntimeException("Moodboard generation failed: " + stringValue(output.get("error_type")));
         }
 
-        String imagePayload = firstNonBlank(stringValue(output.get("image_url")), stringValue(output.get("fallback_url")));
+        String imagePayload = stringValue(output.get("image_url"));
         String description = stringValue(output.get("description"));
 
         if (imagePayload == null) {
@@ -194,6 +198,12 @@ public class MoodboardService {
         List<String> magazineTags = parseTags(magazine.getTags());
         String topic = magazine.getTitle();
         List<String> magazineTitles = topic == null || topic.isBlank() ? List.of() : List.of(topic);
+        List<String> sectionHeadings = magazine.getSections().stream()
+                .map(MagazineSection::getHeading)
+                .filter(value -> value != null && !value.isBlank())
+                .limit(8)
+                .toList();
+        List<String> contentKeywords = extractContentKeywords(magazine);
 
         return new MagazineMoodboardContext(
                 user.getId(),
@@ -201,7 +211,9 @@ public class MoodboardService {
                 null,
                 userInterests,
                 magazineTags,
-                magazineTitles);
+                magazineTitles,
+                sectionHeadings,
+                contentKeywords);
     }
 
     private Map<String, Object> callMoodboardApi(Map<String, Object> data) {
@@ -305,6 +317,32 @@ public class MoodboardService {
         return result;
     }
 
+    private List<String> extractContentKeywords(Magazine magazine) {
+        List<String> keywords = new ArrayList<>();
+        for (MagazineSection section : magazine.getSections()) {
+            addIfPresent(keywords, section.getHeading(), 80);
+            for (Paragraph paragraph : section.getParagraphs()) {
+                addIfPresent(keywords, paragraph.getSubtitle(), 80);
+                addIfPresent(keywords, paragraph.getText(), 160);
+                if (keywords.size() >= 12) {
+                    return keywords;
+                }
+            }
+        }
+        return keywords;
+    }
+
+    private void addIfPresent(List<String> values, String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        String normalized = value.trim().replaceAll("\\s+", " ");
+        if (normalized.length() > maxLength) {
+            normalized = normalized.substring(0, maxLength);
+        }
+        values.add(normalized);
+    }
+
     private void validateMoodboardApiUrl() {
         if (moodboardApiUrl == null || moodboardApiUrl.isBlank()) {
             throw new IllegalStateException("python.api.moodboard-url is missing (PYTHON_MOODBOARD_URL).");
@@ -324,9 +362,11 @@ public class MoodboardService {
 
     private List<String> moodboardRules() {
         return List.of(
-                "topic, magazine_titles, magazine_tags와 직접 관련된 시각 요소만 사용한다.",
-                "주제와 무관한 스포츠 장비, 골프공, 일반 소품 이미지는 사용하지 않는다.",
-                "관련 이미지를 만들 수 없으면 무작위 대체 이미지를 반환하지 말고 실패로 응답한다.");
+                "topic, magazine_titles, magazine_tags, section_headings, content_keywords와 직접 관련된 시각 요소만 사용한다.",
+                "매거진 주제와 무관한 일반 방, 램프, 식물, TV 시청자, 파티 장면, 스포츠 장비, 골프공, 일반 소품 이미지는 사용하지 않는다.",
+                "추천/리뷰형 매거진은 실제 콘텐츠 장르와 분위기를 시각화하고, 단순히 사람들이 무언가를 시청하는 장면으로 대체하지 않는다.",
+                "저해상도, 흐릿한 이미지, 작은 썸네일, 워터마크, 텍스트가 깨진 이미지는 반환하지 않는다.",
+                "관련 고화질 이미지를 만들 수 없으면 fallback_url이나 무작위 대체 이미지를 반환하지 말고 실패로 응답한다.");
     }
 
     private boolean isLocalMoodboardApi() {
@@ -360,7 +400,9 @@ public class MoodboardService {
             String userMood,
             List<String> userInterests,
             List<String> magazineTags,
-            List<String> magazineTitles) {
+            List<String> magazineTitles,
+            List<String> sectionHeadings,
+            List<String> contentKeywords) {
     }
 
     private record MoodboardGenerationResult(Long userId, String imageUrl, String description) {
