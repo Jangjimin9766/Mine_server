@@ -143,7 +143,7 @@ public class MoodboardResponseDto {
 ## 6. Security & Production Setup (RunPod / Deployment)
 
 ### 6.1 Timeout Configuration
-The AI generation process takes time (10-30s+). The Spring Boot server `ReadTimeout` has been increased to **90 seconds** in `AppConfig.java`.
+The AI generation process can take several minutes. The Spring Boot server `ReadTimeout` has been increased to **5 minutes** in `AppConfig.java`.
 Ensure your Python server does not have its own timeout disconnects (usually Uvicorn/Gunicorn defaults are fine, but check Reverse Proxy settings if using Nginx).
 
 ### 6.2 Connection Address
