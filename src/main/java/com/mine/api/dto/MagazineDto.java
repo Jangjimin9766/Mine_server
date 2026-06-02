@@ -2,6 +2,7 @@ package com.mine.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mine.api.common.ImageUrlSanitizer;
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MoodboardStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -151,7 +152,7 @@ public class MagazineDto {
             return ListItem.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
-                    .coverImageUrl(magazine.getCoverImageUrl())
+                    .coverImageUrl(ImageUrlSanitizer.nullIfDefault(magazine.getCoverImageUrl()))
                     .username(magazine.getUser().getUsername())
                     .likeCount(magazine.getLikes().size())
                     .commentCount(0)
@@ -261,29 +262,40 @@ public class MagazineDto {
                     .profileImageUrl(magazine.getUser().getProfileImageUrl())
                     .build();
 
+            java.util.Set<String> usedImageUrls = new java.util.HashSet<>();
             List<SectionItem> sectionItems = magazine.getSections().stream()
-                    .map(section -> SectionItem.builder()
+                    .map(section -> {
+                        String thumbnailUrl = ImageUrlSanitizer.nullIfDefaultOrDuplicate(
+                                section.getThumbnailUrl(),
+                                usedImageUrls);
+                        return SectionItem.builder()
                             .id(section.getId())
                             .heading(section.getHeading())
-                            .thumbnailUrl(section.getThumbnailUrl())
+                            .thumbnailUrl(thumbnailUrl)
                             .paragraphs(section.getParagraphs().stream()
-                                    .map(p -> ParagraphDto.Response.builder()
+                                    .map(p -> {
+                                        String imageUrl = ImageUrlSanitizer.nullIfDefaultOrDuplicate(
+                                                p.getImageUrl(),
+                                                usedImageUrls);
+                                        return ParagraphDto.Response.builder()
                                             .id(p.getId())
                                             .subtitle(p.getSubtitle())
                                             .text(p.getText())
-                                            .imageUrl(p.getImageUrl())
+                                            .imageUrl(imageUrl)
                                             .sourceUrl(p.getSourceUrl())
-                                            .build())
+                                            .build();
+                                    })
                                     .toList())
                             .displayOrder(section.getDisplayOrder())
                             .sourceUrl(section.getSourceUrl())
-                            .build())
+                            .build();
+                    })
                     .toList();
 
             return DetailResponse.builder()
                     .id(magazine.getId())
                     .title(magazine.getTitle())
-                    .coverImageUrl(magazine.getCoverImageUrl())
+                    .coverImageUrl(ImageUrlSanitizer.nullIfDefault(magazine.getCoverImageUrl()))
                     .tags(magazine.getTags())
                     .moodboard(MoodboardItem.from(magazine))
                     .likeCount(magazine.getLikes().size()) // 좋아요 수 계산

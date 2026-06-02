@@ -1,6 +1,7 @@
 package com.mine.api.service;
 
 import com.mine.api.common.ErrorMessages;
+import com.mine.api.common.ImageUrlSanitizer;
 
 import com.mine.api.domain.Magazine;
 import com.mine.api.domain.MagazineSection;
@@ -44,6 +45,7 @@ public class MagazineService {
     public Long saveMagazine(MagazineCreateRequest request, String username) {
         com.mine.api.domain.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException(ErrorMessages.USER_NOT_FOUND));
+        java.util.Set<String> usedImageUrls = new java.util.HashSet<>();
 
         // 1. 태그 리스트를 JSON 문자열로 변환
         String tagsJson = null;
@@ -65,7 +67,9 @@ public class MagazineService {
         }
 
         // 3. Magazine 엔티티 생성
-        String coverImageUrl = moodboardImageUrl != null ? moodboardImageUrl : resolveCoverImageUrl(request);
+        String coverImageUrl = moodboardImageUrl != null
+                ? moodboardImageUrl
+                : ImageUrlSanitizer.nullIfDefault(resolveCoverImageUrl(request));
         MoodboardStatus moodboardStatus = moodboardImageUrl != null
                 ? MoodboardStatus.COMPLETED
                 : MoodboardStatus.PENDING;
@@ -85,9 +89,13 @@ public class MagazineService {
             for (int i = 0; i < request.getSections().size(); i++) {
                 MagazineCreateRequest.SectionDto sectionDto = request.getSections().get(i);
 
+                String thumbnailUrl = ImageUrlSanitizer.nullIfDefaultOrDuplicate(
+                        sectionDto.getThumbnailUrl(),
+                        usedImageUrls);
+
                 MagazineSection section = MagazineSection.builder()
                         .heading(truncate(sectionDto.getHeading(), 490))
-                        .thumbnailUrl(truncate(sectionDto.getThumbnailUrl(), 990))
+                        .thumbnailUrl(truncate(thumbnailUrl, 990))
                         .displayOrder(i)
                         .sourceUrl(sectionDto.getSourceUrl()) // 원본 웹 소스 URL 저장
                         .build();
@@ -97,14 +105,18 @@ public class MagazineService {
                     for (int j = 0; j < sectionDto.getParagraphs().size(); j++) {
                         MagazineCreateRequest.ParagraphDto paraDto = sectionDto.getParagraphs().get(j);
                         
-                        if (firstParaImageUrl == null && paraDto.getImageUrl() != null) {
-                            firstParaImageUrl = paraDto.getImageUrl();
+                        String paragraphImageUrl = ImageUrlSanitizer.nullIfDefaultOrDuplicate(
+                                paraDto.getImageUrl(),
+                                usedImageUrls);
+
+                        if (firstParaImageUrl == null && paragraphImageUrl != null) {
+                            firstParaImageUrl = paragraphImageUrl;
                         }
 
                         Paragraph paragraph = Paragraph.builder()
                                 .subtitle(truncate(paraDto.getSubtitle() != null && !paraDto.getSubtitle().isEmpty() ? paraDto.getSubtitle() : "소제목 내용", 490))
                                 .text(paraDto.getText() != null && !paraDto.getText().isEmpty() ? paraDto.getText() : "내용을 입력해주세요.")
-                                .imageUrl(truncate(paraDto.getImageUrl(), 990))
+                                .imageUrl(truncate(paragraphImageUrl, 990))
                                 .sourceUrl(truncate(paraDto.getSourceUrl(), 1990))
                                 .displayOrder(j)
                                 .build();
@@ -117,11 +129,6 @@ public class MagazineService {
                     if (firstParaImageUrl != null) {
                         section.setThumbnailUrl(firstParaImageUrl);
                     }
-                }
-
-                // 그래도 없으면 기본 플레이스홀더 이미지 사용
-                if (section.getThumbnailUrl() == null) {
-                    section.setThumbnailUrl("https://mine-moodboard-bucket.s3.ap-southeast-2.amazonaws.com/assets/default-placeholder.png");
                 }
 
                 magazine.addSection(section);
@@ -295,6 +302,10 @@ public class MagazineService {
             data.put("user_interests", userInterests);
             data.put("generation_rules", java.util.List.of(
                     "주제와 직접 관련된 내용만 생성한다.",
+                    "각 섹션과 문단에는 Pexels 등 검증 가능한 고품질 이미지 URL을 우선 사용한다.",
+                    "Pexels 이미지는 작은 썸네일이 아니라 본문 표시용 큰 이미지 URL을 사용한다.",
+                    "동일한 이미지 URL을 여러 섹션이나 문단에 재사용하지 않는다.",
+                    "이미지를 찾지 못하면 기본 이미지나 로고 이미지를 만들지 말고 image_url 또는 thumbnail_url을 null로 둔다.",
                     "실존 인물, 유튜버, 장소, 상품 추천은 검증 가능한 경우에만 포함한다.",
                     "검증할 수 없는 추천 대상은 만들어내지 말고 일반적인 선택 기준으로 대체한다."));
 

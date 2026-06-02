@@ -41,7 +41,7 @@ public class InternalApiController {
     }
 
     /**
-     * [복구용] 특정 유저의 초기 매거진 생성을 강제로 트리거
+     * 초기 매거진 자동 생성은 비용과 수동 생성 충돌 문제로 비활성화됨.
      */
     @PostMapping("/trigger-initial")
     public ResponseEntity<String> triggerInitial(
@@ -50,9 +50,9 @@ public class InternalApiController {
 
         validateInternalApiKey(apiKey, "/trigger-initial");
 
-        magazineService.generateInitialMagazinesAsync(username);
-
-        return ResponseEntity.ok("Async generation triggered for user: " + username);
+        log.info("Initial magazine generation trigger ignored because the feature is disabled. username={}", username);
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body("Initial magazine generation is disabled.");
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/init-assets")

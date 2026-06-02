@@ -59,12 +59,10 @@ public class MagazineImageUploadService {
         for (ParagraphImageUpload paragraphImage : paragraphImages) {
             try {
                 String uploadedUrl = s3Service.uploadImageFromUrl(paragraphImage.imageUrl());
-                if (uploadedUrl != null) {
-                    paragraphRepository.findById(paragraphImage.paragraphId()).ifPresent(paragraph -> {
-                        paragraph.setImageUrl(uploadedUrl);
-                        paragraphRepository.save(paragraph);
-                    });
-                }
+                paragraphRepository.findById(paragraphImage.paragraphId()).ifPresent(paragraph -> {
+                    paragraph.setImageUrl(uploadedUrl);
+                    paragraphRepository.save(paragraph);
+                });
             } catch (Exception e) {
                 log.warn(
                         "Async paragraph image upload failed: magazineId={}, paragraphId={}, url={}",

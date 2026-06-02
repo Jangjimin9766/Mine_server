@@ -18,7 +18,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final InterestService interestService;
-    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     private final com.mine.api.repository.RefreshTokenRepository refreshTokenRepository;
     private final com.mine.api.repository.BlacklistedTokenRepository blacklistedTokenRepository;
     private final com.mine.api.security.JwtTokenProvider accessTokenProvider;
@@ -48,9 +47,6 @@ public class AuthService {
         // 관심사 저장 (선택사항)
         if (request.getInterests() != null && !request.getInterests().isEmpty()) {
             interestService.updateUserInterests(savedUser.getUsername(), request.getInterests());
-            
-            // 회원가입 완료 이벤트 발행 — 트랜잭션 커밋 후 별도 스레드에서 초기 매거진 자동 생성됨
-            eventPublisher.publishEvent(new com.mine.api.event.UserSignupEvent(this, savedUser, request.getInterests()));
         }
 
         return savedUser.getId();
