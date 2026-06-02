@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -54,5 +56,19 @@ class InternalApiControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1"));
+    }
+
+    @Test
+    @DisplayName("초기 매거진 생성 트리거는 비활성화되어 있다")
+    @WithMockUser
+    void triggerInitial_Disabled() throws Exception {
+        mockMvc.perform(post("/api/internal/trigger-initial")
+                .with(csrf())
+                .header("X-Internal-Key", "test-internal-key")
+                .param("username", "testuser"))
+                .andExpect(status().isGone())
+                .andExpect(content().string("Initial magazine generation is disabled."));
+
+        verify(magazineService, never()).generateInitialMagazinesAsync(anyString());
     }
 }
