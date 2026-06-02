@@ -10,6 +10,7 @@ import com.mine.api.domain.Paragraph;
 import com.mine.api.domain.User;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.exception.AiServerUnavailableException;
+import com.mine.api.exception.MagazineGenerationInProgressException;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserRepository;
 import com.mine.api.repository.MagazineLikeRepository;
@@ -34,6 +35,7 @@ public class MagazineService {
     private final SectionService sectionService;
     private final MagazineImageUploadService magazineImageUploadService;
     private final ContentSafetyService contentSafetyService;
+    private final java.util.Set<String> activeGenerationUsers = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @org.springframework.beans.factory.annotation.Value("${python.api.url}")
     private String pythonApiUrl;
@@ -282,6 +284,11 @@ public class MagazineService {
     }
 
     public Long generateAndSaveMagazine(com.mine.api.dto.MagazineGenerationRequest request, String username) {
+        String generationKey = username == null ? "" : username;
+        if (!activeGenerationUsers.add(generationKey)) {
+            throw new MagazineGenerationInProgressException("이미 매거진 생성이 진행 중입니다. 완료 후 다시 시도해주세요.");
+        }
+
         try {
             contentSafetyService.validateText(request != null ? request.getTopic() : null);
             contentSafetyService.validateText(request != null ? request.getUserMood() : null);
@@ -381,6 +388,8 @@ public class MagazineService {
         } catch (Exception e) {
             log.error("Error in generateAndSaveMagazine", e);
             throw new RuntimeException("Detailed error: " + e.getMessage(), e);
+        } finally {
+            activeGenerationUsers.remove(generationKey);
         }
     }
 

@@ -53,6 +53,8 @@ public class RunPodService {
     }
 
     private Map<String, Object> doSendRequest(String url, Map<String, Object> inputData) {
+        long requestStartedAt = System.nanoTime();
+        String action = extractAction(inputData);
         // RunPod Serverless는 POST /run 요청 후 작업 ID를 받아 폴링하는 비동기 구조
         String runUrl = url.replace("/runsync", "/run");
         if (!runUrl.contains("/run")) {
@@ -72,7 +74,7 @@ public class RunPodService {
         WebClient client = webClientBuilder.clone().exchangeStrategies(strategies).build();
 
         // 3. Send Async Request (POST /run)
-        log.info("Sending RunPod request to: {}", runUrl);
+        log.info("RunPod job request starting action={} url={}", action, runUrl);
         java.util.Map<String, Object> response = client.post()
                 .uri(runUrl)
                 .header("Authorization", "Bearer " + apiKey)
@@ -89,13 +91,16 @@ public class RunPodService {
         }
 
         String jobId = (String) response.get("id");
-        log.info("RunPod job started. ID: {}", jobId);
+        log.info(
+                "RunPod job started action={} jobId={} elapsedMs={}",
+                action, jobId, elapsedMs(requestStartedAt));
 
         // 4. Poll Status (GET /status/{id})
         // Construct status URL: replace /run with /status/{id}
         String statusUrl = runUrl.replace("/run", "/status/" + jobId);
-        log.info("Starting RunPod polling at: {}", statusUrl);
+        log.info("Starting RunPod polling action={} jobId={} statusUrl={}", action, jobId, statusUrl);
 
+        String lastLoggedStatus = null;
         for (int i = 0; i < MAX_RETRIES; i++) {
             try {
                 Thread.sleep(RETRY_DELAY_MS);
@@ -120,12 +125,22 @@ public class RunPodService {
 
             String status = (String) statusResponse.get("status");
             log.debug("Job status: {}", status);
+            if (status != null && !status.equals(lastLoggedStatus)) {
+                log.info(
+                        "RunPod job status action={} jobId={} status={} pollAttempt={} elapsedMs={}",
+                        action, jobId, status, i + 1, elapsedMs(requestStartedAt));
+                lastLoggedStatus = status;
+            }
 
             if ("COMPLETED".equals(status)) {
-                log.info("RunPod job COMPLETED. Extracting output.");
+                log.info(
+                        "RunPod job COMPLETED action={} jobId={} pollAttempt={} elapsedMs={}",
+                        action, jobId, i + 1, elapsedMs(requestStartedAt));
                 return statusResponse; // output 필드에 AI 결과가 담겨 있다
             } else if ("FAILED".equals(status)) {
-                log.error("RunPod job FAILED. Full response: {}", statusResponse);
+                log.error(
+                        "RunPod job FAILED action={} jobId={} pollAttempt={} elapsedMs={} response={}",
+                        action, jobId, i + 1, elapsedMs(requestStartedAt), statusResponse);
                 throw new RuntimeException("RunPod job failed: " + statusResponse);
             } else if ("IN_QUEUE".equals(status) || "IN_PROGRESS".equals(status)) {
                 // 작업 대기 중 — 다음 폴링 시도
@@ -135,6 +150,9 @@ public class RunPodService {
             }
         }
 
+        log.error(
+                "RunPod job timed out action={} jobId={} elapsedMs={} maxRetries={}",
+                action, jobId, elapsedMs(requestStartedAt), MAX_RETRIES);
         throw new RuntimeException("RunPod job timed out after " + (MAX_RETRIES * RETRY_DELAY_MS / 1000) + " seconds");
     }
 
@@ -149,13 +167,15 @@ public class RunPodService {
     }
 
     private Map<String, Object> doSendSyncRequest(String url, Map<String, Object> requestBody) {
-        log.info("Sending Sync request to: {}", url);
+        long requestStartedAt = System.nanoTime();
+        String action = extractAction(requestBody);
+        log.info("Sending Sync request action={} url={}", action, url);
 
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
                 .build();
         // WebClient.Builder는 공용 Bean이므로 .clone() 사용 시 메모리 누수 방지
-        return webClientBuilder.clone().exchangeStrategies(strategies).build()
+        Map<String, Object> response = webClientBuilder.clone().exchangeStrategies(strategies).build()
                 .post()
                 .uri(url)
                 .header("x-api-key", apiKey)
@@ -165,6 +185,8 @@ public class RunPodService {
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<java.util.Map<String, Object>>() {
                 })
                 .block(Duration.ofMinutes(5)); // 로컀 AI 요청은 최대 5분 대기
+        log.info("Sync request completed action={} url={} elapsedMs={}", action, url, elapsedMs(requestStartedAt));
+        return response;
     }
 
     public Map<String, Object> fallback(String url, Map<String, Object> inputData, Throwable t) {
@@ -204,5 +226,9 @@ public class RunPodService {
             }
         }
         return "unknown";
+    }
+
+    private long elapsedMs(long startedAtNanos) {
+        return java.time.Duration.ofNanos(System.nanoTime() - startedAtNanos).toMillis();
     }
 }
