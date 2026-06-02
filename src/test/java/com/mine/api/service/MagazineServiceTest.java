@@ -7,6 +7,7 @@ import com.mine.api.domain.Interest;
 import com.mine.api.dto.MagazineCreateRequest;
 import com.mine.api.dto.MagazineGenerationRequest;
 import com.mine.api.exception.AiServerUnavailableException;
+import com.mine.api.exception.MagazineGenerationInProgressException;
 import com.mine.api.repository.MagazineLikeRepository;
 import com.mine.api.repository.MagazineRepository;
 import com.mine.api.repository.UserInterestRepository;
@@ -238,6 +239,28 @@ class MagazineServiceTest {
                                 AiServerUnavailableException.class,
                                 () -> magazineService.generateAndSaveMagazine(request, username));
                 assertEquals("AI 생성 서버가 잠시 준비 중입니다. 잠시 후 다시 시도해주세요.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("같은 유저의 매거진 생성이 이미 진행 중이면 RunPod 호출 전 409 예외를 던진다")
+        void generateAndSaveMagazine_DuplicateUserGeneration_ThrowsBeforeRunPodCall() {
+                String username = "testuser";
+                @SuppressWarnings("unchecked")
+                java.util.Set<String> activeGenerationUsers = (java.util.Set<String>) ReflectionTestUtils.getField(
+                                magazineService,
+                                "activeGenerationUsers");
+                assertNotNull(activeGenerationUsers);
+                activeGenerationUsers.add(username);
+
+                MagazineGenerationRequest request = new MagazineGenerationRequest();
+                request.setTopic("Travel");
+
+                MagazineGenerationInProgressException exception = assertThrows(
+                                MagazineGenerationInProgressException.class,
+                                () -> magazineService.generateAndSaveMagazine(request, username));
+
+                assertEquals("이미 매거진 생성이 진행 중입니다. 완료 후 다시 시도해주세요.", exception.getMessage());
+                verifyNoInteractions(runPodService);
         }
 
         /*
