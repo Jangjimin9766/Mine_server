@@ -177,6 +177,9 @@ public class MagazineInteractionService {
 
     @Transactional
     protected void handlePythonResponse(Magazine magazine, Map<String, Object> response) {
+        if (Boolean.FALSE.equals(response.get("success"))) {
+            return;
+        }
         sortSectionsByDisplayOrder(magazine);
 
         String action = (String) response.get("intent");
